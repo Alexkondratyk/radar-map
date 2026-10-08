@@ -39,7 +39,7 @@
       padding: 12px 14px;
       border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      max-width: 310px;
+      max-width: 320px;
       width: calc(100% - 32px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -64,8 +64,36 @@
     .info-subtitle {
       font-size: 12px;
       color: #94a3b8;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
+
+    /* Легенда промальованих маршрутів */
+    .routes-legend {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      padding: 7px 9px;
+      background: rgba(15, 23, 42, 0.75);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .route-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #cbd5e1;
+    }
+    .route-line-badge {
+      width: 20px;
+      height: 5px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .badge-r1 { background: #0284c7; box-shadow: 0 0 6px #0284c7; }
+    .badge-r2 { background: #d97706; box-shadow: 0 0 6px #d97706; }
+
     .filter-group {
       display: grid;
       grid-template-columns: 1fr 1.3fr 1fr 1fr;
@@ -168,14 +196,15 @@
     }
     .popup-badge {
       display: inline-block;
-      background: #f59e0b;
-      color: #000;
       font-size: 10px;
       font-weight: 700;
-      padding: 1px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
       margin-bottom: 6px;
     }
+    .badge-route-1 { background: #0284c7; color: #fff; }
+    .badge-route-2 { background: #d97706; color: #fff; }
+
     .popup-content p {
       font-size: 12px;
       margin-bottom: 6px;
@@ -195,32 +224,41 @@
 </head>
 <body>
 
-  <!-- Оверлей перезавантаження -->
   <div id="loading-overlay">
     <div class="spinner"></div>
     <div>Оновлення даних...</div>
   </div>
 
-  <!-- Панель керування -->
   <div class="info-card">
     <div class="info-header">
       <div class="info-title" id="points-title">Точок: 0</div>
       <button class="db-settings-btn" onclick="editDbUrl()" title="Налаштування посилання БД">⚙️</button>
     </div>
     <div class="info-subtitle">Маркери активні 2 години</div>
+
+    <!-- Легенда маршрутів -->
+    <div class="routes-legend">
+      <div class="route-item">
+        <span class="route-line-badge badge-r1"></span>
+        <span><b>М1 (Промзона):</b> Канатна ➔ Павлова ➔ Комбайн ➔ Свободи</span>
+      </div>
+      <div class="route-item">
+        <span class="route-line-badge badge-r2"></span>
+        <span><b>М2 (Набережна):</b> Канатна ➔ Озерка ➔ Речпорт ➔ Свободи</span>
+      </div>
+    </div>
+
     <div class="filter-group">
       <button class="filter-btn active" onclick="setFilter('all', this)">Всі</button>
-      <button class="filter-btn route-btn" onclick="setFilter('route', this)">Маршрут</button>
+      <button class="filter-btn route-btn" onclick="setFilter('route', this)">Маршрути</button>
       <button class="filter-btn" onclick="setFilter('1', this)">К 1</button>
       <button class="filter-btn" onclick="setFilter('2', this)">К 2</button>
     </div>
     <div id="db-error" class="error-banner" style="display:none;"></div>
   </div>
 
-  <!-- Кнопка оновлення -->
   <button id="refresh-btn" class="refresh-btn" onclick="triggerReload()">🔄 Оновити</button>
 
-  <!-- Карта -->
   <div id="map"></div>
 
   <!-- Leaflet JS -->
@@ -234,23 +272,10 @@
     let rawPoints = [];
     const markersLayer = L.layerGroup();
 
-    // Ключові слова вашого маршруту (включаючи Водокачку, Комбайновий і весь пр. Свободи)
-    const ROUTE_KEYWORDS = [
-      'канатн', 'нігоян', 'нигоян', 'калінін', 'калинин',
-      'павлов', 'белелюб', 'краснозавод',
-      'комбайн', 'ударник',
-      'набережн.*заводськ', 'заводськ', 'заводск',
-      'водокачк',
-      'кайдак', 'кайдац',
-      'свобод', 'новокодацьк', 'новокодакск', 'дзержинськ',
-      'озерк', 'шмідт', 'шмидт', 'бобров',
-      'річпорт', 'речпорт'
-    ];
-
-    // Центрування: фокус на осі маршруту (Центр - Вокзал - Набережна - Свободи)
+    // Центрування карти на обох коридорах руху
     const map = L.map('map', {
       zoomControl: false
-    }).setView([48.480, 34.975], 13);
+    }).setView([48.478, 34.982], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -258,6 +283,62 @@
     }).addTo(map);
 
     markersLayer.addTo(map);
+
+    // ==============================================================
+    // ТОЧНІ ТРАЄКТОРІЇ ПРОРИСОВКИ ДВОХ МАРШРУТІВ ПО ДОРОГАХ ДНІПРА
+    // ==============================================================
+
+    // Маршрут 1 (Синій): Канатна -> пр. Нігояна -> Павлова -> Белелюбського -> Комбайновий -> Водолікарня -> тупик пр. Свободи
+    const route1Coords = [
+      [48.4665, 35.0125], // Канатна
+      [48.4710, 35.0080], // під'їзд до пр. Нігояна
+      [48.4735, 35.0040], // пр. Сергія Нігояна
+      [48.4770, 35.0055], // поворот на Павлова
+      [48.4795, 35.0068], // вул. Академіка Павлова
+      [48.4828, 35.0040], // вул. Белелюбського (Краснозаводська)
+      [48.4815, 34.9925], // рух уздовж колій / промзона
+      [48.4775, 34.9825], // Комбайновий завод (вул. Ударників)
+      [48.4770, 34.9660], // Водолікарня / 2-га міська лікарня
+      [48.4815, 34.9540], // підхід до пр. Свободи
+      [48.4878, 34.9442]  // тупик пр. Свободи (Новокодацька площа)
+    ];
+
+    // Лінія Маршруту 1 (Яскраво-синя з пунктиром)
+    L.polyline(route1Coords, {
+      color: '#0284c7',
+      weight: 6,
+      opacity: 0.9,
+      dashArray: '8, 6',
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map).bindTooltip("Маршрут 1: Промзона (Павлова - Комбайн - Свободи)", { sticky: true });
+
+    // Маршрут 2 (Помаранчевий): Канатна -> Озерка -> Речпорт -> Набережна Заводська -> Водокачка -> пр. Свободи
+    const route2Coords = [
+      [48.4665, 35.0125], // Канатна
+      [48.4685, 35.0250], // Озерка (Шмідта / Боброва)
+      [48.4755, 35.0270], // рух до набережної (вул. Княгині Ольги)
+      [48.4820, 35.0320], // Речпорт / пл. Десантників
+      [48.4850, 35.0150], // Набережна Заводська (початок)
+      [48.4875, 34.9850], // Набережна Заводська (середина)
+      [48.4905, 34.9570], // Набережна Заводська (перед Кайдацьким мостом)
+      [48.4925, 34.9440], // Водокачка (насосна станція)
+      [48.4878, 34.9442]  // поворот у тупик пр. Свободи
+    ];
+
+    // Лінія Маршруту 2 (Бурштинова / помаранчева з пунктиром)
+    L.polyline(route2Coords, {
+      color: '#d97706',
+      weight: 6,
+      opacity: 0.9,
+      dashArray: '8, 6',
+      lineCap: 'round',
+      lineJoin: 'round'
+    }).addTo(map).bindTooltip("Маршрут 2: Набережна (Озерка - Речпорт - Водокачка - Свободи)", { sticky: true });
+
+    // Словники ключових слів для розпізнавання та фільтрації
+    const ROUTE_1_KEYWORDS = ['канатн', 'нігоян', 'нигоян', 'калінін', 'калинин', 'павлов', 'белелюб', 'краснозавод', 'комбайн', 'ударник', 'водолікарн', 'водолечебн', 'свобод', 'новокодацьк'];
+    const ROUTE_2_KEYWORDS = ['канатн', 'озерк', 'шмідт', 'шмидт', 'бобров', 'річпорт', 'речпорт', 'набережн.*заводськ', 'заводськ', 'заводск', 'водокачк', 'кайдак', 'свобод'];
 
     function triggerReload() {
       const overlay = document.getElementById('loading-overlay');
@@ -317,9 +398,14 @@
       return clearMarkers.some(word => lowerText.includes(word));
     }
 
-    function isPointOnRoute(p, text) {
+    function checkRouteMembership(p, text) {
       const combined = `${p.address || ''} ${text || ''}`.toLowerCase();
-      return ROUTE_KEYWORDS.some(kw => new RegExp(kw).test(combined));
+      const isR1 = ROUTE_1_KEYWORDS.some(kw => new RegExp(kw).test(combined));
+      const isR2 = ROUTE_2_KEYWORDS.some(kw => new RegExp(kw).test(combined));
+      if (isR1 && isR2) return 'both';
+      if (isR1) return 'r1';
+      if (isR2) return 'r2';
+      return null;
     }
 
     function getMarkerColor(pChannel, isClear) {
@@ -347,9 +433,9 @@
         }
 
         const pointText = p.text || p.message || p.description || p.raw_text || p.original_text || p.details || 'Без опису';
-        const onRoute = isPointOnRoute(p, pointText);
+        const routeType = checkRouteMembership(p, pointText);
 
-        if (currentFilter === 'route' && !onRoute) return;
+        if (currentFilter === 'route' && !routeType) return;
         if (currentFilter === '1' && pChannel !== '1') return;
         if (currentFilter === '2' && pChannel !== '2') return;
 
@@ -360,21 +446,43 @@
         const isClear = isStatusClear(p, pointText);
         const color = getMarkerColor(pChannel, isClear);
 
+        let strokeColor = '#ffffff';
+        let strokeWidth = 2;
+        let radius = 8;
+
+        if (routeType === 'r1') {
+          strokeColor = '#0284c7';
+          strokeWidth = 3.5;
+          radius = 11;
+        } else if (routeType === 'r2') {
+          strokeColor = '#d97706';
+          strokeWidth = 3.5;
+          radius = 11;
+        } else if (routeType === 'both') {
+          strokeColor = '#ec4899';
+          strokeWidth = 4;
+          radius = 12;
+        }
+
         const circle = L.circleMarker([lat, lng], {
-          radius: onRoute ? 11 : 8,
+          radius: radius,
           fillColor: color,
-          color: onRoute ? '#f59e0b' : '#ffffff',
-          weight: onRoute ? 3 : 2,
+          color: strokeColor,
+          weight: strokeWidth,
           opacity: 1,
           fillOpacity: 0.9
         });
 
         const exactTime = formatExactTime(pTime);
-        const routeBadge = onRoute ? '<div class="popup-badge">📍 Мій маршрут</div>' : '';
+        
+        let badgeHtml = '';
+        if (routeType === 'r1') badgeHtml = '<div class="popup-badge badge-route-1">📍 Маршрут 1 (Промзона)</div>';
+        if (routeType === 'r2') badgeHtml = '<div class="popup-badge badge-route-2">📍 Маршрут 2 (Набережна)</div>';
+        if (routeType === 'both') badgeHtml = '<div class="popup-badge badge-route-1">📍 Спільна точка М1 / М2</div>';
 
         circle.bindPopup(`
           <div class="popup-content">
-            ${routeBadge}
+            ${badgeHtml}
             <strong>${p.address || 'Точка на карті'}</strong>
             <p>${pointText}</p>
             <div class="popup-time">🕒 ${exactTime} | Канал ${pChannel}</div>
