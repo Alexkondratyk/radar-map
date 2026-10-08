@@ -2,195 +2,120 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Моя Карта</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Радар Дніпро</title>
+
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body, html { height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    #map { height: 100vh; width: 100vw; z-index: 1; }
-    .panel {
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #e5e3df;
+    }
+
+    /* Верхня панель статистики та фільтрів */
+    .info-card {
       position: absolute;
-      top: 15px;
-      left: 15px;
-      background: rgba(20, 24, 33, 0.88);
+      top: 16px;
+      left: 16px;
+      z-index: 1000;
+      background: rgba(23, 27, 34, 0.92);
       backdrop-filter: blur(8px);
       color: #fff;
-      padding: 14px 18px;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      z-index: 1000;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-width: 250px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      max-width: 260px;
+      width: calc(100% - 32px);
     }
-    .panel-title { font-size: 16px; font-weight: bold; }
-    .panel-subtitle { font-size: 12px; color: #a0aec0; }
-    .btn-group { display: flex; gap: 8px; margin-top: 4px; }
+    .info-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .info-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 10px;
+    }
+    .filter-group {
+      display: flex;
+      gap: 6px;
+    }
     .filter-btn {
-      background: #2d3748;
-      color: #fff;
-      border: 1px solid #4a5568;
-      padding: 6px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
+      flex: 1;
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      padding: 6px 0;
+      font-size: 12px;
       font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
       transition: all 0.2s;
     }
     .filter-btn.active {
-      background: #2b6cb0;
-      border-color: #3182ce;
+      background: #2563eb;
+      color: #fff;
     }
+
+    /* Кнопка Оновити (F5) у правому нижньому кутку */
     .refresh-btn {
       position: absolute;
-      bottom: 25px;
-      right: 25px;
-      background: #ffffff;
-      color: #2b6cb0;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-weight: bold;
-      font-size: 14px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
-      cursor: pointer;
+      bottom: 24px;
+      right: 16px;
       z-index: 1000;
+      background: rgba(23, 27, 34, 0.92);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    .refresh-btn:hover { background: #f0f4f8; }
-  </style>
-</head>
-<body>
-  <div class="panel">
-    <div class="panel-title">Точок: <span id="count">0</span></div>
-    <div class="panel-subtitle">Маркери активні 60 хвилин</div>
-    <div class="btn-group">
-      <button class="filter-btn active" onclick="setChannel('all')">Всі</button>
-      <button class="filter-btn" id="btn-ch1" onclick="setChannel('channel1')">Канал 1</button>
-      <button class="filter-btn" id="btn-ch2" onclick="setChannel('channel2')">Канал 2</button>
-    </div>
-  </div>
-
-  <button class="refresh-btn" onclick="fetchData()">🔄 Оновити</button>
-
-  <div id="map"></div>
-
-  <script>
-    var currentChannel = 'all';
-    var cachedPoints = [];
-    const DB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
-
-    const map = L.map('map', { zoomControl: false }).setView([48.4647, 35.0462], 12);
-
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19,
-      attribution: 'Tiles &copy; Esri'
-    }).addTo(map);
-
-    const markersLayer = L.layerGroup().addTo(map);
-
-    function setChannel(channel) {
-      currentChannel = channel;
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      if (channel === 'all') document.querySelectorAll('.filter-btn')[0].classList.add('active');
-      if (channel === 'channel1') document.getElementById('btn-ch1').classList.add('active');
-      if (channel === 'channel2') document.getElementById('btn-ch2').classList.add('active');
-      renderMarkers();
+    .refresh-btn:active {
+      transform: scale(0.96);
+      background: #1e293b;
     }
 
-    function renderMarkers() {
-      markersLayer.clearLayers();
-      const now = Date.now();
-      const TTL_MS = 60 * 60 * 1000; // 60 хвилин
-      let activeCount = 0;
-      let coordOffsets = {};
-
-      cachedPoints.forEach(point => {
-        if (!point || !point.lat || !point.lng || !point.time) return;
-
-        const pointTime = Number(point.time);
-        const age = now - pointTime;
-
-        if (age > TTL_MS) return;
-        if (currentChannel !== 'all' && point.channel !== currentChannel) return;
-
-        activeCount++;
-
-        let lat = Number(point.lat);
-        let lng = Number(point.lng);
-
-        const coordKey = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
-        const offsetIndex = coordOffsets[coordKey] || 0;
-        coordOffsets[coordKey] = offsetIndex + 1;
-
-        if (offsetIndex > 0) {
-          const angle = offsetIndex * 1.3;
-          lat += 0.00035 * Math.sin(angle);
-          lng += 0.00045 * Math.cos(angle);
-        }
-
-        const isClear = point.type === 'clear';
-        const markerColor = isClear ? '#38a169' : '#e53e3e';
-
-        const marker = L.circleMarker([lat, lng], {
-          radius: 9,
-          fillColor: markerColor,
-          color: '#ffffff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.85
-        });
-
-        const minutesAgo = Math.max(0, Math.floor(age / 60000));
-        const statusBadge = isClear 
-          ? '<span style="color:#2f855a; font-weight:bold; font-size:13px;">🟢 ЧИСТО</span>' 
-          : '<span style="color:#e53e3e; font-weight:bold; font-size:13px;">🔴 УВАГА</span>';
-
-        const rawMessage = point.text || point.address || 'Повідомлення без тексту';
-
-        const popupHtml = `
-          <div style="font-size: 13px; line-height: 1.45; min-width: 170px; max-width: 250px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
-              ${statusBadge}
-              <span style="color: #718096; font-size: 11px;">${minutesAgo} хв. тому</span>
-            </div>
-            <div style="font-weight: 600; color: #1a202c; background: #edf2f7; padding: 6px 8px; border-radius: 6px; word-break: break-word;">
-              ${rawMessage}
-            </div>
-          </div>
-        `;
-
-        marker.bindPopup(popupHtml);
-
-        marker.on('mouseover', function () {
-          this.openPopup();
-        });
-
-        markersLayer.addLayer(marker);
-      });
-
-      document.getElementById('count').textContent = activeCount;
+    /* Спливаюче вікно маркера */
+    .leaflet-popup-content-wrapper {
+      background: #1e293b;
+      color: #f8fafc;
+      border-radius: 8px;
     }
-
-    async function fetchData() {
-      try {
-        const res = await fetch(DB_URL);
-        if (!res.ok) throw new Error('Помилка завантаження');
-        const data = await res.json();
-        cachedPoints = data ? Object.values(data) : [];
-        renderMarkers();
-      } catch (err) {
-        console.error(err);
-      }
+    .leaflet-popup-tip {
+      background: #1e293b;
     }
-
-    fetchData();
-    setInterval(fetchData, 60000);
-  </script>
-</body>
-</html>
+    .popup-content strong {
+      display: block;
+      color: #38bdf8;
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+    .popup-content p {
+      font-size: 12px;
+      margin-bottom: 6px;
+      line-height: 1.35;
+    }
+    .popup-time {
+      font-size: 1
