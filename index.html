@@ -114,7 +114,7 @@
       background: #1e293b;
     }
 
-    /* Анімація повноекранного оновлення */
+    /* Повноекранний індикатор завантаження */
     #loading-overlay {
       position: fixed;
       top: 0;
@@ -145,7 +145,7 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Спливаюче вікно маркера */
+    /* Вікно маркера */
     .leaflet-popup-content-wrapper {
       background: #1e293b;
       color: #f8fafc;
@@ -179,13 +179,13 @@
 </head>
 <body>
 
-  <!-- Оверлей примусової перезагрузки -->
+  <!-- Оверлей перезавантаження -->
   <div id="loading-overlay">
     <div class="spinner"></div>
     <div>Оновлення даних...</div>
   </div>
 
-  <!-- Верхня панель -->
+  <!-- Панель керування -->
   <div class="info-card">
     <div class="info-header">
       <div class="info-title" id="points-title">Точок: 0</div>
@@ -200,7 +200,7 @@
     <div id="db-error" class="error-banner" style="display:none;"></div>
   </div>
 
-  <!-- Кнопка оновлення сторінки -->
+  <!-- Кнопка оновлення -->
   <button id="refresh-btn" class="refresh-btn" onclick="triggerReload()">🔄 Оновити</button>
 
   <!-- Карта -->
@@ -210,18 +210,14 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // ==============================================================
-    // АДРЕСА БАЗИ ДАНИХ FIREBASE:
-    // Якщо збережено в браузері — береться з пам'яті, інакше дефолтна:
     let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
-    // ==============================================================
 
-    const TTL_MS = 60 * 60 * 1000; // 60 хвилин (1 година)
+    const TTL_MS = 60 * 60 * 1000; // 60 хвилин
     let currentFilter = 'all';
     let rawPoints = [];
     const markersLayer = L.layerGroup();
 
-    // Карта: фокус на сектор Центр — Вокзал — Парус
+    // Центрування: Центр — Вокзал — Парус
     const map = L.map('map', {
       zoomControl: false
     }).setView([48.472, 35.015], 12);
@@ -233,7 +229,6 @@
 
     markersLayer.addTo(map);
 
-    // 100% видима перезагрузка з анімацією та спливаючим оверлеєм
     function triggerReload() {
       const overlay = document.getElementById('loading-overlay');
       const btn = document.getElementById('refresh-btn');
@@ -249,7 +244,6 @@
       }, 250);
     }
 
-    // Ручне налаштування URL прямо з екрану при потребі
     function editDbUrl() {
       const current = localStorage.getItem('user_db_url') || DB_URL;
       const input = prompt('Введіть повний URL вашої бази Firebase (з /points.json на кінці):', current);
@@ -260,12 +254,11 @@
       }
     }
 
-    // Нормалізація часу
     function parseTimestamp(p) {
       let t = p.timestamp || p.time || p.date;
       if (!t) return Date.now();
       if (typeof t === 'string' && !isNaN(t)) t = Number(t);
-      if (typeof t === 'number' && t < 1e11) t *= 1000; // секунди в мс
+      if (typeof t === 'number' && t < 1e11) t *= 1000;
       return new Date(t).getTime() || Date.now();
     }
 
@@ -276,15 +269,10 @@
       return `${diffMins} хв. тому`;
     }
 
-    function getMarkerColor(point) {
-      const channel = point.channel || 1;
-      const type = point.type || 'danger';
-
-      if (channel === 2) {
-        // Канал 2: жовтий (чисто) / фіолетовий (тривога)
+    function getMarkerColor(pChannel, type) {
+      if (pChannel === '2') {
         return type === 'clear' ? '#eab308' : '#a855f7';
       } else {
-        // Канал 1: зелений (чисто) / червоний (тривога)
         return type === 'clear' ? '#22c55e' : '#ef4444';
       }
     }
@@ -298,18 +286,24 @@
         if (!p) return;
         const pTime = parseTimestamp(p);
         
-        // Фільтр за віком (60 хвилин)
+        // Фільтр за часом життя
         if (now - pTime > TTL_MS) return;
 
-        // Фільтр каналів
-        const pChannel = String(p.channel || 1);
+        // Нормалізація каналу: підтримує 1, '1', 'channel1', null -> '1'
+        let pChannel = '1';
+        if (p.channel === 2 || p.channel === '2' || p.channel === 'channel2') {
+          pChannel = '2';
+        }
+
+        // Фільтрація за вкладками
         if (currentFilter !== 'all' && currentFilter !== pChannel) return;
 
         const lat = parseFloat(p.lat);
         const lng = parseFloat(p.lng);
         if (isNaN(lat) || isNaN(lng)) return;
 
-        const color = getMarkerColor(p);
+        const type = p.type || 'danger';
+        const color = getMarkerColor(pChannel, type);
 
         const circle = L.circleMarker([lat, lng], {
           radius: 9,
@@ -320,11 +314,14 @@
           fillOpacity: 0.85
         });
 
+        // Пошук тексту повідомлення по всіх можливих полях
+        const pointText = p.text || p.message || p.description || p.raw_text || p.original_text || p.details || 'Без опису';
         const timeText = getRelativeTime(pTime);
+
         circle.bindPopup(`
           <div class="popup-content">
             <strong>${p.address || 'Точка на карті'}</strong>
-            <p>${p.text || 'Без опису'}</p>
+            <p>${pointText}</p>
             <div class="popup-time">🕒 ${timeText} | Канал ${pChannel}</div>
           </div>
         `);
@@ -343,7 +340,6 @@
       renderMarkers();
     }
 
-    // Завантаження точок
     async function loadData() {
       const errBox = document.getElementById('db-error');
       try {
