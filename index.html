@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Радар Дніпро</title>
 
-  <!-- Leaflet CSS (Cloudflare CDN) -->
-  <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css](https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css)" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
   <style>
     * {
@@ -31,7 +31,7 @@
       z-index: 1;
     }
 
-    /* Верхня панель зі статистикою та фільтрами */
+    /* Верхня панель */
     .info-card {
       position: absolute;
       top: 16px;
@@ -71,7 +71,7 @@
       margin-bottom: 8px;
     }
 
-    /* Легенда промальованих маршрутів */
+    /* Легенда маршрутів */
     .routes-legend {
       display: flex;
       flex-direction: column;
@@ -182,6 +182,7 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Спливаюче вікно */
     .leaflet-popup-content-wrapper {
       background: #1e293b;
       color: #f8fafc;
@@ -263,11 +264,11 @@
 
   <div id="map"></div>
 
-  <!-- Leaflet JS (Cloudflare CDN) -->
-  <script src="[https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js](https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js)"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    let DB_URL = localStorage.getItem('user_db_url') || '[https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json](https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json)';
+    let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
 
     const TTL_MS = 120 * 60 * 1000;
     let currentFilter = 'all';
@@ -286,10 +287,10 @@
     const markersLayer = L.layerGroup().addTo(map);
 
     // ==============================================================
-    // РЕАЛЬНІ ТРАЄКТОРІЇ ВУЛИЦЬ
+    // ТОЧНІ ТРАЄКТОРІЇ ВУЛИЦЬ (ПРЯМИЙ ВИХІД БЕЗ ПЕТЕЛЬ НА ПІВДЕНЬ)
     // ==============================================================
 
-    // МАРШРУТ 1: Канатна, 126 -> Щепкіна -> пр. Нігояна -> Павлова -> Белелюбського -> Ударників (Комбайн) -> Водолікарня -> пр. Свободи
+    // М1 (Промзона): Канатна, 126 -> Щепкіна -> пр. Нігояна -> Павлова -> Белелюбського -> Ударників (Комбайн) -> Водолікарня -> пр. Свободи
     const route1StreetPath = [
       [48.4650, 35.0110], // вул. Канатна, 126
       [48.4680, 35.0080], // вул. Щепкіна
@@ -302,21 +303,21 @@
       [48.4828, 35.0040], // поворот на вул. Академіка Белелюбського
       [48.4834, 34.9980], // вул. Белелюбського вздовж залізниці
       [48.4836, 34.9920], // вул. Белелюбського
-      [48.4832, 34.9860], // перехід Белелюбського у вул. Ударників
+      [48.4832, 34.9860], // плавний перехід у вул. Ударників
       [48.4825, 34.9800], // вул. Ударників (Комбайновий завод)
-      [48.4815, 34.9720], // вул. Ударників вздовж заводського паркану
+      [48.4815, 34.9720], // вул. Ударників повз заводський паркан
       [48.4800, 34.9640], // вул. Ударників до виходу на пр. Свободи
-      [48.4793, 34.9608], // Водолікарня (пр. Свободи, 2-А)
+      [48.4793, 34.9608], // Водолікарня (початок пр. Свободи, 2-А)
       [48.4805, 34.9565], // рух по пр. Свободи
-      [48.4825, 34.9520], // пр. Свободи (станція метро)
-      [48.4850, 34.9475], // пр. Свободи повз парк Новокодацький
+      [48.4825, 34.9520], // пр. Свободи (станція метро Проспект Свободи)
+      [48.4850, 34.9475], // пр. Свободи повз парк
       [48.4880, 34.9440]  // тупик пр. Свободи (Новокодацька площа)
     ];
 
-    // МАРШРУТ 2: Канатна, 126 -> Озерка -> Княгині Ольги -> Речпорт -> Набережна Заводська -> Водокачка -> пр. Свободи
+    // М2 (Набережна): Канатна, 126 -> Озерка -> Княгині Ольги -> Речпорт -> Набережна Заводська -> Водокачка -> тупик пр. Свободи
     const route2StreetPath = [
       [48.4650, 35.0110], // вул. Канатна, 126
-      [48.4665, 35.0180], // вул. Канатна в бік ринку
+      [48.4665, 35.0180], // рух по Канатній в бік ринку
       [48.4678, 35.0235], // виїзд на вул. Шмідта (Степана Бандери)
       [48.4688, 35.0252], // ринок Озерка / вул. Боброва
       [48.4725, 35.0268], // перетин з пр. Яворницького / вул. Княгині Ольги
@@ -333,7 +334,7 @@
       [48.4880, 34.9440]  // тупик пр. Свободи (Новокодацька площа)
     ];
 
-    // Отрисовка линий сразу
+    // Малювання ліній
     L.polyline(route1StreetPath, { color: '#0f172a', weight: 8, opacity: 0.75 }).addTo(map);
     L.polyline(route1StreetPath, {
       color: '#0284c7',
