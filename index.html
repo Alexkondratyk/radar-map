@@ -2,112 +2,81 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Radar Map</title>
-  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Моя Карта</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <style>
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0; width: 100%; height: 100%;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    #map { width: 100%; height: 100%; background: #e5e3df; }
-
-    /* Верхняя панель со счетчиком и фильтрами */
-    .control-panel {
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #map { height: 100vh; width: 100vw; z-index: 1; }
+    .panel {
       position: absolute;
-      top: 14px;
-      left: 14px;
-      right: 14px;
-      max-width: 320px;
-      background: rgba(30, 30, 30, 0.92);
-      color: #ffffff;
-      padding: 12px 14px;
-      border-radius: 16px;
+      top: 15px;
+      left: 15px;
+      background: rgba(20, 24, 33, 0.88);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
       z-index: 1000;
-      box-shadow: 0 4px 18px rgba(0,0,0,0.3);
-      backdrop-filter: blur(6px);
-    }
-    .info-count {
-      font-size: 15px;
-      font-weight: 700;
-    }
-    .info-sub {
-      font-size: 11px;
-      color: #aaa;
-      margin-top: 2px;
-      margin-bottom: 10px;
-    }
-
-    /* Кнопки переключения каналов */
-    .channel-filter {
       display: flex;
-      gap: 6px;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 250px;
     }
+    .panel-title { font-size: 16px; font-weight: bold; }
+    .panel-subtitle { font-size: 12px; color: #a0aec0; }
+    .btn-group { display: flex; gap: 8px; margin-top: 4px; }
     .filter-btn {
-      flex: 1;
-      padding: 6px 4px;
-      font-size: 12px;
-      font-weight: 600;
-      border: 1px solid #444;
-      background: #222;
-      color: #ddd;
+      background: #2d3748;
+      color: #fff;
+      border: 1px solid #4a5568;
+      padding: 6px 14px;
       border-radius: 8px;
       cursor: pointer;
-      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
       transition: all 0.2s;
     }
     .filter-btn.active {
-      background: #007aff;
-      color: #fff;
-      border-color: #007aff;
+      background: #2b6cb0;
+      border-color: #3182ce;
     }
-
-    /* Кнопка ручного обновления */
     .refresh-btn {
       position: absolute;
-      bottom: 24px;
-      right: 18px;
+      bottom: 25px;
+      right: 25px;
       background: #ffffff;
-      color: #1a1a1a;
+      color: #2b6cb0;
       border: none;
-      border-radius: 50px;
-      padding: 12px 20px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-weight: bold;
       font-size: 14px;
-      font-weight: 600;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
       cursor: pointer;
+      z-index: 1000;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
     }
-    .refresh-btn:active {
-      background: #f0f0f0;
-      transform: scale(0.97);
-    }
+    .refresh-btn:hover { background: #f0f4f8; }
   </style>
 </head>
 <body>
-
-  <div class="control-panel">
-    <div class="info-count">Точок: <span id="count">0</span></div>
-    <div class="info-sub">Маркери активні 20 хвилин</div>
-    
-    <div class="channel-filter">
+  <div class="panel">
+    <div class="panel-title">Точок: <span id="count">0</span></div>
+    <div class="panel-subtitle">Маркери активні 60 хвилин</div>
+    <div class="btn-group">
       <button class="filter-btn active" onclick="setChannel('all')">Всі</button>
       <button class="filter-btn" id="btn-ch1" onclick="setChannel('channel1')">Канал 1</button>
       <button class="filter-btn" id="btn-ch2" onclick="setChannel('channel2')">Канал 2</button>
     </div>
   </div>
 
-  <button class="refresh-btn" onclick="loadMarkers()">
-    🔄 Оновити
-  </button>
+  <button class="refresh-btn" onclick="fetchData()">🔄 Оновити</button>
 
   <div id="map"></div>
 
@@ -138,61 +107,53 @@
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
-      const TTL_MS = 20 * 60 * 1000;
+      const TTL_MS = 60 * 60 * 1000; // 60 хвилин
       let activeCount = 0;
 
       cachedPoints.forEach(point => {
         if (!point || !point.lat || !point.lng || !point.time) return;
-        if (now - point.time > TTL_MS) return;
 
-        // Фильтрация по каналу
+        const pointTime = Number(point.time);
+        const age = now - pointTime;
+
+        if (age > TTL_MS) return;
         if (currentChannel !== 'all' && point.channel !== currentChannel) return;
 
         activeCount++;
 
-        // Цвет маркера в зависимости от источника: Канал 1 — красный, Канал 2 — синий
-        let markerColor = point.channel === 'channel2' ? '#007aff' : '#ff3b30';
-
-        const circle = L.circleMarker([point.lat, point.lng], {
-          radius: 9,
-          fillColor: markerColor,
+        const marker = L.circleMarker([point.lat, point.lng], {
+          radius: 8,
+          fillColor: '#e53e3e',
           color: '#ffffff',
           weight: 2,
           opacity: 1,
-          fillOpacity: 0.9
+          fillOpacity: 0.85
         });
 
-        const minutesAgo = Math.floor((now - point.time) / 60000);
-        const sourceName = point.channel === 'channel2' ? 'Канал 2' : 'Канал 1';
+        const minutesAgo = Math.max(0, Math.floor(age / 60000));
+        const addressText = point.address || 'Адреса не вказана';
 
-        circle.bindPopup(`
-          <div style="font-size: 13px;">
-            <b style="color:${markerColor}">${sourceName}</b><br>
-            <b>${point.address || 'Адреса'}</b><br>
-            <span>${point.text || ''}</span><br>
-            <small style="color: #666;">${minutesAgo} хв тому</small>
-          </div>
-        `);
-
-        markersLayer.addLayer(circle);
+        marker.bindPopup(`<b>${addressText}</b><br><small>${minutesAgo} хв. тому</small>`);
+        markersLayer.addLayer(marker);
       });
 
-      document.getElementById('count').innerText = activeCount;
+      document.getElementById('count').textContent = activeCount;
     }
 
-    async function loadMarkers() {
+    async function fetchData() {
       try {
-        const response = await fetch(DB_URL);
-        const data = await response.json();
+        const res = await fetch(DB_URL);
+        if (!res.ok) throw new Error('Помилка завантаження');
+        const data = await res.json();
         cachedPoints = data ? Object.values(data) : [];
         renderMarkers();
       } catch (err) {
-        console.error("Помилка завантаження точок:", err);
+        console.error(err);
       }
     }
 
-    loadMarkers();
-    setInterval(loadMarkers, 60000);
+    fetchData();
+    setInterval(fetchData, 60000);
   </script>
 </body>
 </html>
