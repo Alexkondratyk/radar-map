@@ -19,6 +19,7 @@
       height: 100%;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #171b22;
     }
     #map {
       width: 100%;
@@ -72,7 +73,7 @@
       color: #fff;
     }
 
-    /* Кнопка Оновити (F5) у правому нижньому кутку */
+    /* Кнопка Оновити у правому нижньому кутку */
     .refresh-btn {
       position: absolute;
       bottom: 24px;
@@ -91,9 +92,10 @@
       display: flex;
       align-items: center;
       gap: 6px;
+      transition: transform 0.1s ease, background 0.2s ease;
     }
     .refresh-btn:active {
-      transform: scale(0.96);
+      transform: scale(0.95);
       background: #1e293b;
     }
 
@@ -118,4 +120,60 @@
       line-height: 1.35;
     }
     .popup-time {
-      font-size: 1
+      font-size: 11px;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Верхня панель -->
+  <div class="info-card">
+    <div class="info-title" id="points-title">Точок: 0</div>
+    <div class="info-subtitle">Маркери активні 60 хвилин</div>
+    <div class="filter-group">
+      <button class="filter-btn active" onclick="setFilter('all', this)">Всі</button>
+      <button class="filter-btn" onclick="setFilter('1', this)">Канал 1</button>
+      <button class="filter-btn" onclick="setFilter('2', this)">Канал 2</button>
+    </div>
+  </div>
+
+  <!-- Кнопка оновлення з візуальним відгуком -->
+  <button class="refresh-btn" onclick="forceReload(this)">🔄 Оновити</button>
+
+  <!-- Карта -->
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // URL бази Firebase
+    const DB_URL = 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
+
+    const TTL_MS = 60 * 60 * 1000; // 60 хвилин (1 година)
+    let currentFilter = 'all';
+    let rawPoints = [];
+    const markersLayer = L.layerGroup();
+
+    // Центр карти: фокус на коридор Центр — Вокзал — Парус
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView([48.472, 35.015], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 18
+    }).addTo(map);
+
+    markersLayer.addTo(map);
+
+    // Функція примусового перезавантаження сторінки з помітним візуальним ефектом
+    function forceReload(btn) {
+      if (btn) {
+        btn.innerHTML = '⏳ Оновлюю...';
+        btn.style.pointerEvents = 'none';
+      }
+
+      // Затемнення екрану для чіткого візуального підтвердження кліку
+      document.body.style.transition = 'opacity 0.15s ease';
