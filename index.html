@@ -31,7 +31,7 @@
       z-index: 1;
     }
 
-    /* Верхня інформаційна панель */
+    /* Верхня панель */
     .info-card {
       position: absolute;
       top: 16px;
@@ -71,7 +71,6 @@
       margin-bottom: 10px;
     }
 
-    /* Кнопки фільтрів */
     .filter-group {
       display: flex;
       gap: 6px;
@@ -95,7 +94,6 @@
       font-weight: 600;
     }
 
-    /* Кнопка Оновити */
     .refresh-btn {
       position: absolute;
       bottom: 24px;
@@ -121,7 +119,6 @@
       background: #1e293b;
     }
 
-    /* Індикатор завантаження */
     #loading-overlay {
       position: fixed;
       top: 0;
@@ -152,7 +149,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Вікно маркера */
     .leaflet-popup-content-wrapper {
       background: #1e293b;
       color: #f8fafc;
@@ -186,13 +182,11 @@
 </head>
 <body>
 
-  <!-- Оверлей оновлення -->
   <div id="loading-overlay">
     <div class="spinner"></div>
     <div>Оновлення даних...</div>
   </div>
 
-  <!-- Верхня панель -->
   <div class="info-card">
     <div class="info-header">
       <div class="info-title" id="points-title">Точок: 0</div>
@@ -207,10 +201,8 @@
     <div id="db-error" class="error-banner" style="display:none;"></div>
   </div>
 
-  <!-- Кнопка оновлення -->
   <button id="refresh-btn" class="refresh-btn" onclick="triggerReload()">🔄 Оновити</button>
 
-  <!-- Карта -->
   <div id="map"></div>
 
   <!-- Leaflet JS -->
@@ -219,12 +211,10 @@
   <script>
     let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
 
-    // Маркери активні 2 години (120 хв)
     const TTL_MS = 120 * 60 * 1000;
     let currentFilter = 'all';
     let rawPoints = [];
 
-    // Центр міста Дніпро
     const map = L.map('map', {
       zoomControl: false
     }).setView([48.468, 35.035], 12);
@@ -270,7 +260,6 @@
       return isNaN(parsed) ? Date.now() : parsed;
     }
 
-    // Точний час (наприклад: 16:32)
     function formatExactTime(timestamp) {
       try {
         const date = new Date(timestamp);
@@ -285,7 +274,6 @@
       }
     }
 
-    // Визначення статусу (чисто чи небезпека)
     function isStatusClear(p, text) {
       const typeStr = String(p.type || '').toLowerCase().trim();
       if (typeStr === 'clear' || typeStr === 'clean' || typeStr === 'safe' || typeStr === 'чисто') {
@@ -313,26 +301,27 @@
         if (!p) return;
         const pTime = parseTimestamp(p);
         
-        // Фільтр за часом життя
         if (now - pTime > TTL_MS) return;
 
-        // Канал повідомлення
         let pChannel = '1';
         if (p.channel === 2 || p.channel === '2' || p.channel === 'channel2') {
           pChannel = '2';
         }
 
-        // Фільтрація по вкладках
         if (currentFilter !== 'all' && currentFilter !== pChannel) return;
 
         const lat = parseFloat(p.lat);
         const lng = parseFloat(p.lng);
         if (isNaN(lat) || isNaN(lng)) return;
 
-        // Текст та статус точки
-        const pointText = p.text || p.message || p.description || p.raw_text || p.original_text || p.details || 'Без опису';
-        const isClear = isStatusClear(p, pointText);
+        const isClear = isStatusClear(p, p.text);
         const color = getMarkerColor(pChannel, isClear);
+
+        // Якщо тексту нема, показуємо зрозумілий опис замість "Без опису"
+        let pointText = p.text || p.message || p.description || p.raw_text;
+        if (!pointText || pointText.trim() === '' || pointText === 'Без опису') {
+          pointText = isClear ? '☀️ Чисто, рух спокійний' : '⚠️ Повідомлення про перевірку / БП';
+        }
 
         const circle = L.circleMarker([lat, lng], {
           radius: 8.5,
