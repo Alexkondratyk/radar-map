@@ -19,6 +19,7 @@
       height: 100%;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #171b22;
     }
     #map {
       width: 100%;
@@ -26,25 +27,39 @@
       background: #e5e3df;
     }
 
-    /* Верхня панель статистики та фільтрів */
+    /* Верхня панель зі статистикою та фільтрами */
     .info-card {
       position: absolute;
       top: 16px;
       left: 16px;
       z-index: 1000;
-      background: rgba(23, 27, 34, 0.92);
+      background: rgba(23, 27, 34, 0.94);
       backdrop-filter: blur(8px);
       color: #fff;
       padding: 12px 14px;
       border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      max-width: 260px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      max-width: 270px;
       width: calc(100% - 32px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
     }
     .info-title {
       font-size: 15px;
-      font-weight: 600;
-      margin-bottom: 3px;
+      font-weight: 700;
+    }
+    .db-settings-btn {
+      background: none;
+      border: none;
+      color: #94a3b8;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 4px;
     }
     .info-subtitle {
       font-size: 12px;
@@ -70,31 +85,64 @@
     .filter-btn.active {
       background: #2563eb;
       color: #fff;
+      font-weight: 600;
     }
 
-    /* Кнопка Оновити (F5) у правому нижньому кутку */
+    /* Кнопка Оновити */
     .refresh-btn {
       position: absolute;
       bottom: 24px;
       right: 16px;
       z-index: 1000;
-      background: rgba(23, 27, 34, 0.92);
+      background: rgba(23, 27, 34, 0.94);
       backdrop-filter: blur(8px);
       color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      padding: 10px 16px;
-      font-size: 13px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 12px 18px;
+      font-size: 14px;
       font-weight: 600;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      user-select: none;
     }
     .refresh-btn:active {
-      transform: scale(0.96);
+      transform: scale(0.94);
       background: #1e293b;
+    }
+
+    /* Анімація повноекранного оновлення */
+    #loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      gap: 12px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
 
     /* Спливаюче вікно маркера */
@@ -121,23 +169,39 @@
       font-size: 11px;
       color: #94a3b8;
     }
+    .error-banner {
+      color: #f87171;
+      font-size: 11px;
+      margin-top: 6px;
+      line-height: 1.3;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Оверлей примусової перезагрузки -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div>Оновлення даних...</div>
+  </div>
+
   <!-- Верхня панель -->
   <div class="info-card">
-    <div class="info-title" id="points-title">Точок: 0</div>
+    <div class="info-header">
+      <div class="info-title" id="points-title">Точок: 0</div>
+      <button class="db-settings-btn" onclick="editDbUrl()" title="Налаштування посилання БД">⚙️</button>
+    </div>
     <div class="info-subtitle">Маркери активні 60 хвилин</div>
     <div class="filter-group">
       <button class="filter-btn active" onclick="setFilter('all', this)">Всі</button>
       <button class="filter-btn" onclick="setFilter('1', this)">Канал 1</button>
       <button class="filter-btn" onclick="setFilter('2', this)">Канал 2</button>
     </div>
+    <div id="db-error" class="error-banner" style="display:none;"></div>
   </div>
 
-  <!-- Кнопка жорсткого оновлення сторінки -->
-  <button class="refresh-btn" onclick="window.location.reload();">🔄 Оновити</button>
+  <!-- Кнопка оновлення сторінки -->
+  <button id="refresh-btn" class="refresh-btn" onclick="triggerReload()">🔄 Оновити</button>
 
   <!-- Карта -->
   <div id="map"></div>
@@ -146,17 +210,18 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // ==========================================
-    // ВСТАВТЕ ВАШЕ ПОСИЛАННЯ НА FIREBASE НИЖЧЕ:
-    const DB_URL = 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
-    // ==========================================
+    // ==============================================================
+    // АДРЕСА БАЗИ ДАНИХ FIREBASE:
+    // Якщо збережено в браузері — береться з пам'яті, інакше дефолтна:
+    let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
+    // ==============================================================
 
     const TTL_MS = 60 * 60 * 1000; // 60 хвилин (1 година)
     let currentFilter = 'all';
     let rawPoints = [];
     const markersLayer = L.layerGroup();
 
-    // Центр: фокус на коридор Центр — Вокзал — Парус
+    // Карта: фокус на сектор Центр — Вокзал — Парус
     const map = L.map('map', {
       zoomControl: false
     }).setView([48.472, 35.015], 12);
@@ -168,23 +233,55 @@
 
     markersLayer.addTo(map);
 
-    // Розрахунок часу
+    // 100% видима перезагрузка з анімацією та спливаючим оверлеєм
+    function triggerReload() {
+      const overlay = document.getElementById('loading-overlay');
+      const btn = document.getElementById('refresh-btn');
+      
+      btn.innerHTML = '⏳ Оновлюю...';
+      btn.style.pointerEvents = 'none';
+      overlay.style.display = 'flex';
+
+      setTimeout(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set('t', Date.now());
+        window.location.href = url.toString();
+      }, 250);
+    }
+
+    // Ручне налаштування URL прямо з екрану при потребі
+    function editDbUrl() {
+      const current = localStorage.getItem('user_db_url') || DB_URL;
+      const input = prompt('Введіть повний URL вашої бази Firebase (з /points.json на кінці):', current);
+      if (input && input.trim().startsWith('http')) {
+        localStorage.setItem('user_db_url', input.trim());
+        DB_URL = input.trim();
+        triggerReload();
+      }
+    }
+
+    // Нормалізація часу
+    function parseTimestamp(p) {
+      let t = p.timestamp || p.time || p.date;
+      if (!t) return Date.now();
+      if (typeof t === 'string' && !isNaN(t)) t = Number(t);
+      if (typeof t === 'number' && t < 1e11) t *= 1000; // секунди в мс
+      return new Date(t).getTime() || Date.now();
+    }
+
     function getRelativeTime(timestamp) {
-      if (!timestamp) return 'нещодавно';
       const diffMins = Math.floor((Date.now() - timestamp) / 60000);
       if (diffMins <= 0) return 'щойно';
       if (diffMins === 1) return '1 хв. тому';
-      if (diffMins < 5) return `${diffMins} хв. тому`;
       return `${diffMins} хв. тому`;
     }
 
-    // Отримання кольору кружка в залежності від типу та каналу
     function getMarkerColor(point) {
       const channel = point.channel || 1;
       const type = point.type || 'danger';
 
       if (channel === 2) {
-        // Канал 2: фіолетовий (небезпека) / жовтий (чисто)
+        // Канал 2: жовтий (чисто) / фіолетовий (тривога)
         return type === 'clear' ? '#eab308' : '#a855f7';
       } else {
         // Канал 1: зелений (чисто) / червоний (тривога)
@@ -192,27 +289,29 @@
       }
     }
 
-    // Відображення маркерів на карті
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
       let count = 0;
 
       rawPoints.forEach(p => {
-        const pTime = p.timestamp || p.time || now;
+        if (!p) return;
+        const pTime = parseTimestamp(p);
         
-        // Фільтр за часом: строго 60 хвилин
+        // Фільтр за віком (60 хвилин)
         if (now - pTime > TTL_MS) return;
 
-        // Фільтр за каналом
+        // Фільтр каналів
         const pChannel = String(p.channel || 1);
         if (currentFilter !== 'all' && currentFilter !== pChannel) return;
 
-        if (!p.lat || !p.lng) return;
+        const lat = parseFloat(p.lat);
+        const lng = parseFloat(p.lng);
+        if (isNaN(lat) || isNaN(lng)) return;
 
         const color = getMarkerColor(p);
 
-        const circle = L.circleMarker([p.lat, p.lng], {
+        const circle = L.circleMarker([lat, lng], {
           radius: 9,
           fillColor: color,
           color: '#ffffff',
@@ -237,7 +336,6 @@
       document.getElementById('points-title').innerText = `Точок: ${count}`;
     }
 
-    // Перемикання вкладок «Всі / Канал 1 / Канал 2»
     function setFilter(filter, el) {
       currentFilter = filter;
       document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -245,21 +343,24 @@
       renderMarkers();
     }
 
-    // Завантаження точок з бази даних при відкритті або F5
-    async function initData() {
+    // Завантаження точок
+    async function loadData() {
+      const errBox = document.getElementById('db-error');
       try {
         const res = await fetch(`${DB_URL}?nocache=${Date.now()}`);
-        if (!res.ok) throw new Error('Помилка читання БД');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         rawPoints = data ? Object.values(data) : [];
+        errBox.style.display = 'none';
         renderMarkers();
       } catch (err) {
         console.error(err);
+        errBox.style.display = 'block';
+        errBox.innerHTML = `⚠️ Помилка з'єднання з БД.<br>Натисніть ⚙️ вище і перевірте адресу.`;
       }
     }
 
-    // Первинний запуск
-    initData();
+    loadData();
   </script>
 </body>
 </html>
