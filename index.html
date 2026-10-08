@@ -191,7 +191,7 @@
       <div class="info-title" id="points-title">Точок: 0</div>
       <button class="db-settings-btn" onclick="editDbUrl()" title="Налаштування посилання БД">⚙️</button>
     </div>
-    <div class="info-subtitle">Маркери активні 60 хвилин</div>
+    <div class="info-subtitle">Маркери активні 2 години</div>
     <div class="filter-group">
       <button class="filter-btn active" onclick="setFilter('all', this)">Всі</button>
       <button class="filter-btn" onclick="setFilter('1', this)">Канал 1</button>
@@ -212,12 +212,13 @@
   <script>
     let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
 
-    const TTL_MS = 60 * 60 * 1000; // 60 хвилин
+    // Час життя маркерів: 120 хвилин (2 години), щоб на карті було 30-50 точок
+    const TTL_MS = 120 * 60 * 1000;
     let currentFilter = 'all';
     let rawPoints = [];
     const markersLayer = L.layerGroup();
 
-    // Центрування: Центр — Вокзал — Парус
+    // Центрування: Дніпро
     const map = L.map('map', {
       zoomControl: false
     }).setView([48.472, 35.015], 12);
@@ -259,14 +260,23 @@
       if (!t) return Date.now();
       if (typeof t === 'string' && !isNaN(t)) t = Number(t);
       if (typeof t === 'number' && t < 1e11) t *= 1000;
-      return new Date(t).getTime() || Date.now();
+      const parsed = new Date(t).getTime();
+      return isNaN(parsed) ? Date.now() : parsed;
     }
 
-    function getRelativeTime(timestamp) {
-      const diffMins = Math.floor((Date.now() - timestamp) / 60000);
-      if (diffMins <= 0) return 'щойно';
-      if (diffMins === 1) return '1 хв. тому';
-      return `${diffMins} хв. тому`;
+    // Форматування точного часу: "16:32"
+    function formatExactTime(timestamp) {
+      try {
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString('uk-UA', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false,
+          timeZone: 'Europe/Kyiv'
+        });
+      } catch (e) {
+        return '';
+      }
     }
 
     function getMarkerColor(pChannel, type) {
@@ -286,16 +296,16 @@
         if (!p) return;
         const pTime = parseTimestamp(p);
         
-        // Фільтр за часом життя
+        // Фільтр за часом життя (120 хв)
         if (now - pTime > TTL_MS) return;
 
-        // Нормалізація каналу: підтримує 1, '1', 'channel1', null -> '1'
+        // Нормалізація каналу: будь-які 1, '1', 'channel1', null -> '1'
         let pChannel = '1';
         if (p.channel === 2 || p.channel === '2' || p.channel === 'channel2') {
           pChannel = '2';
         }
 
-        // Фільтрація за вкладками
+        // Фільтрація за активною вкладкою
         if (currentFilter !== 'all' && currentFilter !== pChannel) return;
 
         const lat = parseFloat(p.lat);
@@ -314,15 +324,15 @@
           fillOpacity: 0.85
         });
 
-        // Пошук тексту повідомлення по всіх можливих полях
+        // Підтягування тексту та точного часу повідомлення
         const pointText = p.text || p.message || p.description || p.raw_text || p.original_text || p.details || 'Без опису';
-        const timeText = getRelativeTime(pTime);
+        const exactTime = formatExactTime(pTime);
 
         circle.bindPopup(`
           <div class="popup-content">
             <strong>${p.address || 'Точка на карті'}</strong>
             <p>${pointText}</p>
-            <div class="popup-time">🕒 ${timeText} | Канал ${pChannel}</div>
+            <div class="popup-time">🕒 ${exactTime} | Канал ${pChannel}</div>
           </div>
         `);
 
