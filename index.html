@@ -39,7 +39,7 @@
       padding: 12px 14px;
       border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      max-width: 270px;
+      max-width: 310px;
       width: calc(100% - 32px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
@@ -67,25 +67,31 @@
       margin-bottom: 10px;
     }
     .filter-group {
-      display: flex;
-      gap: 6px;
+      display: grid;
+      grid-template-columns: 1fr 1.3fr 1fr 1fr;
+      gap: 5px;
     }
     .filter-btn {
-      flex: 1;
       background: #334155;
       color: #e2e8f0;
       border: none;
       padding: 6px 0;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 500;
       border-radius: 6px;
       cursor: pointer;
+      text-align: center;
       transition: all 0.2s;
     }
     .filter-btn.active {
       background: #2563eb;
       color: #fff;
       font-weight: 600;
+    }
+    .filter-btn.route-btn.active {
+      background: #f59e0b;
+      color: #000;
+      font-weight: 700;
     }
 
     /* Кнопка Оновити */
@@ -160,6 +166,16 @@
       margin-bottom: 4px;
       font-size: 13px;
     }
+    .popup-badge {
+      display: inline-block;
+      background: #f59e0b;
+      color: #000;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-bottom: 6px;
+    }
     .popup-content p {
       font-size: 12px;
       margin-bottom: 6px;
@@ -194,8 +210,9 @@
     <div class="info-subtitle">Маркери активні 2 години</div>
     <div class="filter-group">
       <button class="filter-btn active" onclick="setFilter('all', this)">Всі</button>
-      <button class="filter-btn" onclick="setFilter('1', this)">Канал 1</button>
-      <button class="filter-btn" onclick="setFilter('2', this)">Канал 2</button>
+      <button class="filter-btn route-btn" onclick="setFilter('route', this)">Маршрут</button>
+      <button class="filter-btn" onclick="setFilter('1', this)">К 1</button>
+      <button class="filter-btn" onclick="setFilter('2', this)">К 2</button>
     </div>
     <div id="db-error" class="error-banner" style="display:none;"></div>
   </div>
@@ -212,16 +229,28 @@
   <script>
     let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
 
-    // Час життя маркерів: 120 хвилин (2 години)
     const TTL_MS = 120 * 60 * 1000;
     let currentFilter = 'all';
     let rawPoints = [];
     const markersLayer = L.layerGroup();
 
-    // Центрування: Дніпро
+    // Ключові слова вашого маршруту (включаючи Водокачку, Комбайновий і весь пр. Свободи)
+    const ROUTE_KEYWORDS = [
+      'канатн', 'нігоян', 'нигоян', 'калінін', 'калинин',
+      'павлов', 'белелюб', 'краснозавод',
+      'комбайн', 'ударник',
+      'набережн.*заводськ', 'заводськ', 'заводск',
+      'водокачк',
+      'кайдак', 'кайдац',
+      'свобод', 'новокодацьк', 'новокодакск', 'дзержинськ',
+      'озерк', 'шмідт', 'шмидт', 'бобров',
+      'річпорт', 'речпорт'
+    ];
+
+    // Центрування: фокус на осі маршруту (Центр - Вокзал - Набережна - Свободи)
     const map = L.map('map', {
       zoomControl: false
-    }).setView([48.472, 35.015], 12);
+    }).setView([48.480, 34.975], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
@@ -264,7 +293,6 @@
       return isNaN(parsed) ? Date.now() : parsed;
     }
 
-    // Форматування часу повідомлення за Києвом: "16:32"
     function formatExactTime(timestamp) {
       try {
         const date = new Date(timestamp);
@@ -279,17 +307,19 @@
       }
     }
 
-    // Розумне визначення статусу (чисто чи небезпека)
     function isStatusClear(p, text) {
       const typeStr = String(p.type || '').toLowerCase().trim();
       if (typeStr === 'clear' || typeStr === 'clean' || typeStr === 'safe' || typeStr === 'чисто') {
         return true;
       }
-      
       const lowerText = String(text || '').toLowerCase();
-      // Ключові слова та символи спокою
       const clearMarkers = ['чисто', 'чист', 'спокійно', 'спокойно', 'тихо', 'сонячно', 'солнечно', '☀️', 'ведра нет', 'відра нема'];
       return clearMarkers.some(word => lowerText.includes(word));
+    }
+
+    function isPointOnRoute(p, text) {
+      const combined = `${p.address || ''} ${text || ''}`.toLowerCase();
+      return ROUTE_KEYWORDS.some(kw => new RegExp(kw).test(combined));
     }
 
     function getMarkerColor(pChannel, isClear) {
@@ -309,39 +339,42 @@
         if (!p) return;
         const pTime = parseTimestamp(p);
         
-        // Фільтр за часом життя (120 хв)
         if (now - pTime > TTL_MS) return;
 
-        // Нормалізація каналу: 1, '1', 'channel1', null -> '1'
         let pChannel = '1';
         if (p.channel === 2 || p.channel === '2' || p.channel === 'channel2') {
           pChannel = '2';
         }
 
-        // Фільтрація за активною вкладкою
-        if (currentFilter !== 'all' && currentFilter !== pChannel) return;
+        const pointText = p.text || p.message || p.description || p.raw_text || p.original_text || p.details || 'Без опису';
+        const onRoute = isPointOnRoute(p, pointText);
+
+        if (currentFilter === 'route' && !onRoute) return;
+        if (currentFilter === '1' && pChannel !== '1') return;
+        if (currentFilter === '2' && pChannel !== '2') return;
 
         const lat = parseFloat(p.lat);
         const lng = parseFloat(p.lng);
         if (isNaN(lat) || isNaN(lng)) return;
 
-        const pointText = p.text || p.message || p.description || p.raw_text || p.original_text || p.details || 'Без опису';
         const isClear = isStatusClear(p, pointText);
         const color = getMarkerColor(pChannel, isClear);
 
         const circle = L.circleMarker([lat, lng], {
-          radius: 9,
+          radius: onRoute ? 11 : 8,
           fillColor: color,
-          color: '#ffffff',
-          weight: 2,
+          color: onRoute ? '#f59e0b' : '#ffffff',
+          weight: onRoute ? 3 : 2,
           opacity: 1,
-          fillOpacity: 0.85
+          fillOpacity: 0.9
         });
 
         const exactTime = formatExactTime(pTime);
+        const routeBadge = onRoute ? '<div class="popup-badge">📍 Мій маршрут</div>' : '';
 
         circle.bindPopup(`
           <div class="popup-content">
+            ${routeBadge}
             <strong>${p.address || 'Точка на карті'}</strong>
             <p>${pointText}</p>
             <div class="popup-time">🕒 ${exactTime} | Канал ${pChannel}</div>
