@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Моя Карта</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="[https://unpkg.com/leaflet@1.9.4/dist/leaflet.css](https://unpkg.com/leaflet@1.9.4/dist/leaflet.css)" />
+  <script src="[https://unpkg.com/leaflet@1.9.4/dist/leaflet.js](https://unpkg.com/leaflet@1.9.4/dist/leaflet.js)"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body, html { height: 100%; width: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
@@ -81,11 +82,11 @@
   <div id="map"></div>
 
   <script>
-    const DB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
+    const DB_URL = "[https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json](https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json)";
 
     const map = L.map('map', { zoomControl: false }).setView([48.4647, 35.0462], 12);
 
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    L.tileLayer('[https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/](https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/){z}/{y}/{x}', {
       maxZoom: 19,
       attribution: 'Tiles &copy; Esri'
     }).addTo(map);
@@ -125,7 +126,7 @@
         let lat = Number(point.lat);
         let lng = Number(point.lng);
 
-        // Якщо кілька повідомлень мають однакові координати — зміщуємо їх по колу, щоб були поруч
+        // Якщо кілька повідомлень мають однакові координати — зміщуємо їх по колу
         const coordKey = `${lat.toFixed(4)}_${lng.toFixed(4)}`;
         const offsetIndex = coordOffsets[coordKey] || 0;
         coordOffsets[coordKey] = offsetIndex + 1;
@@ -137,7 +138,7 @@
         }
 
         const isClear = point.type === 'clear';
-        const markerColor = isClear ? '#38a169' : '#e53e3e'; // Зелений (чисто) або Червоний (небезпека)
+        const markerColor = isClear ? '#38a169' : '#e53e3e';
 
         const marker = L.circleMarker([lat, lng], {
           radius: 9,
@@ -149,20 +150,28 @@
         });
 
         const minutesAgo = Math.max(0, Math.floor(age / 60000));
-        const statusBadge = isClear ? '<b style="color:#2f855a;">🟢 ЧИСТО</b>' : '<b style="color:#c53030;">🔴 УВАГА</b>';
-        const messageText = point.text || point.address || 'Повідомлення без тексту';
+        const statusBadge = isClear 
+          ? '<span style="color:#2f855a; font-weight:bold; font-size:13px;">🟢 ЧИСТО</span>' 
+          : '<span style="color:#e53e3e; font-weight:bold; font-size:13px;">🔴 УВАГА</span>';
+
+        // Виводимо саме живий оригінальний текст повідомлення з каналу
+        const rawMessage = point.text || point.address || 'Повідомлення без тексту';
 
         const popupHtml = `
-          <div style="font-size: 13px; line-height: 1.4; min-width: 140px;">
-            ${statusBadge}<br>
-            <div style="margin: 4px 0; color: #2d3748;">${messageText}</div>
-            <small style="color: #718096;">${minutesAgo} хв. тому</small>
+          <div style="font-size: 13px; line-height: 1.45; min-width: 170px; max-width: 250px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 5px;">
+              ${statusBadge}
+              <span style="color: #718096; font-size: 11px;">${minutesAgo} хв. тому</span>
+            </div>
+            <div style="font-weight: 600; color: #1a202c; background: #edf2f7; padding: 6px 8px; border-radius: 6px; word-break: break-word;">
+              ${rawMessage}
+            </div>
           </div>
         `;
 
         marker.bindPopup(popupHtml);
 
-        // Відкриття при наведенні мишкою
+        // Відкриття при наведенні курсору миші
         marker.on('mouseover', function () {
           this.openPopup();
         });
