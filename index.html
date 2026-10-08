@@ -19,7 +19,6 @@
       height: 100%;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #171b22;
     }
     #map {
       width: 100%;
@@ -73,7 +72,7 @@
       color: #fff;
     }
 
-    /* Кнопка Оновити у правому нижньому кутку */
+    /* Кнопка Оновити (F5) у правому нижньому кутку */
     .refresh-btn {
       position: absolute;
       bottom: 24px;
@@ -92,10 +91,9 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      transition: transform 0.1s ease, background 0.2s ease;
     }
     .refresh-btn:active {
-      transform: scale(0.95);
+      transform: scale(0.96);
       background: #1e293b;
     }
 
@@ -138,8 +136,8 @@
     </div>
   </div>
 
-  <!-- Кнопка оновлення з візуальним відгуком -->
-  <button class="refresh-btn" onclick="forceReload(this)">🔄 Оновити</button>
+  <!-- Кнопка жорсткого оновлення сторінки -->
+  <button class="refresh-btn" onclick="window.location.reload();">🔄 Оновити</button>
 
   <!-- Карта -->
   <div id="map"></div>
@@ -148,15 +146,17 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // URL бази Firebase
+    // ==========================================
+    // ВСТАВТЕ ВАШЕ ПОСИЛАННЯ НА FIREBASE НИЖЧЕ:
     const DB_URL = 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
+    // ==========================================
 
     const TTL_MS = 60 * 60 * 1000; // 60 хвилин (1 година)
     let currentFilter = 'all';
     let rawPoints = [];
     const markersLayer = L.layerGroup();
 
-    // Центр карти: фокус на коридор Центр — Вокзал — Парус
+    // Центр: фокус на коридор Центр — Вокзал — Парус
     const map = L.map('map', {
       zoomControl: false
     }).setView([48.472, 35.015], 12);
@@ -168,12 +168,98 @@
 
     markersLayer.addTo(map);
 
-    // Функція примусового перезавантаження сторінки з помітним візуальним ефектом
-    function forceReload(btn) {
-      if (btn) {
-        btn.innerHTML = '⏳ Оновлюю...';
-        btn.style.pointerEvents = 'none';
-      }
+    // Розрахунок часу
+    function getRelativeTime(timestamp) {
+      if (!timestamp) return 'нещодавно';
+      const diffMins = Math.floor((Date.now() - timestamp) / 60000);
+      if (diffMins <= 0) return 'щойно';
+      if (diffMins === 1) return '1 хв. тому';
+      if (diffMins < 5) return `${diffMins} хв. тому`;
+      return `${diffMins} хв. тому`;
+    }
 
-      // Затемнення екрану для чіткого візуального підтвердження кліку
-      document.body.style.transition = 'opacity 0.15s ease';
+    // Отримання кольору кружка в залежності від типу та каналу
+    function getMarkerColor(point) {
+      const channel = point.channel || 1;
+      const type = point.type || 'danger';
+
+      if (channel === 2) {
+        // Канал 2: фіолетовий (небезпека) / жовтий (чисто)
+        return type === 'clear' ? '#eab308' : '#a855f7';
+      } else {
+        // Канал 1: зелений (чисто) / червоний (тривога)
+        return type === 'clear' ? '#22c55e' : '#ef4444';
+      }
+    }
+
+    // Відображення маркерів на карті
+    function renderMarkers() {
+      markersLayer.clearLayers();
+      const now = Date.now();
+      let count = 0;
+
+      rawPoints.forEach(p => {
+        const pTime = p.timestamp || p.time || now;
+        
+        // Фільтр за часом: строго 60 хвилин
+        if (now - pTime > TTL_MS) return;
+
+        // Фільтр за каналом
+        const pChannel = String(p.channel || 1);
+        if (currentFilter !== 'all' && currentFilter !== pChannel) return;
+
+        if (!p.lat || !p.lng) return;
+
+        const color = getMarkerColor(p);
+
+        const circle = L.circleMarker([p.lat, p.lng], {
+          radius: 9,
+          fillColor: color,
+          color: '#ffffff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.85
+        });
+
+        const timeText = getRelativeTime(pTime);
+        circle.bindPopup(`
+          <div class="popup-content">
+            <strong>${p.address || 'Точка на карті'}</strong>
+            <p>${p.text || 'Без опису'}</p>
+            <div class="popup-time">🕒 ${timeText} | Канал ${pChannel}</div>
+          </div>
+        `);
+
+        circle.addTo(markersLayer);
+        count++;
+      });
+
+      document.getElementById('points-title').innerText = `Точок: ${count}`;
+    }
+
+    // Перемикання вкладок «Всі / Канал 1 / Канал 2»
+    function setFilter(filter, el) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      el.classList.add('active');
+      renderMarkers();
+    }
+
+    // Завантаження точок з бази даних при відкритті або F5
+    async function initData() {
+      try {
+        const res = await fetch(`${DB_URL}?nocache=${Date.now()}`);
+        if (!res.ok) throw new Error('Помилка читання БД');
+        const data = await res.json();
+        rawPoints = data ? Object.values(data) : [];
+        renderMarkers();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Первинний запуск
+    initData();
+  </script>
+</body>
+</html>
