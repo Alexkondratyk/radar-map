@@ -68,7 +68,7 @@
 <body>
   <div class="panel">
     <div class="panel-title">Точок: <span id="count">0</span></div>
-    <div class="panel-subtitle">Маркери активні 20 хвилин</div>
+    <div class="panel-subtitle">Маркери активні 60 хвилин</div>
     <div class="btn-group">
       <button class="filter-btn active" onclick="setChannel('all')">Всі</button>
       <button class="filter-btn" id="btn-ch1" onclick="setChannel('channel1')">Канал 1</button>
@@ -106,7 +106,7 @@
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
-      const TTL_MS = 20 * 60 * 1000; // 20 хвилин
+      const TTL_MS = 60 * 60 * 1000; // 60 хвилин
       let activeCount = 0;
       let coordOffsets = {};
 
