@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Radar Map</title>
+  
+  <!-- Стили Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+      background: #e5e3df;
+    }
+
+    /* Плашка со счетчиком точек */
+    .info-panel {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(30, 30, 30, 0.88);
+      color: #ffffff;
+      padding: 10px 16px;
+      border-radius: 14px;
+      z-index: 1000;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      backdrop-filter: blur(4px);
+      pointer-events: none;
+    }
+    .info-count {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .info-sub {
+      font-size: 11px;
+      color: #b0b0b0;
+      margin-top: 2px;
+    }
+
+    /* Кнопка ручного обновления */
+    .refresh-btn {
+      position: absolute;
+      bottom: 24px;
+      right: 18px;
+      background: #ffffff;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+      z-index: 1000;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .refresh-btn:active {
+      background: #f0f0f0;
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Плашка со счетчиком -->
+  <div class="info-panel">
+    <div class="info-count">Точок: <span id="count">0</span></div>
+    <div class="info-sub">Маркери активні 20 хвилин</div>
+  </div>
+
+  <!-- Кнопка обновления -->
+  <button class="refresh-btn" onclick="loadMarkers()">
+    🔄 Оновити
+  </button>
+
+  <div id="map"></div>
+
+  <script>
+    // URL базы данных Firebase
+    const DB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
+
+    // 1. Инициализация карты (центр — Днепр)
+    const map = L.map('map', {
+      zoomControl: false
+    }).setView([48.4647, 35.0462], 12);
+
+    // 2. Стабильная подложка Esri Street Map (без ключей и водяных знаков)
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    }).addTo(map);
+
+    // Слой для маркеров
+    const markersLayer = L.layerGroup().addTo(map);
+
+    // 3. Загрузка и фильтрация точек по времени
+    async function loadMarkers() {
+      try {
+        const response = await fetch(DB_URL);
+        const data = await response.json();
+
+        markersLayer.clearLayers();
+
+        if (!data) {
+          document.getElementById('count').innerText = 0;
+          return;
+        }
+
+        const now = Date.now();
+        const TTL_MS = 20 * 60 * 1000; // 20 минут активности
+        let activeCount = 0;
+
+        Object.values(data).forEach(point => {
+          if (!point || !point.lat || !point.lng || !point.time) return;
+
+          // Фильтр: показываем только события не старше 20 минут
+          if (now - point.time <= TTL_MS) {
+            activeCount++;
+
+            const markerColor = point.color || '#e53935';
+
+            const circle = L.circleMarker([point.lat, point.lng], {
+              radius: 9,
+              fillColor: markerColor,
+              color: '#ffffff',
+              weight: 2,
+              opacity: 1,
+              fillOpacity: 0.9
+            });
+
+            const minutesAgo = Math.floor((now - point.time) / 60000);
+            circle.bindPopup(`
+              <div style="font-size: 13px;">
+                <b>${point.address || 'Точка'}</b><br>
+                <span>${point.text || ''}</span><br>
+                <small style="color: #666;">${minutesAgo} хв тому</small>
+              </div>
+            `);
+
+            markersLayer.addLayer(circle);
+          }
+        });
+
+        document.getElementById('count').innerText = activeCount;
+      } catch (err) {
+        console.error("Помилка завантаження точок:", err);
+      }
+    }
+
+    // Первичный запуск и автообновление каждую минуту
+    loadMarkers();
+    setInterval(loadMarkers, 60000);
+  </script>
+</body>
+</html>
