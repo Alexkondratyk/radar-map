@@ -127,7 +127,7 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
-    /* Светофор с масштабированием зума */
+    /* Светофор с динамическим масштабом */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -147,7 +147,7 @@
     .traffic-light-body.draggable-mode {
       cursor: grab;
       border-color: #38bdf8;
-      box-shadow: 0 0 12px 2px #38bdf8;
+      box-shadow: 0 0 14px 3px #38bdf8;
     }
     .tl-lamp {
       width: 10px;
@@ -278,7 +278,7 @@
         </div>
         <div class="legend-row" style="margin-top: 3px;">
           <span style="font-size: 13px;">🚦</span>
-          <span>Світлофори: Кайдацький, Водолікарня, Комбайновий, Краснозаводська, Павлова, Річпорт, Водокачка</span>
+          <span>Світлофори ключових точок (🔴/🟢)</span>
         </div>
       </div>
     </div>
@@ -294,7 +294,6 @@
     const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
-    // Список 7 ключевых светофоров
     const DEFAULT_CHECKPOINTS = [
       {
         id: "kaidak_rovd",
@@ -383,9 +382,16 @@
       }
     }
 
-    function savePositionToStorage(id, lat, lng) {
+    // Сохранение всех текущих позиций сразу
+    function saveAllPositionsToStorage() {
       const stored = getStoredPositions();
-      stored[id] = { lat: Number(lat), lng: Number(lng) };
+      Object.keys(trafficMarkersMap).forEach(id => {
+        const m = trafficMarkersMap[id];
+        if (m) {
+          const pos = m.getLatLng();
+          stored[id] = { lat: Number(pos.lat.toFixed(5)), lng: Number(pos.lng.toFixed(5)) };
+        }
+      });
       localStorage.setItem("dnepr_radar_tl_positions", JSON.stringify(stored));
     }
 
@@ -419,6 +425,7 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
+    // Переключение режима расстановки
     function toggleEditMode() {
       isEditMode = !isEditMode;
       const btn = document.getElementById("btnSetup");
@@ -431,7 +438,9 @@
       } else {
         btn.classList.remove("editing");
         btnText.innerText = "📍 Розставити світлофори";
-        showToast("✅ Позиції надійно збережено та зафіксовано!");
+        // Железно сохраняем координаты ВСЕХ светофоров при фиксации
+        saveAllPositionsToStorage();
+        showToast("✅ Всі позиції надійно збережено та зафіксовано!");
       }
 
       Object.values(trafficMarkersMap).forEach(marker => {
@@ -449,6 +458,8 @@
           }
         }
       });
+
+      renderMarkers();
     }
 
     function setFilter(type, btn) {
@@ -526,13 +537,22 @@
       return null;
     }
 
+    // Отрисовка светофоров без сброса координат
     function renderTrafficLights() {
       const now = Date.now();
       const stored = getStoredPositions();
 
       DEFAULT_CHECKPOINTS.forEach(cp => {
-        const curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
-        const curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
+        // Текущие координаты: берём из уже созданного на карте маркера (если есть) или из памяти
+        let curLat, curLng;
+        if (trafficMarkersMap[cp.id]) {
+          const currentPos = trafficMarkersMap[cp.id].getLatLng();
+          curLat = currentPos.lat;
+          curLng = currentPos.lng;
+        } else {
+          curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
+          curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
+        }
 
         const matched = allPoints.filter(p => {
           const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
@@ -606,13 +626,11 @@
           popupContent += `<div class="popup-text" style="color: #94a3b8;">Повідомлень за останні 40 хв не було.</div>`;
         }
 
+        // Если маркер уже есть на карте — меняем ТОЛЬКО иконку и попап, координаты НЕ ТРОГАЕМ!
         if (trafficMarkersMap[cp.id]) {
           const marker = trafficMarkersMap[cp.id];
           marker.setIcon(tlIcon);
           marker.setPopupContent(popupContent);
-          if (!isEditMode) {
-            marker.setLatLng([curLat, curLng]);
-          }
         } else {
           const marker = L.marker([curLat, curLng], {
             icon: tlIcon,
@@ -620,10 +638,8 @@
             draggable: isEditMode
           });
 
-          marker.on('dragend', function(e) {
-            const pos = e.target.getLatLng();
-            savePositionToStorage(cp.id, pos.lat.toFixed(5), pos.lng.toFixed(5));
-            showToast(`📌 Збережено позицію для: ${cp.name}`);
+          marker.on('dragend', function() {
+            saveAllPositionsToStorage();
             renderMarkers();
           });
 
