@@ -12,7 +12,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-    /* Панель управления — компактная ширина 200px */
+    /* Панель управления */
     .dashboard {
       position: absolute;
       top: 15px;
@@ -24,14 +24,14 @@
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      width: 200px;
+      width: 210px;
       transition: all 0.25s ease;
     }
     .dash-header { 
       display: flex; 
       justify-content: space-between; 
       align-items: center; 
-      margin-bottom: 8px; 
+      margin-bottom: 6px; 
     }
     .points-count { font-size: 14px; font-weight: 700; color: #fff; }
     
@@ -49,49 +49,31 @@
       font-size: 10px;
       transition: all 0.2s;
     }
-    .btn-toggle:hover {
-      background: #334155;
-      color: #fff;
-    }
-
-    .btn-group { display: flex; gap: 4px; }
-    .btn-filter {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #cbd5e1;
-      padding: 4px 2px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: pointer;
-      font-weight: 500;
-      transition: all 0.2s;
-      flex: 1;
-      text-align: center;
-    }
-    .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn-toggle:hover { background: #334155; color: #fff; }
 
     .collapsible-body {
-      margin-top: 8px;
+      margin-top: 6px;
       transition: all 0.25s ease;
     }
-    .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 6px; }
+    .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
 
+    /* Кнопки управления светофорами */
     .btn-setup {
       width: 100%;
       background: #1e293b;
       border: 1px dashed #38bdf8;
       color: #38bdf8;
-      padding: 5px 6px;
+      padding: 6px 8px;
       border-radius: 6px;
       font-size: 11px;
       cursor: pointer;
       font-weight: 600;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
       transition: all 0.2s;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 4px;
+      gap: 5px;
     }
     .btn-setup.editing {
       background: #15803d;
@@ -100,12 +82,32 @@
       animation: pulse-border 1.5s infinite;
     }
 
+    .btn-add-tl {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #cbd5e1;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 500;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .btn-add-tl:hover { background: #334155; color: #fff; }
+
     @keyframes pulse-border {
       0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
       70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
+    /* Легенда */
     .legend {
       display: flex;
       flex-direction: column;
@@ -115,16 +117,12 @@
       border-top: 1px solid #334155;
       padding-top: 6px;
     }
-    .legend-row { display: flex; align-items: center; gap: 5px; }
-    .shape { width: 9px; height: 9px; display: inline-block; flex-shrink: 0; }
-    .shape.circle { border-radius: 50%; }
-    .shape.square { border-radius: 2px; }
+    .legend-row { display: flex; align-items: center; gap: 6px; }
+    .shape { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
     .dot-green { background: #22c55e; }
     .dot-red { background: #ef4444; }
-    .dot-blue { background: #06b6d4; }
-    .dot-purple { background: #a855f7; }
 
-    /* Светофор с динамическим зумом */
+    /* Светофор */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -152,32 +150,60 @@
       border-radius: 50%;
       transition: all 0.3s ease;
     }
-    .tl-lamp.red-active {
-      background: #ef4444;
-      box-shadow: 0 0 10px 3px #ef4444;
-    }
-    .tl-lamp.red-dim {
-      background: #450a0a;
-      opacity: 0.3;
-    }
-    .tl-lamp.green-active {
-      background: #22c55e;
-      box-shadow: 0 0 10px 3px #22c55e;
-    }
-    .tl-lamp.green-dim {
-      background: #052e16;
-      opacity: 0.3;
-    }
-    .tl-lamp.off {
-      background: #334155;
-      opacity: 0.4;
-    }
+    .tl-lamp.red-active { background: #ef4444; box-shadow: 0 0 10px 3px #ef4444; }
+    .tl-lamp.red-dim { background: #450a0a; opacity: 0.3; }
+    .tl-lamp.green-active { background: #22c55e; box-shadow: 0 0 10px 3px #22c55e; }
+    .tl-lamp.green-dim { background: #052e16; opacity: 0.3; }
+    .tl-lamp.off { background: #334155; opacity: 0.4; }
 
-    .square-marker-icon, .traffic-marker-icon {
-      background: transparent !important;
-      border: none !important;
-    }
+    .traffic-marker-icon { background: transparent !important; border: none !important; }
 
+    /* Модальное окно добавления светофора */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 3000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-card {
+      background: #1e293b;
+      padding: 16px;
+      border-radius: 12px;
+      color: #fff;
+      width: 290px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      border: 1px solid #334155;
+    }
+    .modal-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: #38bdf8; }
+    .modal-input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 10px;
+      outline: none;
+    }
+    .modal-input:focus { border-color: #38bdf8; }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+    .btn-m {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+      border: none;
+    }
+    .btn-m-save { background: #2563eb; color: #fff; }
+    .btn-m-cancel { background: #334155; color: #94a3b8; }
+
+    /* Тост уведомление */
     .toast-msg {
       position: absolute;
       top: 20px;
@@ -220,7 +246,7 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап */
+    /* Попапы */
     .leaflet-popup-content-wrapper {
       background: #1e293b !important;
       color: #f8fafc !important;
@@ -241,6 +267,19 @@
       gap: 8px;
     }
     .timer-badge { color: #f59e0b; font-weight: 600; }
+    .btn-delete-tl {
+      margin-top: 8px;
+      width: 100%;
+      background: #991b1b;
+      color: #fee2e2;
+      border: none;
+      padding: 5px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-delete-tl:hover { background: #dc2626; }
   </style>
 </head>
 <body>
@@ -250,95 +289,115 @@
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
 
-    <div class="btn-group">
-      <button class="btn-filter active" onclick="setFilter('all', this)">Всі</button>
-      <button class="btn-filter" onclick="setFilter('Канал 1', this)">К 1</button>
-      <button class="btn-filter" onclick="setFilter('Канал 2', this)">К 2</button>
-    </div>
-
     <div id="collapsibleBody" class="collapsible-body">
-      <div class="subtitle">Активні 40 хв</div>
+      <div class="subtitle">Метки активні 40 хв</div>
 
       <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
         <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
       </button>
 
+      <button class="btn-add-tl" onclick="openAddModal()">
+        <span>➕</span><span>Додати світлофор</span>
+      </button>
+
       <div class="legend">
         <div class="legend-row">
-          <span class="shape circle dot-green"></span><span class="shape circle dot-red"></span>
-          <span>К1: Чисто / Опасно</span>
+          <span class="shape dot-green"></span>
+          <span>Вільний проїзд / Чисто</span>
         </div>
         <div class="legend-row">
-          <span class="shape square dot-blue"></span><span class="shape square dot-purple"></span>
-          <span>К2: Чисто / Опасно</span>
+          <span class="shape dot-red"></span>
+          <span>Увага / Блокпост / Патруль</span>
         </div>
         <div class="legend-row" style="margin-top: 2px;">
           <span style="font-size: 11px;">🚦</span>
-          <span>Світлофори (8 точок)</span>
+          <span id="tlLegendCount">Світлофори</span>
         </div>
       </div>
     </div>
   </div>
 
-  <div id="toast" class="toast-msg">✅ Позиції збережено та синхронізовано!</div>
+  <!-- Модальное окно добавления светофора -->
+  <div id="modalAdd" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-title">🚦 Новий світлофор</div>
+      <input type="text" id="newTlName" class="modal-input" placeholder="Назва (напр. пр. Богдана Хмельницького)" />
+      <input type="text" id="newTlKeys" class="modal-input" placeholder="Ключові слова (через кому: хмельницького, 12 квартал)" />
+      <div class="modal-btns">
+        <button class="btn-m btn-m-cancel" onclick="closeAddModal()">Скасувати</button>
+        <button class="btn-m btn-m-save" onclick="saveNewTrafficLight()">Додати</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast-msg">✅ Збережено та синхронізовано!</div>
   
   <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
-    const CONFIG_POS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/positions.json";
+    const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
+    const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
-    const DEFAULT_CHECKPOINTS = [
+    // Базовые светофоры по умолчанию
+    let checkpoints = [
       {
         id: "kaidak_rovd",
         name: "РОВД / Кайдацький з'їзд",
         lat: 48.4925,
-        lng: 34.9625
+        lng: 34.9625,
+        keys: ["кайдак", "ровд", "з'їзд", "съезд"]
       },
       {
         id: "vodolechebnitsa",
         name: "Водолікарня (пр. Свободи, 2)",
         lat: 48.4848,
-        lng: 34.9735
+        lng: 34.9735,
+        keys: ["водолечеб", "водолікарн", "свобод"]
       },
       {
         id: "kombainoviy",
         name: "Комбайновий (Белелюбського)",
         lat: 48.4795,
-        lng: 34.9845
+        lng: 34.9845,
+        keys: ["комбайн", "ударник"]
       },
       {
         id: "krasnozavodska",
-        name: "Краснозаводська (Белелюбського біля ДТРЗ)",
+        name: "Краснозаводська (ДТРЗ)",
         lat: 48.4812,
-        lng: 34.9940
+        lng: 34.9940,
+        keys: ["краснозавод", "белелюб"]
       },
       {
         id: "pavlova",
         name: "вул. Академіка Павлова",
         lat: 48.4818,
-        lng: 35.0012
+        lng: 35.0012,
+        keys: ["павлов"]
       },
       {
         id: "rechport",
         name: "Річпорт (Набережна Заводська)",
         lat: 48.4805,
-        lng: 35.0210
+        lng: 35.0210,
+        keys: ["речпорт", "річпорт", "десантник", "річковий"]
       },
       {
         id: "vodokachka",
         name: "Водокачка (Набережна Заводська)",
         lat: 48.4910,
-        lng: 34.9480
+        lng: 34.9480,
+        keys: ["водокачк"]
       },
       {
         id: "stan_550",
         name: "Стан 550 / Набережна Заводська",
         lat: 48.4865,
-        lng: 34.9850
+        lng: 34.9850,
+        keys: ["стан 550", "стан550", "набережная заводская", "набережна заводська", "заводская набережная", "заводська набережна", "стан"]
       }
     ];
 
@@ -369,57 +428,40 @@
       document.getElementById("btnToggle").innerText = "▼";
     }
 
-    function getStoredPositions() {
+    // Сохранение светофоров в Firebase
+    async function syncCheckpointsToCloud() {
       try {
-        const saved = localStorage.getItem("dnepr_radar_tl_positions");
-        return saved ? JSON.parse(saved) : {};
-      } catch (e) {
-        return {};
-      }
-    }
-
-    async function saveAllPositionsToStorage() {
-      const stored = getStoredPositions();
-      Object.keys(trafficMarkersMap).forEach(id => {
-        const m = trafficMarkersMap[id];
-        if (m) {
-          const pos = m.getLatLng();
-          stored[id] = { lat: Number(pos.lat.toFixed(5)), lng: Number(pos.lng.toFixed(5)) };
-        }
-      });
-      localStorage.setItem("dnepr_radar_tl_positions", JSON.stringify(stored));
-      
-      try {
-        await fetch(CONFIG_POS_URL, {
+        await fetch(FIREBASE_CONFIG_URL, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(stored)
+          body: JSON.stringify(checkpoints)
         });
       } catch (e) {
-        console.error("Помилка хмарного збереження:", e);
+        console.error("Помилка синхронізації:", e);
       }
     }
 
-    async function fetchCloudPositions() {
+    // Загрузка светофоров из Firebase
+    async function loadCheckpointsFromCloud() {
       try {
-        const res = await fetch(`${CONFIG_POS_URL}?t=${Date.now()}`);
+        const res = await fetch(`${FIREBASE_CONFIG_URL}?t=${Date.now()}`);
         if (res.ok) {
-          const cloudData = await res.json();
-          if (cloudData && typeof cloudData === 'object') {
-            localStorage.setItem("dnepr_radar_tl_positions", JSON.stringify(cloudData));
-            if (!isEditMode) {
-              Object.keys(cloudData).forEach(id => {
-                if (trafficMarkersMap[id]) {
-                  trafficMarkersMap[id].setLatLng([cloudData[id].lat, cloudData[id].lng]);
-                }
-              });
-            }
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            checkpoints = data;
           }
         }
       } catch (e) {}
+      updateLegendCount();
     }
 
-    const map = L.map('map', { zoomControl: false }).setView([48.481, 34.985], 13);
+    function updateLegendCount() {
+      document.getElementById("tlLegendCount").innerText = `Світлофори (${checkpoints.length})`;
+    }
+
+    const isMobile = window.innerWidth < 768;
+    const initialZoom = isMobile ? 12 : 13;
+    const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
@@ -429,7 +471,6 @@
     const trafficLightLayer = L.layerGroup().addTo(map);
 
     let allPoints = [];
-    let currentFilter = 'all';
     let isEditMode = false;
     let trafficMarkersMap = {};
 
@@ -449,6 +490,7 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
+    // Режим расстановки
     async function toggleEditMode() {
       isEditMode = !isEditMode;
       const btn = document.getElementById("btnSetup");
@@ -456,13 +498,21 @@
 
       if (isEditMode) {
         btn.classList.add("editing");
-        btnText.innerText = "💾 Зафіксувати";
-        showToast("📍 Перетягніть світлофори мишкою у потрібні місця!");
+        btnText.innerText = "💾 Зафіксувати позиції";
+        showToast("📍 Перетягуйте світлофори мишкою у потрібні місця!");
       } else {
         btn.classList.remove("editing");
         btnText.innerText = "📍 Розставити світлофори";
-        await saveAllPositionsToStorage();
-        showToast("✅ Позиції збережено та синхронізовано з хмарою!");
+        // Сохраняем новые координаты в объекте checkpoints
+        checkpoints.forEach(cp => {
+          if (trafficMarkersMap[cp.id]) {
+            const pos = trafficMarkersMap[cp.id].getLatLng();
+            cp.lat = Number(pos.lat.toFixed(5));
+            cp.lng = Number(pos.lng.toFixed(5));
+          }
+        });
+        await syncCheckpointsToCloud();
+        showToast("✅ Всі позиції надійно збережено та зафіксовано!");
       }
 
       Object.values(trafficMarkersMap).forEach(marker => {
@@ -480,18 +530,63 @@
           }
         }
       });
+      renderTrafficLights();
     }
 
-    function setFilter(type, btn) {
-      document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentFilter = type;
+    // Модальное окно добавления
+    function openAddModal() {
+      document.getElementById("modalAdd").style.display = "flex";
+      document.getElementById("newTlName").value = "";
+      document.getElementById("newTlKeys").value = "";
+    }
+    function closeAddModal() {
+      document.getElementById("modalAdd").style.display = "none";
+    }
+
+    async function saveNewTrafficLight() {
+      const name = document.getElementById("newTlName").value.trim();
+      const keysRaw = document.getElementById("newTlKeys").value.trim();
+      if (!name) {
+        alert("Вкажіть назву світлофора!");
+        return;
+      }
+      const keys = keysRaw ? keysRaw.split(",").map(k => k.trim().toLowerCase()).filter(Boolean) : [name.toLowerCase()];
+      const center = map.getCenter();
+
+      const newId = "tl_" + Date.now();
+      checkpoints.push({
+        id: newId,
+        name: name,
+        lat: Number(center.lat.toFixed(5)),
+        lng: Number(center.lng.toFixed(5)),
+        keys: keys
+      });
+
+      closeAddModal();
+      await syncCheckpointsToCloud();
+      updateLegendCount();
+      renderTrafficLights();
+      showToast(`🚦 Додано: ${name}! Увімкніть розстановку, щоб посунути його.`);
+    }
+
+    // Удаление светофора
+    async function deleteTrafficLight(id) {
+      if (!confirm("Видалити цей світлофор?")) return;
+      checkpoints = checkpoints.filter(cp => cp.id !== id);
+      if (trafficMarkersMap[id]) {
+        trafficLightLayer.removeLayer(trafficMarkersMap[id]);
+        delete trafficMarkersMap[id];
+      }
+      await syncCheckpointsToCloud();
+      updateLegendCount();
+      renderTrafficLights();
       renderMarkers();
+      showToast("🗑️ Світлофор видалено!");
     }
 
     async function loadPoints() {
       try {
-        const res = await fetch(`${FIREBASE_URL}?t=${Date.now()}`);
+        const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
         if (!res.ok) return;
         const data = await res.json();
         if (!data) {
@@ -526,57 +621,39 @@
     }
 
     function isCleanPoint(p) {
-      if (p.color === "green" || p.color === "blue" || p.status === "чисто") return true;
-      if (p.color === "red" || p.color === "purple" || p.status === "опасно") return false;
+      if (p.color === "green" || p.status === "чисто") return true;
+      if (p.color === "red" || p.status === "опасно") return false;
       const t = (p.text || "").toLowerCase();
       return t.includes("чисто") || t.includes("👍") || t.includes("🫡") || t.includes("пусто");
     }
 
-    function getMarkerColor(p) {
-      if (p.color === "green") return "#22c55e";
-      if (p.color === "red") return "#ef4444";
-      if (p.color === "blue") return "#06b6d4";
-      if (p.color === "purple") return "#a855f7";
-
-      const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
-      const clean = isCleanPoint(p);
-      if (isChannel2) return clean ? "#06b6d4" : "#a855f7";
-      return clean ? "#22c55e" : "#ef4444";
+    function checkKeysMatch(text, cp) {
+      if (!cp.keys || cp.keys.length === 0) return false;
+      return cp.keys.some(k => {
+        if (k.length <= 4) {
+          const regex = new RegExp(`\\b${k}\\b`, "i");
+          return regex.test(text);
+        }
+        return text.includes(k);
+      });
     }
 
-    // Изолированная привязка отчётов строго к своим светофорам
+    // Поиск светофора для сообщения
     function getMatchedCheckpointId(p) {
-      const text = (p.raw_text || p.text || "").toLowerCase();
+      const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
       
-      if (text.includes("павлов")) return "pavlova";
-      if (text.includes("краснозавод")) return "krasnozavodska";
-      if (text.includes("комбайн") || text.includes("ударник")) return "kombainoviy";
-      if (text.includes("белелюб")) return "krasnozavodska";
-      if (text.includes("водокачк")) return "vodokachka";
-      if (/\bстан\b|\bстан550\b|\bстан 550\b/i.test(text) || (text.includes("заводськ") && text.includes("набережн")) || (text.includes("заводск") && text.includes("набережн"))) return "stan_550";
-      if (text.includes("речпорт") || text.includes("річпорт") || text.includes("десантник") || text.includes("річков")) return "rechport";
-      if (text.includes("водолечеб") || text.includes("водолікарн") || text.includes("свобод")) return "vodolechebnitsa";
-      if (text.includes("кайдак") || text.includes("ровд")) return "kaidak_rovd";
+      // 1. По совпадению ключевых слов светофора
+      for (const cp of checkpoints) {
+        if (checkKeysMatch(text, cp)) {
+          return cp.id;
+        }
+      }
 
-      const addr = (p.address || "").toLowerCase();
-      if (addr.includes("павлов")) return "pavlova";
-      if (addr.includes("краснозавод")) return "krasnozavodska";
-      if (addr.includes("комбайн")) return "kombainoviy";
-      if (addr.includes("белелюб")) return "krasnozavodska";
-      if (addr.includes("водокачк")) return "vodokachka";
-      if (addr.includes("стан 550") || addr.includes("стан")) return "stan_550";
-      if (addr.includes("речпорт") || addr.includes("річпорт")) return "rechport";
-      if (addr.includes("водолечеб") || addr.includes("водолікарн")) return "vodolechebnitsa";
-      if (addr.includes("кайдак") || addr.includes("ровд")) return "kaidak_rovd";
-
-      const stored = getStoredPositions();
+      // 2. Если слов нет — по расстоянию 250 метров
       let closestId = null;
       let minDistance = 250;
-
-      for (const cp of DEFAULT_CHECKPOINTS) {
-        const curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
-        const curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
-        const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
+      for (const cp of checkpoints) {
+        const dist = getDistanceMeters(p.lat, p.lng, cp.lat, cp.lng);
         if (dist <= minDistance) {
           minDistance = dist;
           closestId = cp.id;
@@ -587,17 +664,22 @@
 
     function renderTrafficLights() {
       const now = Date.now();
-      const stored = getStoredPositions();
 
-      DEFAULT_CHECKPOINTS.forEach(cp => {
-        let curLat, curLng;
+      // Удаляем маркеры, которых больше нет в списке checkpoints
+      Object.keys(trafficMarkersMap).forEach(id => {
+        if (!checkpoints.some(cp => cp.id === id)) {
+          trafficLightLayer.removeLayer(trafficMarkersMap[id]);
+          delete trafficMarkersMap[id];
+        }
+      });
+
+      checkpoints.forEach(cp => {
+        let curLat = cp.lat;
+        let curLng = cp.lng;
         if (trafficMarkersMap[cp.id]) {
           const currentPos = trafficMarkersMap[cp.id].getLatLng();
           curLat = currentPos.lat;
           curLng = currentPos.lng;
-        } else {
-          curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
-          curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
         }
 
         const matched = allPoints.filter(p => getMatchedCheckpointId(p) === cp.id);
@@ -658,12 +740,17 @@
           popupContent += `
             <div class="popup-text">${latest.text || ""}</div>
             <div class="popup-meta">
-              <span>🕒 ${timeStr} | ${latest.channel_name || (latest.source === "agendaDnepr" ? "Канал 2" : "Канал 1")}</span>
+              <span>🕒 ${timeStr}</span>
               <span class="timer-badge">⏳ До скидання: ${remMin} хв ${remSec} с</span>
             </div>
           `;
         } else {
           popupContent += `<div class="popup-text" style="color: #94a3b8;">Повідомлень за останні 40 хв не було.</div>`;
+        }
+
+        // Если включен режим редактирования — добавляем кнопку удаления
+        if (isEditMode) {
+          popupContent += `<button class="btn-delete-tl" onclick="deleteTrafficLight('${cp.id}')">🗑️ Видалити цей світлофор</button>`;
         }
 
         if (trafficMarkersMap[cp.id]) {
@@ -677,10 +764,6 @@
             draggable: isEditMode
           });
 
-          marker.on('dragend', async function() {
-            await saveAllPositionsToStorage();
-          });
-
           marker.bindPopup(popupContent);
           trafficLightLayer.addLayer(marker);
           trafficMarkersMap[cp.id] = marker;
@@ -688,7 +771,6 @@
       });
     }
 
-    // Отрисовка ВСЕХ точек (ничего не скрываем!)
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -699,52 +781,29 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
-        const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
-        const channelTitle = isChannel2 ? "Канал 2" : "Канал 1";
-
-        if (currentFilter !== 'all' && currentFilter !== channelTitle) return;
-
         const remainingMs = Math.max(0, LIFETIME_MS - diff);
         const remMinutes = Math.floor(remainingMs / 60000);
         const remSeconds = Math.floor((remainingMs % 60000) / 1000);
 
         const date = new Date(time);
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const markerColor = getMarkerColor(p);
+        const clean = isCleanPoint(p);
+        const markerColor = clean ? "#22c55e" : "#ef4444";
 
-        let marker;
-        if (isChannel2) {
-          const squareIcon = L.divIcon({
-            className: 'square-marker-icon',
-            html: `<div style="
-              width: 14px;
-              height: 14px;
-              background-color: ${markerColor};
-              border: 2px solid #ffffff;
-              border-radius: 3px;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.45);
-            "></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7],
-            popupAnchor: [0, -10]
-          });
-          marker = L.marker([p.lat, p.lng], { icon: squareIcon });
-        } else {
-          marker = L.circleMarker([p.lat, p.lng], {
-            radius: 8,
-            fillColor: markerColor,
-            color: "#ffffff",
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.95
-          });
-        }
+        const marker = L.circleMarker([p.lat, p.lng], {
+          radius: 8,
+          fillColor: markerColor,
+          color: "#ffffff",
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.95
+        });
 
         const popupContent = `
           <div class="popup-title">${p.address || "Дніпро"}</div>
           <div class="popup-text">${p.text || ""}</div>
           <div class="popup-meta">
-            <span>🕒 ${timeStr} | ${channelTitle}</span>
+            <span>🕒 ${timeStr}</span>
             <span class="timer-badge">⏳ До видалення: ${remMinutes} хв ${remSeconds} с</span>
           </div>
         `;
@@ -757,7 +816,7 @@
       document.getElementById('countText').innerText = `Точок: ${visibleCount}`;
     }
 
-    fetchCloudPositions().then(() => {
+    loadCheckpointsFromCloud().then(() => {
       loadPoints();
     });
     setInterval(loadPoints, 15000);
