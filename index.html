@@ -110,7 +110,7 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Легенда с разделением по времени */
+    /* Легенда */
     .legend {
       display: flex;
       flex-direction: column;
@@ -121,7 +121,15 @@
       padding-top: 6px;
     }
     .legend-row { display: flex; align-items: center; gap: 6px; }
-    .shape { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .shape { 
+      width: 10px; 
+      height: 10px; 
+      border-radius: 50%; 
+      display: inline-block; 
+      flex-shrink: 0;
+      border: 2px solid #facc15;
+      box-sizing: border-box;
+    }
     .dot-green { background: #22c55e; }
     .dot-red { background: #ef4444; }
 
@@ -135,7 +143,7 @@
       font-size: 9px;
     }
 
-    /* СТИЛИ ТОЧЕК-МЕТОК (3 СОСТОЯНИЯ) */
+    /* СТИЛИ ТОЧЕК-МЕТОК */
     .marker-wrap {
       position: relative;
       width: 24px;
@@ -145,7 +153,7 @@
       justify-content: center;
     }
 
-    /* 1. Свежие (0-10 мин): Живой Радар-Пинг */
+    /* Радарная волна для свежих меток (0-10 мин) */
     .pulse-ring {
       position: absolute;
       width: 14px;
@@ -159,45 +167,53 @@
 
     @keyframes radar-wave {
       0% { transform: scale(0.8); opacity: 1; }
-      100% { transform: scale(2.5); opacity: 0; }
+      100% { transform: scale(2.6); opacity: 0; }
     }
 
-    /* Основа точки */
     .radar-core {
       border-radius: 50%;
-      transition: all 0.3s ease;
       box-sizing: border-box;
+      transition: all 0.3s ease;
     }
 
-    /* Свежая: крупная плотная */
-    .radar-core.fresh {
-      width: 12px;
-      height: 12px;
-      border: 2px solid #ffffff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    /* 1. СВЕЖИЕ И АКТУАЛЬНЫЕ (0-25 мин): СПЛОШНЫЕ С ЖЁЛТЫМ ОБОДКОМ */
+    .radar-core.fresh, .radar-core.mid {
+      border: 2px solid #facc15;
+      box-shadow: 0 0 5px rgba(250, 204, 21, 0.6), 0 2px 5px rgba(0,0,0,0.7);
     }
-    .radar-core.fresh.green { background: #22c55e; }
-    .radar-core.fresh.red { background: #ef4444; }
+    .radar-core.fresh.green, .radar-core.mid.green { background: #22c55e; }
+    .radar-core.fresh.red, .radar-core.mid.red { background: #ef4444; }
 
-    /* Актуальная (10-25 мин): монолитная стандартная */
-    .radar-core.mid {
-      width: 10px;
-      height: 10px;
-      border: 1.5px solid #ffffff;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-    .radar-core.mid.green { background: #16a34a; }
-    .radar-core.mid.red { background: #dc2626; }
+    .radar-core.fresh { width: 13px; height: 13px; }
+    .radar-core.mid { width: 11px; height: 11px; }
 
-    /* Угасающая (25-40 мин): "Бублик" (пустая внутри, только контур) */
-    .radar-core.fading {
-      width: 9px;
-      height: 9px;
+    /* 2. ПРОПАДАЮЩИЕ (25-40 мин): "БУБЛИК" БЕЗ ЖЁЛТОГО ОБОДКА + МЕДЛЕННО МИГАЕТ */
+    .radar-core.expiring {
+      width: 11px;
+      height: 11px;
       background: transparent !important;
-      box-shadow: none;
+      box-shadow: none !important;
+      animation: slow-blink 2.2s ease-in-out infinite;
     }
-    .radar-core.fading.green { border: 2px solid #22c55e; opacity: 0.7; }
-    .radar-core.fading.red { border: 2px solid #ef4444; opacity: 0.7; }
+    .radar-core.expiring.green {
+      border: 2.5px solid #22c55e !important;
+      color: #22c55e;
+    }
+    .radar-core.expiring.red {
+      border: 2.5px solid #ef4444 !important;
+      color: #ef4444;
+    }
+
+    @keyframes slow-blink {
+      0%, 100% {
+        opacity: 1;
+        filter: drop-shadow(0 0 3px currentColor);
+      }
+      50% {
+        opacity: 0.15;
+        filter: none;
+      }
+    }
 
     /* Светофор */
     .traffic-light-body {
@@ -457,9 +473,9 @@
 
         <!-- Подсказка по шкале времени -->
         <div class="legend-time">
-          <div>💥 <b>Пульсує:</b> 0–10 хв (прямо зараз)</div>
-          <div>🟢/🔴 <b>Суцільна:</b> 10–25 хв (актуально)</div>
-          <div>⭕ <b>Контур (бублик):</b> 25–40 хв (згасає)</div>
+          <div>💥 <b>Пульсує:</b> 0–10 хв (свіжа, жовтий ободок)</div>
+          <div>🟡 <b>Суцільна:</b> 10–25 хв (актуальна, жовтий ободок)</div>
+          <div>⭕ <b>Бублик (блимає):</b> 25–40 хв (згасає, без ободка)</div>
         </div>
       </div>
     </div>
@@ -1071,7 +1087,7 @@
     }
 
     /* ----------------------------------------------------
-       ОТРИСОВКА КРУЖКОВ: 3 ВОЗРАСТНЫХ СТАТУСА
+       ОТРИСОВКА КРУЖКОВ: СПЛОШНЫЕ С ЖЁЛТЫМ ОБОДКОМ ИЛИ БУБЛИК БЕЗ ОБОДКА
     ---------------------------------------------------- */
     function renderMarkers() {
       markersLayer.clearLayers();
@@ -1091,19 +1107,18 @@
         const clean = isCleanPoint(p);
         const colorClass = clean ? "green" : "red";
 
-        // Определяем возрастное состояние:
         let ageClass = "mid";
         let pulseHtml = "";
 
         if (ageMinutes < 10) {
-          // 0-10 мин: СВЕЖАЯ (Пульсирует волной)
+          // 0-10 мин: СВЕЖАЯ (Сплошная с желтым ободком + радарная волна)
           ageClass = "fresh";
           pulseHtml = `<div class="pulse-ring pulse-${colorClass}"></div>`;
         } else if (ageMinutes >= 25) {
-          // 25-40 мин: СТАРАЯ (Пустой контур "бублик")
-          ageClass = "fading";
+          // 25-40 мин: ПРОПАДАЕТ ("БУБЛИК" БЕЗ ЖЕЛТОГО ОБОДКА, МЕДЛЕННО МИГАЕТ)
+          ageClass = "expiring";
         } else {
-          // 10-25 мин: АКТУАЛЬНАЯ (Плотная монолитная)
+          // 10-25 мин: АКТУАЛЬНАЯ (Сплошная спокойная с желтым ободком)
           ageClass = "mid";
         }
 
