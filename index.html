@@ -10,7 +10,12 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; background: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body, #map { width: 100%; height: 100%; background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    /* ОТБЕЛИВАНИЕ КАРТЫ: убираем желтизну и серый налёт */
+    .leaflet-tile-pane {
+      filter: brightness(1.08) contrast(1.04) saturate(0.65) hue-rotate(-2deg);
+    }
 
     /* Панель управления */
     .dashboard {
@@ -23,7 +28,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
       width: 215px;
       transition: all 0.25s ease;
     }
@@ -81,8 +86,8 @@
       gap: 5px;
     }
     .btn-setup.editing {
-      background: #15803d;
-      border: 1px solid #25d366;
+      background: #0284c7;
+      border: 1px solid #38bdf8;
       color: #ffffff;
       animation: pulse-border 1.5s infinite;
     }
@@ -107,9 +112,9 @@
     .btn-secondary:hover { background: #334155; color: #fff; }
 
     @keyframes pulse-border {
-      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(37, 211, 102, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
     }
 
     /* Легенда */
@@ -124,38 +129,38 @@
     }
     .legend-row { display: flex; align-items: center; gap: 7px; }
     .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .dot-green { background: #25d366; box-shadow: 0 0 6px #25d366; }
+    .dot-blue { background: #00b4d8; box-shadow: 0 0 6px #00b4d8; }
     .dot-red { background: #ff334b; box-shadow: 0 0 6px #ff334b; }
 
-    /* ТОЧКИ: ЯРКИЙ САЛАТОВЫЙ И ЯРКИЙ АЛЫЙ (1 В 1 С ФОТО 2) */
+    /* ТОЧКИ: ГОЛУБЫЕ И ЯРКО-КРАСНЫЕ КРУГИ */
     .custom-dot-marker {
       background: transparent !important;
       border: none !important;
       overflow: visible !important;
     }
     .radar-circle {
-      width: 17px;
-      height: 17px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       cursor: pointer;
       position: relative;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
     }
-    .radar-circle.color-green {
-      background-color: #25d366 !important;
+    .radar-circle.color-blue {
+      background-color: #00b4d8 !important;
     }
     .radar-circle.color-red {
       background-color: #ff334b !important;
     }
 
     /* Пульсирующий ореол свежих меток */
-    .radar-circle.fresh.color-green::after {
+    .radar-circle.fresh.color-blue::after {
       content: '';
       position: absolute;
       top: -2px; left: -2px; right: -2px; bottom: -2px;
       border-radius: 50%;
-      background: rgba(37, 211, 102, 0.6);
-      animation: ripple-green 1.7s infinite ease-out;
+      background: rgba(0, 180, 216, 0.6);
+      animation: ripple-blue 1.7s infinite ease-out;
       z-index: -1;
     }
     .radar-circle.fresh.color-red::after {
@@ -168,7 +173,7 @@
       z-index: -1;
     }
 
-    @keyframes ripple-green {
+    @keyframes ripple-blue {
       0% { transform: scale(1); opacity: 0.9; }
       100% { transform: scale(2.4); opacity: 0; }
     }
@@ -177,25 +182,25 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
-    /* СВЕТОФОР: КОМПАКТНЫЙ, ЧЁТКИЙ, ЧИТАЕМЫЙ ГРАФИТОВЫЙ КОРПУС */
+    /* СВЕТОФОРЫ: ВОЗВРАЩЁН УДОБНЫЙ РАЗМЕР (20x36 px) */
     .traffic-pill {
       background: #0f172a !important;
       border: 1.5px solid #ffffff !important;
-      border-radius: 12px !important;
+      border-radius: 13px !important;
       padding: 3px 2px !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
       gap: 3px !important;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.45) !important;
-      width: 17px !important;
-      height: 32px !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.35) !important;
+      width: 20px !important;
+      height: 36px !important;
       user-select: none !important;
     }
     .traffic-pill.draggable-mode {
       cursor: grab;
-      border-color: #00f3ff !important;
-      box-shadow: 0 0 14px 4px #00f3ff !important;
+      border-color: #38bdf8 !important;
+      box-shadow: 0 0 14px 4px #38bdf8 !important;
     }
     .traffic-pill.standby-mode {
       background: rgba(15, 23, 42, 0.45) !important;
@@ -203,8 +208,8 @@
       opacity: 0.7;
     }
     .tl-lamp {
-      width: 10px;
-      height: 10px;
+      width: 11px;
+      height: 11px;
       border-radius: 50%;
       transition: all 0.25s ease;
     }
@@ -214,7 +219,7 @@
     }
     .tl-lamp.red-dim { 
       background: #3b1114 !important; 
-      opacity: 0.3 !important; 
+      opacity: 0.25 !important; 
     }
     .tl-lamp.green-active { 
       background: #25d366 !important; 
@@ -222,11 +227,11 @@
     }
     .tl-lamp.green-dim { 
       background: #092e16 !important; 
-      opacity: 0.3 !important; 
+      opacity: 0.25 !important; 
     }
     .tl-lamp.off { 
       background: #334155 !important; 
-      opacity: 0.45 !important; 
+      opacity: 0.4 !important; 
     }
 
     .traffic-marker-icon { background: transparent !important; border: none !important; }
@@ -337,7 +342,7 @@
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       display: none;
       animation: fadeIn 0.3s ease;
     }
@@ -362,12 +367,12 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
       transition: background 0.2s;
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап */
+    /* Карточка информации */
     .leaflet-popup-content-wrapper {
       background: #ffffff !important;
       color: #0f172a !important;
@@ -431,7 +436,7 @@
 
       <div class="legend">
         <div class="legend-row">
-          <span class="shape dot-green"></span>
+          <span class="shape dot-blue"></span>
           <span>Вільний проїзд / Чисто</span>
         </div>
         <div class="legend-row">
@@ -466,7 +471,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно создания светофора -->
+  <!-- Окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -648,6 +653,7 @@
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
+    // ПОДЛОЖКА КАРТЫ С АВТОМАТИЧЕСКИМ ОТБЕЛИВАНИЕМ
     L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       attribution: 'Google Maps'
@@ -930,7 +936,7 @@
       return null;
     }
 
-    /* СВЕТОФОРЫ: ЧИТАЕМЫЙ ГРАФИТОВЫЙ КОРПУС, НЕАКТИВНЫЕ СКРЫТЫ */
+    /* СВЕТОФОРЫ: КРУПНЫЙ УДОБНЫЙ РАЗМЕР, НЕАКТИВНЫЕ СКРЫТЫ */
     function renderTrafficLights() {
       if (!showTrafficLights) return;
 
@@ -941,7 +947,7 @@
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
-        // Если нет свежего отчёта и не режим расстановки — светофор не отображается
+        // Неактивные скрыты, пока не появится отчет (или в режиме редактирования)
         if (!latest && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
@@ -983,9 +989,9 @@
         const tlIcon = L.divIcon({
           className: 'traffic-marker-icon',
           html: iconHtml,
-          iconSize: [17, 32],
-          iconAnchor: [8.5, 16],
-          popupAnchor: [0, -16]
+          iconSize: [20, 36],
+          iconAnchor: [10, 18],
+          popupAnchor: [0, -18]
         });
 
         let popupContent = `
@@ -1050,7 +1056,7 @@
       });
     }
 
-    /* ТОЧКИ: ЯРКИЙ САЛАТОВЫЙ И АЛЫЙ */
+    /* ТОЧКИ: ГОЛУБЫЕ И ЯРКО-КРАСНЫЕ */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -1064,17 +1070,17 @@
         const isFresh = diff <= FRESH_THRESHOLD_MS;
         const clean = isCleanPoint(p);
         
-        const colorClass = clean ? "color-green" : "color-red";
+        const colorClass = clean ? "color-blue" : "color-red";
         const freshClass = isFresh ? "fresh" : "";
-        const emoji = clean ? "🟢" : "🔴";
+        const emoji = clean ? "🔵" : "🔴";
 
         const markerHtml = `<div class="radar-circle ${colorClass} ${freshClass}"></div>`;
 
         const dotIcon = L.divIcon({
           className: 'custom-dot-marker',
           html: markerHtml,
-          iconSize: [17, 17],
-          iconAnchor: [8.5, 8.5],
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
           popupAnchor: [0, -10]
         });
 
