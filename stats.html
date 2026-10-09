@@ -3,59 +3,155 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Статистика тривог — Дніпро</title>
+  <title>Аналітика блокпостів — Дніпро (7 днів)</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #0f172a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 16px; }
-    .container { max-width: 500px; margin: 0 auto; }
+    body { background: #0b132b; color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 16px; }
+    .container { max-width: 640px; margin: 0 auto; }
+    
     .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-    h1 { font-size: 18px; color: #38bdf8; }
-    .btn-back { background: #1e293b; color: #cbd5e1; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; }
-    .stats-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-    .btn-tab { flex: 1; padding: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
-    .btn-tab.active { background: #2563eb; color: #fff; border-color: #38bdf8; }
-    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
-    .kpi-box { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 10px; text-align: center; }
-    .kpi-num { font-size: 24px; font-weight: 800; color: #ff334b; }
-    .kpi-label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
-    .chart-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px 12px 10px; min-height: 220px; display: flex; align-items: flex-end; gap: 6px; }
-    .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; min-width: 0; }
-    .chart-bar-val { font-size: 10px; font-weight: 700; color: #f1f5f9; margin-bottom: 2px; }
-    .chart-bar { width: 100%; background: #ff334b; border-radius: 3px 3px 0 0; min-height: 3px; box-shadow: 0 0 6px rgba(255, 51, 75, 0.4); }
-    .chart-bar.peak-bar { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
-    .chart-label { font-size: 10px; color: #64748b; margin-top: 6px; }
+    h1 { font-size: 19px; font-weight: 800; color: #38bdf8; }
+    .btn-back { background: #1e293b; color: #cbd5e1; border: 1px solid #475569; padding: 6px 12px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; }
+    .btn-back:hover { background: #334155; color: #fff; }
+
+    .nav-tabs { display: flex; gap: 6px; margin-bottom: 16px; background: #1c2541; padding: 4px; border-radius: 10px; }
+    .tab-btn { flex: 1; padding: 8px; background: transparent; border: none; color: #94a3b8; font-size: 11px; font-weight: 700; border-radius: 6px; cursor: pointer; }
+    .tab-btn.active { background: #2563eb; color: #fff; box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4); }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .kpi-card { background: #1c2541; border: 1px solid #334155; padding: 12px 8px; border-radius: 10px; text-align: center; }
+    .kpi-val { font-size: 20px; font-weight: 800; color: #ff334b; }
+    .kpi-title { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+
+    /* БЛОК ИИ-ВЫВОДОВ */
+    .ai-summary-card {
+      background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+      border: 1px solid #6366f1;
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.2);
+    }
+    .ai-title { font-size: 12px; font-weight: 800; color: #a5b4fc; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+    .ai-text { font-size: 11px; color: #cbd5e1; line-height: 1.5; }
+
+    .card { background: #1c2541; border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 16px; }
+    .card-title { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 12px; }
+
+    /* РЕЙТИНГ ПОВТОРЯЮЩИХСЯ БЛОКПОСТОВ */
+    .hotspot-item { margin-bottom: 10px; }
+    .hotspot-header { display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; margin-bottom: 4px; }
+    .hotspot-name { color: #f1f5f9; }
+    .hotspot-count { color: #f59e0b; font-weight: 800; }
+    .progress-bar-bg { width: 100%; height: 6px; background: #0f172a; border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #ff334b); border-radius: 4px; }
+
+    /* СТОЛБЧАТАЯ ДИАГРАММА */
+    .chart-box { height: 160px; display: flex; align-items: flex-end; gap: 4px; padding-top: 10px; }
+    .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+    .chart-val { font-size: 9px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+    .chart-bar { width: 100%; background: #ff334b; border-radius: 3px 3px 0 0; min-height: 2px; }
+    .chart-bar.peak { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+    .chart-lbl { font-size: 8px; color: #64748b; margin-top: 4px; }
+
+    /* ЖУРНАЛ ЗАПИСЕЙ */
+    .log-item { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px; }
+    .log-meta { display: flex; justify-content: space-between; color: #94a3b8; font-size: 10px; margin-bottom: 3px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>📊 Статистика тривог (7 днів)</h1>
+      <h1>📊 Аналітика блокпостів (7 днів)</h1>
       <a href="index.html" class="btn-back">← До карти</a>
     </div>
 
-    <div class="stats-tabs">
-      <button id="tabDay" class="btn-tab active" onclick="switchTab('day')">🕒 Сьогодні (по годинах)</button>
-      <button id="tabWeek" class="btn-tab" onclick="switchTab('week')">📅 За 7 днів (по днях)</button>
-    </div>
-
     <div class="kpi-grid">
-      <div class="kpi-box">
-        <div id="kpiToday" class="kpi-num">0</div>
-        <div class="kpi-label">Сьогодні зафіксовано</div>
+      <div class="kpi-card">
+        <div id="kpiTotal" class="kpi-val">0</div>
+        <div class="kpi-title">Всього засад (7 днів)</div>
       </div>
-      <div class="kpi-box">
-        <div id="kpiPeak" class="kpi-num" style="color:#f59e0b;">--:00</div>
-        <div class="kpi-label">Піковий час / день</div>
+      <div class="kpi-card">
+        <div id="kpiToday" class="kpi-val">0</div>
+        <div class="kpi-title">Зафіксовано сьогодні</div>
+      </div>
+      <div class="kpi-card">
+        <div id="kpiPeakHour" class="kpi-val" style="color:#f59e0b;">--:00</div>
+        <div class="kpi-title">Пікова година</div>
       </div>
     </div>
 
-    <div id="chartContainer" class="chart-box"></div>
+    <!-- ИИ-РЕЗЮМЕ -->
+    <div class="ai-summary-card">
+      <div class="ai-title">🤖 Аналітичний звіт системи:</div>
+      <div id="aiSummaryText" class="ai-text">Завантаження аналітики...</div>
+    </div>
+
+    <div class="nav-tabs">
+      <button id="tabBtn1" class="tab-btn active" onclick="setTab(1)">🎯 Топ блокпостів</button>
+      <button id="tabBtn2" class="tab-btn" onclick="setTab(2)">🕒 По годинах</button>
+      <button id="tabBtn3" class="tab-btn" onclick="setTab(3)">🏙️ По районах</button>
+      <button id="tabBtn4" class="tab-btn" onclick="setTab(4)">📝 Журнал</button>
+    </div>
+
+    <!-- ТАБ 1: ТОП ПОВТОРЯЮЩИХСЯ БЛОКПОСТОВ -->
+    <div id="tabContent1" class="card">
+      <div class="card-title">🎯 Найчастіші місця засад (Рейтинг повторюваності):</div>
+      <div id="hotspotList"></div>
+    </div>
+
+    <!-- ТАБ 2: ПО ЧАСАМ -->
+    <div id="tabContent2" class="card" style="display:none;">
+      <div class="card-title">🕒 Активність по годинах (сьогодні):</div>
+      <div id="hourlyChart" class="chart-box"></div>
+      <div class="card-title" style="margin-top:16px;">📅 Активність по днях тижня:</div>
+      <div id="weeklyChart" class="chart-box"></div>
+    </div>
+
+    <!-- ТАБ 3: ПО РАЙОНАМ -->
+    <div id="tabContent3" class="card" style="display:none;">
+      <div class="card-title">🏙️ Розподіл блокпостів по секторах міста:</div>
+      <div id="sectorList"></div>
+    </div>
+
+    <!-- ТАБ 4: ЖУРНАЛ -->
+    <div id="tabContent4" class="card" style="display:none;">
+      <div class="card-title">📝 Останні зафіксовані тривоги:</div>
+      <div id="logList"></div>
+    </div>
   </div>
 
   <script>
     const FIREBASE_ARCHIVE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/stats_archive.json";
     let archiveData = [];
-    let currentTab = "day";
+
+    const HOTSPOT_KEYS = [
+      { name: "РОВД / Кайдацький з'їзд", pattern: /кайдак|ровд/i },
+      { name: "вул. Павлова", pattern: /павлов/i },
+      { name: "Комбайновий / Белелюбського", pattern: /комбайн|белелюб|краснозавод|дтрз/i },
+      { name: "Водолікарня / пр. Свободи", pattern: /водолікарн|водолечеб|свобод/i },
+      { name: "Стан 550 / Водокачка", pattern: /стан 550|стан|водокачк/i },
+      { name: "Річпорт / Набережна Заводська", pattern: /речпорт|річпорт|десантник/i },
+      { name: "Вокзали / Старомостова", pattern: /вокзал|старомостов|островськ|курчатов/i },
+      { name: "Ринок Озерка / вул. Шмідта", pattern: /озерк|шмідт|бандер/i },
+      { name: "вул. Робоча / Канатна", pattern: /робоч|канатн|криворізьк/i },
+      { name: "пр. Нігояна / Вечний Вогонь", pattern: /нігоян|калінін|вогні|огни/i },
+      { name: "пр. Мазепи (Петровського)", pattern: /мазеп|петровськ/i },
+      { name: "12 Квартал / Тополя", pattern: /12.*квартал|квартал|топол/i },
+      { name: "пр. Слобожанський (Правди)", pattern: /слобожанськ|правд/i },
+      { name: "вул. Калинова / Янтарна", pattern: /калинов|янтарн|образцов/i },
+      { name: "Донецьке шосе / Караван", pattern: /донецьк.*шосе|караван|лівобереж/i },
+      { name: "пр. Поля (Кірова)", pattern: /поля|кіров/i }
+    ];
+
+    const SECTOR_GROUPS = [
+      { name: "Парус — Вокзал — Робоча (Ваш маршрут)", pattern: /парус|покровськ|червон.*кам|кайдак|свобод|павлов|белелюб|комбайн|речпорт|стан|водокачк|вокзал|озерк|робоч|канатн/i },
+      { name: "Центр, Нагірка, Перемога", pattern: /центр|міст.*сіті|мост.*сити|яворницьк|нагірк|гагарін|перемог/i },
+      { name: "Південь (12 Квартал, Тополя, Поля)", pattern: /квартал|топол|сокіл|мирн|кротов|хмельницьк|поля|титов/i },
+      { name: "Захід (Мазепи, Нігояна, Західний)", pattern: /мазеп|петровськ|нігоян|металург|західн|діївк/i },
+      { name: "Лівий берег (Калинова, Шосе, Караван)", pattern: /донецьк.*шосе|караван|калинов|янтарн|клочко|березинк/i },
+      { name: "Лівий берег (Слобожанський, Сонячний)", pattern: /слобожанськ|правд|сонячн|малиновськ|придніпров/i }
+    ];
 
     async function loadStats() {
       try {
@@ -64,73 +160,160 @@
           const data = await res.json();
           archiveData = data ? Object.values(data).filter(x => x && x.time) : [];
         }
-      } catch (e) { archiveData = []; }
-      render();
+      } catch (e) {
+        archiveData = [];
+      }
+      renderDashboard();
     }
 
-    function switchTab(tab) {
-      currentTab = tab;
-      document.getElementById("tabDay").classList.toggle("active", tab === "day");
-      document.getElementById("tabWeek").classList.toggle("active", tab === "week");
-      render();
-    }
-
-    function render() {
-      const now = new Date();
-      const chart = document.getElementById("chartContainer");
-      chart.innerHTML = "";
-
-      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const todayPoints = archiveData.filter(p => p.time >= startToday);
-      document.getElementById("kpiToday").innerText = todayPoints.length;
-
-      if (currentTab === "day") {
-        const hours = new Array(24).fill(0);
-        todayPoints.forEach(p => { hours[new Date(p.time).getHours()]++; });
-        let max = Math.max(...hours, 1);
-        let peakH = 0, peakVal = 0;
-        hours.forEach((c, h) => { if (c > peakVal) { peakVal = c; peakH = h; } });
-        document.getElementById("kpiPeak").innerText = peakVal > 0 ? `${peakH}:00` : "--:00";
-
-        for (let h = 6; h <= 22; h++) {
-          const c = hours[h];
-          const pct = Math.max(5, Math.round((c / max) * 100));
-          const col = document.createElement("div");
-          col.className = "chart-col";
-          col.innerHTML = `
-            <div class="chart-bar-val">${c > 0 ? c : ''}</div>
-            <div class="chart-bar ${c === peakVal && c > 0 ? 'peak-bar' : ''}" style="height:${pct}%;"></div>
-            <div class="chart-label">${h}</div>
-          `;
-          chart.appendChild(col);
-        }
-      } else {
-        const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-        const days = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-          days.push({ name: dayNames[d.getDay()], date: d.toLocaleDateString([], {day:'2-digit', month:'2-digit'}), start: d.getTime(), end: d.getTime() + 86400000, count: 0 });
-        }
-        archiveData.forEach(p => { days.forEach(day => { if (p.time >= day.start && p.time < day.end) day.count++; }); });
-        let max = Math.max(...days.map(d => d.count), 1);
-        let peakDay = "--", peakVal = 0;
-        days.forEach(d => { if (d.count > peakVal) { peakVal = d.count; peakDay = d.name; } });
-        document.getElementById("kpiPeak").innerText = peakVal > 0 ? peakDay : "--";
-
-        days.forEach(d => {
-          const pct = Math.max(5, Math.round((d.count / max) * 100));
-          const col = document.createElement("div");
-          col.className = "chart-col";
-          col.innerHTML = `
-            <div class="chart-bar-val">${d.count > 0 ? d.count : ''}</div>
-            <div class="chart-bar ${d.count === peakVal && d.count > 0 ? 'peak-bar' : ''}" style="height:${pct}%;"></div>
-            <div class="chart-label" style="font-weight:700;">${d.name}</div>
-            <div class="chart-label" style="font-size:8px;">${d.date}</div>
-          `;
-          chart.appendChild(col);
-        });
+    function setTab(num) {
+      for (let i = 1; i <= 4; i++) {
+        document.getElementById(`tabContent${i}`).style.display = (i === num) ? 'block' : 'none';
+        document.getElementById(`tabBtn${i}`).classList.toggle('active', i === num);
       }
     }
+
+    function renderDashboard() {
+      const now = new Date();
+      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const todayPoints = archiveData.filter(p => p.time >= startToday);
+
+      document.getElementById("kpiTotal").innerText = archiveData.length;
+      document.getElementById("kpiToday").innerText = todayPoints.length;
+
+      // 1. Почасовая статистика
+      const hours = new Array(24).fill(0);
+      todayPoints.forEach(p => { hours[new Date(p.time).getHours()]++; });
+      let maxH = Math.max(...hours, 1), peakH = 0, peakVal = 0;
+      hours.forEach((cnt, h) => { if (cnt > peakVal) { peakVal = cnt; peakH = h; } });
+      document.getElementById("kpiPeakHour").innerText = peakVal > 0 ? `${peakH}:00` : "--:00";
+
+      // 2. Расчет повторяемости блокпостов
+      const hotspotCounts = {};
+      HOTSPOT_KEYS.forEach(h => hotspotCounts[h.name] = 0);
+
+      archiveData.forEach(p => {
+        const txt = ((p.text || "") + " " + (p.address || "")).toLowerCase();
+        HOTSPOT_KEYS.forEach(h => {
+          if (h.pattern.test(txt)) hotspotCounts[h.name]++;
+        });
+      });
+
+      const sortedHotspots = Object.entries(hotspotCounts)
+        .filter(([_, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      const maxHotspotVal = sortedHotspots.length > 0 ? sortedHotspots[0][1] : 1;
+      const hotspotListEl = document.getElementById("hotspotList");
+      hotspotListEl.innerHTML = "";
+
+      sortedHotspots.slice(0, 10).forEach(([name, count]) => {
+        const pct = Math.round((count / maxHotspotVal) * 100);
+        hotspotListEl.innerHTML += `
+          <div class="hotspot-item">
+            <div class="hotspot-header">
+              <span class="hotspot-name">${name}</span>
+              <span class="hotspot-count">${count} разів</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width:${pct}%;"></div>
+            </div>
+          </div>
+        `;
+      });
+      if (sortedHotspots.length === 0) {
+        hotspotListEl.innerHTML = `<div style="font-size:11px; color:#94a3b8;">Поки немає зафіксованих блокпостів у базі.</div>`;
+      }
+
+      // 3. ИИ-выводы
+      const topSpot = sortedHotspots.length > 0 ? sortedHotspots[0][0] : "не визначено";
+      const topSpot2 = sortedHotspots.length > 1 ? sortedHotspots[1][0] : "";
+      const aiSummaryEl = document.getElementById("aiSummaryText");
+      aiSummaryEl.innerHTML = `
+        За останні 7 днів зафіксовано <b>${archiveData.length}</b> блокпостів.
+        Найнебезпечніша точка міста — <b>${topSpot}</b> (${sortedHotspots.length > 0 ? sortedHotspots[0][1] : 0} повідомлень)${topSpot2 ? `, а також <b>\${topSpot2}</b>` : ''}.
+        Найвища активність засад спостерігається близько <b>${peakVal > 0 ? peakH + ':00' : '08:00 - 09:30'}</b>. Будьте уважні на цих ділянках!
+      `;
+
+      // 4. График по часам
+      const hourlyChartEl = document.getElementById("hourlyChart");
+      hourlyChartEl.innerHTML = "";
+      for (let h = 6; h <= 22; h++) {
+        const c = hours[h];
+        const pct = Math.max(6, Math.round((c / maxH) * 100));
+        hourlyChartEl.innerHTML += `
+          <div class="chart-col">
+            <div class="chart-val">${c > 0 ? c : ''}</div>
+            <div class="chart-bar ${c === peakVal && c > 0 ? 'peak' : ''}" style="height:${pct}%;"></div>
+            <div class="chart-lbl">${h}</div>
+          </div>
+        `;
+      }
+
+      // 5. График по дням недели
+      const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+      const days = [];
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        days.push({ name: dayNames[d.getDay()], date: d.toLocaleDateString([], {day:'2-digit', month:'2-digit'}), start: d.getTime(), end: d.getTime() + 86400000, count: 0 });
+      }
+      archiveData.forEach(p => { days.forEach(day => { if (p.time >= day.start && p.time < day.end) day.count++; }); });
+      let maxDayVal = Math.max(...days.map(d => d.count), 1);
+      const weeklyChartEl = document.getElementById("weeklyChart");
+      weeklyChartEl.innerHTML = "";
+      days.forEach(d => {
+        const pct = Math.max(6, Math.round((d.count / maxDayVal) * 100));
+        weeklyChartEl.innerHTML += `
+          <div class="chart-col">
+            <div class="chart-val">${d.count > 0 ? d.count : ''}</div>
+            <div class="chart-bar" style="height:${pct}%;"></div>
+            <div class="chart-lbl" style="font-weight:700;">${d.name}</div>
+          </div>
+        `;
+      });
+
+      // 6. Распределение по районам
+      const sectorCounts = {};
+      SECTOR_GROUPS.forEach(s => sectorCounts[s.name] = 0);
+      archiveData.forEach(p => {
+        const txt = ((p.text || "") + " " + (p.address || "")).toLowerCase();
+        SECTOR_GROUPS.forEach(s => { if (s.pattern.test(txt)) sectorCounts[s.name]++; });
+      });
+      const sectorListEl = document.getElementById("sectorList");
+      sectorListEl.innerHTML = "";
+      Object.entries(sectorCounts).forEach(([name, count]) => {
+        const pct = archiveData.length > 0 ? Math.round((count / archiveData.length) * 100) : 0;
+        sectorListEl.innerHTML += `
+          <div class="hotspot-item">
+            <div class="hotspot-header">
+              <span class="hotspot-name">${name}</span>
+              <span class="hotspot-count">${count} (${pct}%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" style="width:${pct}%;"></div>
+            </div>
+          </div>
+        `;
+      });
+
+      // 7. Журнал последних сообщений
+      const logListEl = document.getElementById("logList");
+      logListEl.innerHTML = "";
+      const recent = [...archiveData].reverse().slice(0, 25);
+      recent.forEach(p => {
+        const timeStr = new Date(p.time).toLocaleString([], { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+        logListEl.innerHTML += `
+          <div class="log-item">
+            <div class="log-meta">
+              <span>📍 ${p.address || "Дніпро"}</span>
+              <span>🕒 ${timeStr}</span>
+            </div>
+            <div style="font-weight:600; color:#f8fafc;">${p.text || ""}</div>
+          </div>
+        `;
+      });
+    }
+
     loadStats();
   </script>
 </body>
