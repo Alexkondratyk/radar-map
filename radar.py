@@ -226,9 +226,6 @@ def sync_cycle():
         log(f"  🏁 [{ch['name']}] Обработано! Добавлено: {added_count}")
 
 if __name__ == "__main__":
-    log("🚀 Запуск быстрого радара...")
-    for step in range(8):
-        sync_cycle()
-        if step < 7:
-            time.sleep(60)
-    log("🏁 Цикл завершён!")
+    log("🚀 Запуск плановой проверки радара...")
+    sync_cycle()
+    log("🏁 Проверка завершена успешно!")
