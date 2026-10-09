@@ -20,17 +20,42 @@
       z-index: 1000;
       background: rgba(15, 23, 42, 0.94);
       backdrop-filter: blur(8px);
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      min-width: 240px;
+      min-width: 230px;
+      transition: all 0.25s ease;
     }
-    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .points-count { font-size: 16px; font-weight: 700; color: #fff; }
-    .subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+    .dash-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      margin-bottom: 8px; 
+    }
+    .points-count { font-size: 15px; font-weight: 700; color: #fff; }
     
-    .btn-group { display: flex; gap: 6px; margin-bottom: 8px; }
+    /* Кнопка сворачивания */
+    .btn-toggle {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #94a3b8;
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      transition: all 0.2s;
+    }
+    .btn-toggle:hover {
+      background: #334155;
+      color: #fff;
+    }
+
+    .btn-group { display: flex; gap: 6px; }
     .btn-filter {
       background: #1e293b;
       border: 1px solid #334155;
@@ -41,8 +66,16 @@
       cursor: pointer;
       font-weight: 500;
       transition: all 0.2s;
+      flex: 1;
     }
     .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+    /* Сворачиваемый блок */
+    .collapsible-body {
+      margin-top: 8px;
+      transition: all 0.25s ease;
+    }
+    .subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
 
     /* Кнопка режима расстановки */
     .btn-setup {
@@ -94,7 +127,7 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
-    /* Светофор с динамическим зум-масштабом */
+    /* Светофор с масштабированием зума */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -148,7 +181,7 @@
       border: none !important;
     }
 
-    /* Всплывающее уведомление */
+    /* Тост уведомление */
     .toast-msg {
       position: absolute;
       top: 20px;
@@ -169,7 +202,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Кнопка ручного обновления */
+    /* Кнопка физического обновления F5 */
     .btn-refresh {
       position: absolute;
       bottom: 25px;
@@ -187,6 +220,7 @@
       align-items: center;
       gap: 6px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      transition: background 0.2s;
     }
     .btn-refresh:hover { background: #1e293b; }
 
@@ -217,38 +251,42 @@
   <div class="dashboard">
     <div class="dash-header">
       <div class="points-count" id="countText">Точок: 0</div>
+      <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
-    <div class="subtitle">Маркери активні 40 хвилин</div>
-    
+
     <div class="btn-group">
       <button class="btn-filter active" onclick="setFilter('all', this)">Всі</button>
       <button class="btn-filter" onclick="setFilter('Канал 1', this)">Канал 1</button>
       <button class="btn-filter" onclick="setFilter('Канал 2', this)">Канал 2</button>
     </div>
 
-    <!-- Кнопка интерактивной расстановки -->
-    <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
-      <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
-    </button>
+    <div id="collapsibleBody" class="collapsible-body">
+      <div class="subtitle">Маркери активні 40 хвилин</div>
 
-    <div class="legend">
-      <div class="legend-row">
-        <span class="shape circle dot-green"></span><span class="shape circle dot-red"></span>
-        <span>К1 (кружки): Чисто / Опасно</span>
-      </div>
-      <div class="legend-row">
-        <span class="shape square dot-blue"></span><span class="shape square dot-purple"></span>
-        <span>К2 (квадрати): Чисто / Опасно</span>
-      </div>
-      <div class="legend-row" style="margin-top: 3px;">
-        <span style="font-size: 13px;">🚦</span>
-        <span>Світлофори: Кайдацький, Водолікарня, Комбайновий, Краснозаводська, Павлова</span>
+      <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
+        <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
+      </button>
+
+      <div class="legend">
+        <div class="legend-row">
+          <span class="shape circle dot-green"></span><span class="shape circle dot-red"></span>
+          <span>К1 (кружки): Чисто / Опасно</span>
+        </div>
+        <div class="legend-row">
+          <span class="shape square dot-blue"></span><span class="shape square dot-purple"></span>
+          <span>К2 (квадрати): Чисто / Опасно</span>
+        </div>
+        <div class="legend-row" style="margin-top: 3px;">
+          <span style="font-size: 13px;">🚦</span>
+          <span>Світлофори: Кайдацький, Водолікарня, Комбайновий, Краснозаводська, Павлова, Річпорт, Водокачка</span>
+        </div>
       </div>
     </div>
   </div>
 
   <div id="toast" class="toast-msg">✅ Позиції збережено та зафіксовано!</div>
-  <button class="btn-refresh" onclick="loadPoints()">🔄 Оновити</button>
+  
+  <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
   <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -256,7 +294,7 @@
     const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
-    // Начальные координаты
+    // Список 7 ключевых светофоров
     const DEFAULT_CHECKPOINTS = [
       {
         id: "kaidak_rovd",
@@ -292,10 +330,50 @@
         lat: 48.4818,
         lng: 35.0012,
         keys: ["павлов"]
+      },
+      {
+        id: "rechport",
+        name: "Річпорт (Набережна Заводська)",
+        lat: 48.4805,
+        lng: 35.0210,
+        keys: ["речпорт", "річпорт", "десантник", "річковий"]
+      },
+      {
+        id: "vodokachka",
+        name: "Водокачка (Набережна Заводська)",
+        lat: 48.4910,
+        lng: 34.9480,
+        keys: ["водокачк"]
       }
     ];
 
-    // Загрузка сохранённых пользователем координат из localStorage
+    function hardReload() {
+      const url = new URL(window.location.href);
+      url.searchParams.set('t', Date.now());
+      window.location.href = url.toString();
+    }
+
+    function togglePanelCollapse() {
+      const body = document.getElementById("collapsibleBody");
+      const btn = document.getElementById("btnToggle");
+      const isHidden = body.style.display === "none";
+
+      if (isHidden) {
+        body.style.display = "block";
+        btn.innerText = "▲";
+        localStorage.setItem("radar_panel_collapsed", "false");
+      } else {
+        body.style.display = "none";
+        btn.innerText = "▼";
+        localStorage.setItem("radar_panel_collapsed", "true");
+      }
+    }
+
+    if (localStorage.getItem("radar_panel_collapsed") === "true") {
+      document.getElementById("collapsibleBody").style.display = "none";
+      document.getElementById("btnToggle").innerText = "▼";
+    }
+
     function getStoredPositions() {
       try {
         const saved = localStorage.getItem("dnepr_radar_tl_positions");
@@ -311,7 +389,6 @@
       localStorage.setItem("dnepr_radar_tl_positions", JSON.stringify(stored));
     }
 
-    // Инициализация карты
     const map = L.map('map', { zoomControl: false }).setView([48.481, 34.985], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -324,12 +401,10 @@
     let allPoints = [];
     let currentFilter = 'all';
     let isEditMode = false;
-    let trafficMarkersMap = {}; // id -> L.marker
+    let trafficMarkersMap = {};
 
-    // Динамическое изменение масштаба светофора в зависимости от приближения (зума)
     function updateZoomScale() {
       const z = map.getZoom();
-      // Зум 13 — базовый масштаб (1.0). При отдалении сжимается до 0.5, при приближении увеличивается до 1.5
       const scale = Math.max(0.5, Math.min(1.5, 1 + (z - 13) * 0.15));
       document.documentElement.style.setProperty('--tl-scale', scale);
     }
@@ -344,7 +419,6 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // Включение / выключение режима ручной расстановки
     function toggleEditMode() {
       isEditMode = !isEditMode;
       const btn = document.getElementById("btnSetup");
@@ -360,7 +434,6 @@
         showToast("✅ Позиції надійно збережено та зафіксовано!");
       }
 
-      // Включаем или выключаем перетаскивание на маркерах
       Object.values(trafficMarkersMap).forEach(marker => {
         if (isEditMode) {
           marker.dragging.enable();
@@ -461,7 +534,6 @@
         const curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
         const curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
 
-        // Поиск отчётов по этой точке
         const matched = allPoints.filter(p => {
           const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
           const text = (p.text + " " + (p.address || "")).toLowerCase();
@@ -534,7 +606,6 @@
           popupContent += `<div class="popup-text" style="color: #94a3b8;">Повідомлень за останні 40 хв не було.</div>`;
         }
 
-        // Если маркер уже создан — обновляем его вид и попап без пересоздания (чтобы не сбивать перетаскивание)
         if (trafficMarkersMap[cp.id]) {
           const marker = trafficMarkersMap[cp.id];
           marker.setIcon(tlIcon);
@@ -549,12 +620,11 @@
             draggable: isEditMode
           });
 
-          // Событие завершения перетаскивания мышкой: мгновенно сохраняем новые координаты
           marker.on('dragend', function(e) {
             const pos = e.target.getLatLng();
             savePositionToStorage(cp.id, pos.lat.toFixed(5), pos.lng.toFixed(5));
             showToast(`📌 Збережено позицію для: ${cp.name}`);
-            renderMarkers(); // перепроверяем скрытие дублей
+            renderMarkers();
           });
 
           marker.bindPopup(popupContent);
@@ -574,7 +644,6 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
-        // Скрываем обычную точку, если для этого перекрёстка уже горит светофор
         if (matchesCheckpoint(p)) return;
 
         const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
