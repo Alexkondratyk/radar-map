@@ -2,13 +2,19 @@ name: Radar 24/7 Sync
 
 on:
   schedule:
-    # Запуск каждые 5 минут круглосуточно
-    - cron: '*/5 * * * *'
+    # 4 смены по будням (Пн-Пт): в 05:00, 10:00, 15:00 и 18:00 по Киеву
+    # (в UTC это 02:00, 07:00, 12:00 и 15:00)
+    - cron: '0 2,7,12,15 * * 1-5'
   workflow_dispatch:
+
+concurrency:
+  group: radar-sync
+  cancel-in-progress: true
 
 jobs:
   run-radar:
     runs-on: ubuntu-latest
+    timeout-minutes: 350
     steps:
       - name: Клонирование репозитория
         uses: actions/checkout@v4
