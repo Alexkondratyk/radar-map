@@ -1,0 +1,27 @@
+name: Radar 24/7 Sync
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # Облачный запуск каждые 10 минут
+  workflow_dispatch:        # Кнопка ручного запуска в один клик
+
+jobs:
+  run-radar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Загрузка репозитория
+        uses: actions/checkout@v4
+
+      - name: Установка Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Установка зависимостей
+        run: pip install requests
+
+      - name: Запуск радара
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+          FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+        run: python radar.py
