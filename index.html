@@ -2,377 +2,209 @@
 <html lang="uk">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Радар Дніпро</title>
-
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #171b22;
-    }
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: #e5e3df;
-      z-index: 1;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-    /* Верхня панель */
-    .info-card {
+    /* Панель управления */
+    .dashboard {
       position: absolute;
-      top: 16px;
-      left: 16px;
+      top: 15px;
+      left: 15px;
       z-index: 1000;
-      background: rgba(23, 27, 34, 0.94);
+      background: rgba(15, 23, 42, 0.92);
       backdrop-filter: blur(8px);
-      color: #fff;
-      padding: 12px 14px;
+      padding: 12px 16px;
       border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-      max-width: 270px;
-      width: calc(100% - 32px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      min-width: 200px;
     }
-    .info-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2px;
-    }
-    .info-title {
-      font-size: 15px;
-      font-weight: 700;
-    }
-    .db-settings-btn {
-      background: none;
-      border: none;
-      color: #94a3b8;
-      font-size: 14px;
-      cursor: pointer;
-      padding: 2px 4px;
-    }
-    .info-subtitle {
-      font-size: 12px;
-      color: #94a3b8;
-      margin-bottom: 10px;
-    }
-
-    .filter-group {
-      display: flex;
-      gap: 6px;
-    }
-    .filter-btn {
-      flex: 1;
-      background: #334155;
-      color: #e2e8f0;
-      border: none;
-      padding: 7px 0;
-      font-size: 12px;
-      font-weight: 500;
+    .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .points-count { font-size: 16px; font-weight: 700; color: #fff; }
+    .subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
+    .btn-group { display: flex; gap: 6px; }
+    .btn-filter {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      padding: 5px 12px;
       border-radius: 6px;
+      font-size: 12px;
       cursor: pointer;
-      text-align: center;
+      font-weight: 500;
       transition: all 0.2s;
     }
-    .filter-btn.active {
-      background: #2563eb;
-      color: #fff;
-      font-weight: 600;
-    }
+    .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-    .refresh-btn {
+    /* Кнопка ручного обновления */
+    .btn-refresh {
       position: absolute;
-      bottom: 24px;
-      right: 16px;
+      bottom: 25px;
+      right: 20px;
       z-index: 1000;
-      background: rgba(23, 27, 34, 0.94);
-      backdrop-filter: blur(8px);
+      background: #0f172a;
       color: #fff;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 12px 18px;
-      font-size: 14px;
-      font-weight: 600;
-      border-radius: 12px;
+      border: 1px solid #334155;
+      padding: 10px 18px;
+      border-radius: 10px;
       cursor: pointer;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      font-size: 13px;
+      font-weight: 600;
       display: flex;
       align-items: center;
-      gap: 8px;
-      user-select: none;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
     }
-    .refresh-btn:active {
-      transform: scale(0.94);
-      background: #1e293b;
-    }
+    .btn-refresh:hover { background: #1e293b; }
 
-    #loading-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(15, 23, 42, 0.7);
-      backdrop-filter: blur(4px);
-      z-index: 9999;
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: #fff;
-      font-size: 16px;
-      font-weight: 600;
-      gap: 12px;
-    }
-    .spinner {
-      width: 36px;
-      height: 36px;
-      border: 4px solid rgba(255, 255, 255, 0.2);
-      border-top-color: #38bdf8;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
+    /* Всплывающее окно метки */
     .leaflet-popup-content-wrapper {
-      background: #1e293b;
-      color: #f8fafc;
-      border-radius: 8px;
+      background: #1e293b !important;
+      color: #f8fafc !important;
+      border-radius: 10px !important;
+      padding: 4px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
     }
-    .leaflet-popup-tip {
-      background: #1e293b;
-    }
-    .popup-content strong {
-      display: block;
-      color: #38bdf8;
-      margin-bottom: 4px;
-      font-size: 13px;
-    }
-    .popup-content p {
-      font-size: 12px;
-      margin-bottom: 6px;
-      line-height: 1.35;
-    }
-    .popup-time {
+    .leaflet-popup-tip { background: #1e293b !important; }
+    .popup-title { font-size: 14px; font-weight: 700; color: #38bdf8; margin-bottom: 4px; }
+    .popup-text { font-size: 13px; margin-bottom: 8px; line-height: 1.4; color: #e2e8f0; }
+    .popup-meta {
       font-size: 11px;
       color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #334155;
+      padding-top: 6px;
+      gap: 10px;
     }
-    .error-banner {
-      color: #f87171;
-      font-size: 11px;
-      margin-top: 6px;
-      line-height: 1.3;
-    }
+    .timer-badge { color: #f59e0b; font-weight: 600; }
   </style>
 </head>
 <body>
-
-  <div id="loading-overlay">
-    <div class="spinner"></div>
-    <div>Оновлення даних...</div>
+  <div class="dashboard">
+    <div class="dash-header">
+      <div class="points-count" id="countText">Точок: 0</div>
+    </div>
+    <div class="subtitle">Маркери активні 40 хвилин</div>
+    <div class="btn-group">
+      <button class="btn-filter active" onclick="setFilter('all', this)">Всі</button>
+      <button class="btn-filter" onclick="setFilter('Канал 1', this)">Канал 1</button>
+      <button class="btn-filter" onclick="setFilter('Канал 2', this)">Канал 2</button>
+    </div>
   </div>
 
-  <div class="info-card">
-    <div class="info-header">
-      <div class="info-title" id="points-title">Точок: 0</div>
-      <button class="db-settings-btn" onclick="editDbUrl()" title="Налаштування посилання БД">⚙️</button>
-    </div>
-    <div class="info-subtitle">Маркери активні 2 години</div>
-    <div class="filter-group">
-      <button class="filter-btn active" onclick="setFilter('all', this)">Всі</button>
-      <button class="filter-btn" onclick="setFilter('1', this)">Канал 1</button>
-      <button class="filter-btn" onclick="setFilter('2', this)">Канал 2</button>
-    </div>
-    <div id="db-error" class="error-banner" style="display:none;"></div>
-  </div>
-
-  <button id="refresh-btn" class="refresh-btn" onclick="triggerReload()">🔄 Оновити</button>
-
+  <button class="btn-refresh" onclick="loadPoints()">🔄 Оновити</button>
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <script>
-    let DB_URL = localStorage.getItem('user_db_url') || 'https://dnepr-radar-default-rtdb.europe-west1.firebasedatabase.app/points.json';
+    const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
+    const LIFETIME_MS = 40 * 60 * 1000; // 40 минут
 
-    const TTL_MS = 120 * 60 * 1000;
-    let currentFilter = 'all';
-    let rawPoints = [];
-
-    const map = L.map('map', {
-      zoomControl: false
-    }).setView([48.468, 35.035], 12);
-
+    // Инициализация карты
+    const map = L.map('map', { zoomControl: false }).setView([48.4647, 35.0462], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors',
-      maxZoom: 18
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
     const markersLayer = L.layerGroup().addTo(map);
+    let allPoints = [];
+    let currentFilter = 'all';
 
-    function triggerReload() {
-      const overlay = document.getElementById('loading-overlay');
-      const btn = document.getElementById('refresh-btn');
-      
-      btn.innerHTML = '⏳ Оновлюю...';
-      btn.style.pointerEvents = 'none';
-      overlay.style.display = 'flex';
-
-      setTimeout(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set('t', Date.now());
-        window.location.href = url.toString();
-      }, 250);
+    function setFilter(type, btn) {
+      document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentFilter = type;
+      renderMarkers();
     }
 
-    function editDbUrl() {
-      const current = localStorage.getItem('user_db_url') || DB_URL;
-      const input = prompt('Введіть повний URL вашої бази Firebase (з /points.json на кінці):', current);
-      if (input && input.trim().startsWith('http')) {
-        localStorage.setItem('user_db_url', input.trim());
-        DB_URL = input.trim();
-        triggerReload();
-      }
-    }
-
-    function parseTimestamp(p) {
-      let t = p.timestamp || p.time || p.date;
-      if (!t) return Date.now();
-      if (typeof t === 'string' && !isNaN(t)) t = Number(t);
-      if (typeof t === 'number' && t < 1e11) t *= 1000;
-      const parsed = new Date(t).getTime();
-      return isNaN(parsed) ? Date.now() : parsed;
-    }
-
-    function formatExactTime(timestamp) {
+    async function loadPoints() {
       try {
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString('uk-UA', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false,
-          timeZone: 'Europe/Kyiv'
+        const res = await fetch(`${FIREBASE_URL}?t=${Date.now()}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!data) {
+          allPoints = [];
+          renderMarkers();
+          return;
+        }
+
+        const now = Date.now();
+        allPoints = Object.values(data).filter(p => {
+          if (!p || typeof p !== 'object' || !p.lat || !p.lng) return false;
+          const time = p.time || p.timestamp || 0;
+          return (now - time) <= LIFETIME_MS;
         });
-      } catch (e) {
-        return '';
-      }
-    }
 
-    function isStatusClear(p, text) {
-      const typeStr = String(p.type || '').toLowerCase().trim();
-      if (typeStr === 'clear' || typeStr === 'clean' || typeStr === 'safe' || typeStr === 'чисто') {
-        return true;
-      }
-      const lowerText = String(text || '').toLowerCase();
-      const clearMarkers = ['чисто', 'чист', 'спокійно', 'спокойно', 'тихо', 'сонячно', 'солнечно', '☀️', 'проїзд', 'проезд', 'ведра нет', 'відра нема'];
-      return clearMarkers.some(word => lowerText.includes(word));
-    }
-
-    function getMarkerColor(pChannel, isClear) {
-      if (pChannel === '2') {
-        return isClear ? '#eab308' : '#a855f7';
-      } else {
-        return isClear ? '#22c55e' : '#ef4444';
+        renderMarkers();
+      } catch (err) {
+        console.error("Помилка завантаження точок:", err);
       }
     }
 
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
-      let count = 0;
+      let visibleCount = 0;
 
-      rawPoints.forEach(p => {
-        if (!p) return;
-        const pTime = parseTimestamp(p);
-        
-        if (now - pTime > TTL_MS) return;
+      allPoints.forEach(p => {
+        const time = p.time || p.timestamp || 0;
+        const diff = now - time;
+        if (diff > LIFETIME_MS) return;
 
-        let pChannel = '1';
-        if (p.channel === 2 || p.channel === '2' || p.channel === 'channel2') {
-          pChannel = '2';
-        }
+        // Фильтр каналов
+        const channel = p.source === "dnepr_bez_tck" ? "Канал 1" : "Канал 2";
+        if (currentFilter !== 'all' && currentFilter !== channel) return;
 
-        if (currentFilter !== 'all' && currentFilter !== pChannel) return;
+        // Расчёт остатка времени
+        const remainingMs = Math.max(0, LIFETIME_MS - diff);
+        const remMinutes = Math.floor(remainingMs / 60000);
+        const remSeconds = Math.floor((remainingMs % 60000) / 1000);
 
-        const lat = parseFloat(p.lat);
-        const lng = parseFloat(p.lng);
-        if (isNaN(lat) || isNaN(lng)) return;
+        // Форматирование времени отправки
+        const date = new Date(time);
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        const isClear = isStatusClear(p, p.text);
-        const color = getMarkerColor(pChannel, isClear);
+        // Определение цвета метки
+        const isClean = (p.color === "green") || (p.status === "чисто") || (p.text && p.text.toLowerCase().includes("чисто"));
+        const markerColor = isClean ? "#22c55e" : "#ef4444";
 
-        // Якщо тексту нема, показуємо зрозумілий опис замість "Без опису"
-        let pointText = p.text || p.message || p.description || p.raw_text;
-        if (!pointText || pointText.trim() === '' || pointText === 'Без опису') {
-          pointText = isClear ? '☀️ Чисто, рух спокійний' : '⚠️ Повідомлення про перевірку / БП';
-        }
-
-        const circle = L.circleMarker([lat, lng], {
-          radius: 8.5,
-          fillColor: color,
-          color: '#ffffff',
+        const marker = L.circleMarker([p.lat, p.lng], {
+          radius: 9,
+          fillColor: markerColor,
+          color: "#ffffff",
           weight: 2,
           opacity: 1,
-          fillOpacity: 0.88
+          fillOpacity: 0.95
         });
 
-        const exactTime = formatExactTime(pTime);
-
-        circle.bindPopup(`
-          <div class="popup-content">
-            <strong>${p.address || 'Точка на карті'}</strong>
-            <p>${pointText}</p>
-            <div class="popup-time">🕒 ${exactTime} | Канал ${pChannel}</div>
+        const popupContent = `
+          <div class="popup-title">${p.address || "Дніпро"}</div>
+          <div class="popup-text">${p.text || ""}</div>
+          <div class="popup-meta">
+            <span>🕒 ${timeStr} | ${channel}</span>
+            <span class="timer-badge">⏳ До видалення: ${remMinutes} хв ${remSeconds} с</span>
           </div>
-        `);
+        `;
 
-        circle.addTo(markersLayer);
-        count++;
+        marker.bindPopup(popupContent);
+        markersLayer.addLayer(marker);
+        visibleCount++;
       });
 
-      document.getElementById('points-title').innerText = `Точок: ${count}`;
+      document.getElementById('countText').innerText = `Точок: ${visibleCount}`;
     }
 
-    function setFilter(filter, el) {
-      currentFilter = filter;
-      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-      el.classList.add('active');
-      renderMarkers();
-    }
+    // Первичная загрузка
+    loadPoints();
 
-    async function loadData() {
-      const errBox = document.getElementById('db-error');
-      try {
-        const res = await fetch(`${DB_URL}?nocache=${Date.now()}`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        rawPoints = data ? Object.values(data) : [];
-        errBox.style.display = 'none';
-        renderMarkers();
-      } catch (err) {
-        console.error(err);
-        errBox.style.display = 'block';
-        errBox.innerHTML = `⚠️ Помилка з'єднання з БД.<br>Натисніть ⚙️ вище і перевірте адресу.`;
-      }
-    }
-
-    loadData();
+    // Автоматическое фоновое обновление каждые 15 секунд без нажатия F5
+    setInterval(loadPoints, 15000);
   </script>
 </body>
 </html>
