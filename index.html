@@ -11,32 +11,31 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     /* ==============================================================
-       🎨 БЛОК НАСТРОЙКИ ЦВЕТОВ И ОБОДКОВ (МЕНЯЙТЕ ЗДЕСЬ)
+       🎨 БЛОК НАСТРОЙКИ ЦВЕТОВ И ОБОДКОВ
        ============================================================== */
     :root {
       color-scheme: light only;
       supported-color-schemes: light;
 
       /* ЗЕЛЕНЫЙ (САЛАТОВЫЙ) ШАРИК */
-      --color-green: #25d366;          /* Салатовый цвет заливки */
-      --border-green-color: #ffffff;   /* БЕЛЫЙ цвет ободка */
-      --border-green-size: 2.5px;      /* Толщина белого ободка */
+      --color-green: #25d366;
+      --border-green-color: #ffffff;
+      --border-green-size: 2.5px;
 
       /* КРАСНЫЙ (АЛЫЙ) ШАРИК */
-      --color-red: #ff334b;            /* Ярко-алый цвет заливки */
-      --border-red-color: #ffffff;     /* БЕЛЫЙ цвет ободка */
-      --border-red-size: 2.5px;        /* Толщина ободка */
+      --color-red: #ff334b;
+      --border-red-color: #ffffff;
+      --border-red-size: 2.5px;
     }
-    /* ============================================================== */
 
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     #map {
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       z-index: 1;
-      background: #e2e8f0;
+      background: #e5e7eb;
     }
 
     /* Панель управления */
@@ -309,6 +308,11 @@
       to { stroke-dashoffset: 16; }
     }
 
+    .neon-svg-line { filter: drop-shadow(0 0 4px currentColor); }
+    .neon-svg-line.clickable-line {
+      cursor: pointer !important; stroke-dasharray: 6, 6; animation: dashMove 1s linear infinite;
+    }
+
     /* Модальные окна */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -396,7 +400,7 @@
   </style>
 </head>
 <body>
-  <!-- ЕДИНСТВЕННЫЙ ЭЛЕМЕНТ КАРТЫ -->
+  <!-- КОНТЕЙНЕР КАРТЫ -->
   <div id="map"></div>
 
   <div class="dashboard">
@@ -536,7 +540,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // --- 1. WAKE LOCK: ЭКРАН СМАРТФОНА НЕ ГАСНЕТ ---
+    // 1. БЛОКИРОВКА ЗАТУХАНИЯ ЭКРАНА СМАРТФОНА
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
@@ -548,9 +552,10 @@
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') requestScreenWakeLock();
     });
+    window.addEventListener('click', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
-    // --- 2. БАЗОВЫЕ URL И КОНФИГУРАЦИЯ ---
+    // 2. БАЗОВЫЕ URL
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
@@ -575,7 +580,7 @@
       if (stored) activeSectors = JSON.parse(stored);
     } catch(e) {}
 
-    // --- 3. ГЕОМЕТРИЯ КЛЮЧЕВЫХ УЛИЦ ДНЕПРА ДЛЯ ПОДСВЕТКИ ---
+    // 3. КООРДИНАТЫ КЛЮЧЕВЫХ УЛИЦ ДЛЯ ПОДСВЕТКИ
     const STREET_GEOMETRIES = {
       "павлов": [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048]],
       "белелюб": [[48.4820, 34.9750], [48.4795, 34.9845], [48.4812, 34.9940], [48.4818, 35.0012], [48.4800, 35.0090]],
@@ -661,15 +666,17 @@
       document.getElementById("btnToggle").innerText = "▼";
     }
 
-    // --- 4. КАРТА LEAFLET ---
+    // 4. ИНИЦИАЛИЗАЦИЯ КАРТЫ С НАДЕЖНЫМ URL
     const isMobile = window.innerWidth < 768;
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
-    const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=uk&gl=ua&x={x}&y={y}&z={z}', {
+    // НАДЕЖНЫЙ ПРЯМОЙ URL GOOGLE MAPS
+    const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       maxZoom: 20, attribution: 'Google Maps'
     });
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+
+    const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '© OpenStreetMap contributors'
     });
 
@@ -713,7 +720,7 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // --- 5. ПОДСВЕТКА УЛИЦЫ ДЛЯ ПЕРЕНОСА ---
+    // 5. ПОДСВЕТКА УЛИЦЫ ДЛЯ ПЕРЕНОСА
     function highlightStreetForPoint(point) {
       streetHighlightGroup.clearLayers();
       const txt = ((point.raw_text || point.text || "") + " " + (point.address || "")).toLowerCase();
@@ -727,7 +734,7 @@
       }
 
       if (matchedKey && STREET_GEOMETRIES[matchedKey]) {
-        const poly = L.polyline(STREET_GEOMETRIES[matchedKey], {
+        L.polyline(STREET_GEOMETRIES[matchedKey], {
           className: 'street-highlight-polyline'
         }).addTo(streetHighlightGroup);
         
@@ -735,7 +742,7 @@
       }
     }
 
-    // --- 6. ЗАВЕРШЕНИЕ ПЕРЕНОСА ТОЧКИ И ОБУЧЕНИЕ ИИ ---
+    // 6. ФИКСАЦИЯ И ОБУЧЕНИЕ ИИ ПРИ ЗАВЕРШЕНИИ ПЕРЕНОСА
     async function finishDragAndTrainAI(point, newLatLng) {
       if (!point || !newLatLng) return;
       
@@ -744,7 +751,6 @@
       
       streetHighlightGroup.clearLayers();
 
-      // Автоматически извлекаем ориентир
       let phrase = (point.address || "").toLowerCase().replace("дніпро", "").replace("вул.", "").replace("пр.", "").trim();
       if (!phrase || phrase.length < 3) {
         phrase = (point.raw_text || point.text || "").replace(" (чисто)", "").trim().slice(0, 30);
@@ -753,7 +759,6 @@
       point.lat = newLat;
       point.lng = newLng;
 
-      // 1. Фиксация в Firebase живой точки
       if (point._fbKey) {
         try {
           await fetch(FIREBASE_POINTS_URL.replace(".json", `/${point._fbKey}.json`), {
@@ -764,7 +769,6 @@
         } catch(e) {}
       }
 
-      // 2. Обучение Базы Знаний
       try {
         await fetch(FIREBASE_KB_URL, {
           method: "POST",
@@ -783,12 +787,14 @@
       renderMarkers();
     }
 
-    // Клик мимо точки завершает режим переноса
+    // Касание рядом с точкой фиксирует перенос
     map.on('click', function() {
       if (activeDraggingMarker) {
         const p = activeDraggingPoint;
         const pos = activeDraggingMarker.getLatLng();
         activeDraggingMarker.dragging.disable();
+        const iconEl = activeDraggingMarker.getElement()?.querySelector('.radar-circle');
+        if (iconEl) iconEl.classList.remove('active-dragging-target');
         activeDraggingMarker = null;
         activeDraggingPoint = null;
         finishDragAndTrainAI(p, pos);
@@ -1550,7 +1556,7 @@
               <span>${dateStr}, ${timeStr}</span>
             </div>
             <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">
-              💡 Утримуйте палец 0.5с для перенесення точки
+              💡 Утримуйте палець 0.5с для перенесення
             </div>
           </div>
         `;
@@ -1563,7 +1569,7 @@
 
         marker.bindPopup(popupContent);
 
-        // --- ДОЛГОЕ НАЖАТИЕ НА ТОЧКУ ДЛЯ ПЕРЕНОСА И ПОДСВЕТКИ ---
+        // ЖЕСТ: ДОЛГОЕ НАЖАТИЕ ДЛЯ ПЕРЕНОСА И ПОДСВЕТКИ УЛИЦЫ
         let pressTimer = null;
         let isLongPressed = false;
 
@@ -1573,7 +1579,6 @@
             isLongPressed = true;
             if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
             
-            // Завершаем предыдущее перемещение если было
             if (activeDraggingMarker && activeDraggingMarker !== marker) {
               const oldPoint = activeDraggingPoint;
               const oldPos = activeDraggingMarker.getLatLng();
@@ -1590,7 +1595,7 @@
             if (iconEl) iconEl.classList.add('active-dragging-target');
 
             highlightStreetForPoint(p);
-            showToast("📍 Вулицю підсвічено! Перетягніть мітку та натисніть поруч для фіксації.");
+            showToast("📍 Вулицю підсвічено! Перетягніть мітку та натисніть на карту поруч для збереження.");
           }, 500);
         }
 
