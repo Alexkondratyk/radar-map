@@ -9,6 +9,22 @@
   <title>Радар Дніпро</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
+    /* ==============================================================
+       🎨 БЛОК НАСТРОЙКИ ЦВЕТОВ И ОБОДКОВ (МЕНЯЙТЕ ЗДЕСЬ)
+       ============================================================== */
+    :root {
+      /* ЗЕЛЕНЫЙ (САЛАТОВЫЙ) ШАРИК */
+      --color-green: #25d366;          /* Салатовый цвет заливки */
+      --border-green-color: #ffffff;   /* БЕЛЫЙ цвет ободка */
+      --border-green-size: 2.5px;      /* Толщина белого ободка */
+
+      /* КРАСНЫЙ (АЛЫЙ) ШАРИК */
+      --color-red: #ff334b;            /* Ярко-алый цвет заливки */
+      --border-red-color: #ffffff;     /* БЕЛЫЙ цвет ободка */
+      --border-red-size: 2.5px;        /* Толщина ободка */
+    }
+    /* ============================================================== */
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
@@ -82,7 +98,7 @@
     }
     .btn-setup.editing {
       background: #15803d;
-      border: 1px solid #25d366;
+      border: 1px solid var(--color-green);
       color: #ffffff;
       animation: pulse-border 1.5s infinite;
     }
@@ -124,10 +140,10 @@
     }
     .legend-row { display: flex; align-items: center; gap: 7px; }
     .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid #fff; }
-    .dot-green { background: #25d366; }
-    .dot-red { background: #ff334b; }
+    .dot-green { background: var(--color-green); }
+    .dot-red { background: var(--color-red); }
 
-    /* ТОЧКИ: ЯРКИЕ, СОЧНЫЕ С БЕЛЫМ КОНТУРОМ (КАК НА ПЕРВОМ ФОТО) */
+    /* ТОЧКИ НА КАРТЕ */
     .custom-dot-marker {
       background: transparent !important;
       border: none !important;
@@ -137,25 +153,30 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
-      border: 2.5px solid #ffffff !important; /* Белый ободок, выделяющий цвет на карте */
       cursor: pointer;
       position: relative;
       box-shadow: 0 2px 5px rgba(0,0,0,0.4);
     }
+    
+    /* ЗЕЛЕНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ */
     .radar-circle.color-green {
-      background-color: #25d366 !important; /* Яркий салатовый */
-    }
-    .radar-circle.color-red {
-      background-color: #ff334b !important; /* Яркий алый */
+      background-color: var(--color-green) !important;
+      border: var(--border-green-size) solid var(--border-green-color) !important;
     }
 
-    /* Пульсация свежих точек: чистое тонкое расширяющееся кольцо (БЕЗ тёмных пятен) */
+    /* КРАСНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ */
+    .radar-circle.color-red {
+      background-color: var(--color-red) !important;
+      border: var(--border-red-size) solid var(--border-red-color) !important;
+    }
+
+    /* Пульсирующее кольцо свежих меток (без затемнений) */
     .radar-circle.fresh.color-green::after {
       content: '';
       position: absolute;
       top: -3px; left: -3px; right: -3px; bottom: -3px;
       border-radius: 50%;
-      border: 2px solid #25d366;
+      border: 2px solid var(--color-green);
       animation: ripple-ring-green 1.8s infinite ease-out;
       pointer-events: none;
     }
@@ -164,7 +185,7 @@
       position: absolute;
       top: -3px; left: -3px; right: -3px; bottom: -3px;
       border-radius: 50%;
-      border: 2px solid #ff334b;
+      border: 2px solid var(--color-red);
       animation: ripple-ring-red 1.8s infinite ease-out;
       pointer-events: none;
     }
@@ -210,16 +231,16 @@
       transition: all 0.25s ease;
     }
     .tl-lamp.red-active { 
-      background: #ff334b !important; 
-      box-shadow: 0 0 10px 3px #ff334b !important; 
+      background: var(--color-red) !important; 
+      box-shadow: 0 0 10px 3px var(--color-red) !important; 
     }
     .tl-lamp.red-dim { 
       background: #3b1114 !important; 
       opacity: 0.25 !important; 
     }
     .tl-lamp.green-active { 
-      background: #25d366 !important; 
-      box-shadow: 0 0 10px 3px #25d366 !important; 
+      background: var(--color-green) !important; 
+      box-shadow: 0 0 10px 3px var(--color-green) !important; 
     }
     .tl-lamp.green-dim { 
       background: #092e16 !important; 
@@ -272,7 +293,7 @@
       transition: all 0.2s;
     }
     .btn-neon-draw { background: #0284c7; color: #fff; }
-    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #25d366; }
+    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px var(--color-green); }
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
@@ -281,7 +302,7 @@
       filter: drop-shadow(0 0 4px currentColor);
     }
 
-    /* Модальное окно */
+    /* Модальное окно создания светофора */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -368,7 +389,7 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап */
+    /* Попап карточка */
     .leaflet-popup-content-wrapper {
       background: #ffffff !important;
       color: #0f172a !important;
@@ -467,7 +488,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Окно добавления светофора -->
+  <!-- Модальное окно добавления светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -943,7 +964,7 @@
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
-        // ЕСЛИ НЕТ АКТИВНОГО ОТЧЁТА И НЕ РЕЖИМ РАССТАНОВКИ — ПОЛНОСТЬЮ СКРЫВАЕМ!
+        // Если нет свежего отчёта и не режим расстановки — светофор не отображается
         if (!latest && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
@@ -1052,7 +1073,7 @@
       });
     }
 
-    /* ТОЧКИ: ЯРКИЙ САЛАТОВЫЙ И АЛЫЙ С БЕЛЫМ КАНТОМ (КАК НА 1-М СКРИНШОТЕ) */
+    /* ТОЧКИ: ЯРКИЕ КРУГИ С БЕЛЫМ ОБОДКОМ */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
