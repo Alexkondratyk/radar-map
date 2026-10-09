@@ -6,8 +6,25 @@ import requests
 
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
-TG_URL = "https://t.me/s/dnepr_bez_tck"
-LIFETIME_MS = 40 * 60 * 1000  # 40 минут в миллисекундах
+LIFETIME_MS = 40 * 60 * 1000  # 40 минут жизни точки
+
+# Список опрашиваемых каналов
+CHANNELS = [
+    {
+        "id": "dnepr_bez_tck",
+        "url": "https://t.me/s/dnepr_bez_tck",
+        "name": "Канал 1",
+        "color_clean": "green",
+        "color_danger": "red"
+    },
+    {
+        "id": "agendaDnepr",
+        "url": "https://t.me/s/agendaDnepr",
+        "name": "Канал 2",
+        "color_clean": "blue",
+        "color_danger": "purple"
+    }
+]
 
 if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
@@ -57,7 +74,7 @@ def find_working_model():
 API_VERSION, MODEL_NAME = find_working_model()
 
 def cleanup_old_points():
-    """Удаляет из базы Firebase точки, которые старше 40 минут."""
+    """Удаляет из базы Firebase точки старше 40 минут."""
     try:
         r = requests.get(FIREBASE_URL, timeout=10)
         if r.status_code == 200 and r.json():
@@ -74,22 +91,24 @@ def cleanup_old_points():
     except Exception as e:
         log(f"Ошибка очистки устаревших точек: {e}")
 
-def get_existing_messages():
+def get_existing_records():
+    """Получает сохраненные связки (канал, текст), чтобы не дублировать посты."""
     try:
         r = requests.get(FIREBASE_URL, timeout=10)
         if r.status_code == 200 and r.json():
             data = r.json()
-            return {v.get("text", "").strip() for v in data.values() if isinstance(v, dict)}
+            return {(v.get("source", ""), v.get("text", "").strip()) for v in data.values() if isinstance(v, dict)}
     except Exception as e:
-        log(f"Ошибка базы: {e}")
+        log(f"Ошибка проверки базы: {e}")
     return set()
 
-def fetch_tg_posts():
+def fetch_tg_posts(channel_url):
+    """Забирает последние сообщения из веб-зеркала Telegram."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
     try:
-        r = requests.get(TG_URL, headers=headers, timeout=10)
+        r = requests.get(channel_url, headers=headers, timeout=10)
         if r.status_code != 200:
             return []
         raw_posts = re.findall(r'<div class="tgme_widget_message_text[^>]*>(.*?)</div>', r.text, re.DOTALL)
@@ -98,9 +117,9 @@ def fetch_tg_posts():
             text = re.sub(r'<[^>]+>', '', p).strip()
             if text:
                 clean.append(text)
-        return clean[-10:]
+        return clean[-8:]  # 8 последних сообщений
     except Exception as e:
-        log(f"Ошибка загрузки постов: {e}")
+        log(f"Ошибка загрузки постов с {channel_url}: {e}")
         return []
 
 def parse_with_gemini(text):
@@ -110,7 +129,7 @@ def parse_with_gemini(text):
 
 ОРИЕНТИРЫ ДНЕПРА:
 1. "Огни" -> Вечный огонь / памятник на пр. Сергея Нигояна, угол с пр. Ивана Мазепы (бывш. Петровского) [lat: 48.4716, lng: 34.9892]
-2. "Водолечебница" / "РОВД водолечебница" -> заводы/промзона перед Кайдакским мостом со стороны Комбайнового завода (ул. Ударников) [lat: 48.4845, lng: 34.9648]
+2. "Водолечебница" / "РОВД водолечебница" -> промзона перед Кайдакским мостом со стороны Комбайнового (ул. Ударников) [lat: 48.4845, lng: 34.9648]
 3. "Комбайновый" -> Днепрокомбайн / ул. Ударников, перед мостом [lat: 48.4820, lng: 34.9620]
 4. "Павлова" -> ул. Академика Павлова [lat: 48.4775, lng: 34.9985]
 5. "Речпорт" -> Речной вокзал / пл. Десантников / Набережная Заводская [lat: 48.4802, lng: 35.0210]
@@ -127,13 +146,13 @@ def parse_with_gemini(text):
 16. "Нагорка" -> Нагорный рынок / пр. Науки [lat: 48.4490, lng: 35.0620]
 
 СТАТУС (status):
-- "clean" (зеленый): 👍, 🫡, ✌️, 👌, ☀️, 🟢, или слова "чисто", "пусто", "спокойно", "ясно", "проехал", "ок".
-- "danger" (красный): 🫒, 🌧️, ⚡, 👮, 📄, или слова "бп", "повестки", "дождь", "тучи", "синие", "оливки", "баклажаны", "пишут", "бус", "тормозят".
+- "clean" (безопасно): 👍, 🫡, ✌️, 👌, ☀️, 🟢, или слова "чисто", "пусто", "спокойно", "ясно", "проехал", "ок".
+- "danger" (опасность): 🫒, 🌧️, ⚡, 👮, 📄, или слова "бп", "повестки", "дождь", "тучи", "синие", "оливки", "баклажаны", "пишут", "бус", "тормозят".
 
 Верни СТРОГО чистый JSON:
 {{"valid": true, "address": "Название улицы", "lat": 48.46, "lng": 35.04, "status": "clean" или "danger"}}
 
-Если сообщению нет соответствия в Днепре (спам, вопрос):
+Если сообщению нет соответствия в Днепре (спам, опрос, реклама):
 {{"valid": false}}"""
 
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -153,52 +172,58 @@ def parse_with_gemini(text):
 
 def sync_cycle():
     cleanup_old_points()
-    existing = get_existing_messages()
-    posts = fetch_tg_posts()
+    existing_records = get_existing_records()
+    total_added = 0
 
-    added = 0
-    for post in posts:
-        if post in existing:
-            continue
+    for ch in CHANNELS:
+        posts = fetch_tg_posts(ch["url"])
+        log(f"[{ch['name']}] Получено сообщений: {len(posts)}")
 
-        result = parse_with_gemini(post)
-        if result and result.get("valid") and "lat" in result and "lng" in result:
-            now_ms = int(time.time() * 1000)
-            gemini_status = result.get("status", "").lower()
-            has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто"])
-            is_clean = (gemini_status == "clean") or has_clean
+        for post in posts:
+            if (ch["id"], post) in existing_records:
+                continue
 
-            clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
-            final_text = f"{post}{clean_tag}"
+            result = parse_with_gemini(post)
+            if result and result.get("valid") and "lat" in result and "lng" in result:
+                now_ms = int(time.time() * 1000)
+                gemini_status = result.get("status", "").lower()
+                has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто"])
+                is_clean = (gemini_status == "clean") or has_clean
 
-            payload = {
-                "text": final_text,
-                "address": result.get("address", "Днепр"),
-                "lat": float(result["lat"]),
-                "lng": float(result["lng"]),
-                "status": "чисто" if is_clean else "опасно",
-                "color": "green" if is_clean else "red",
-                "time": now_ms,
-                "timestamp": now_ms,
-                "source": "dnepr_bez_tck"
-            }
-            try:
-                r = requests.post(FIREBASE_URL, json=payload, timeout=10)
-                if r.status_code == 200:
-                    status_text = "🟢 ЧИСТО" if is_clean else "🔴 ОПАСНО"
-                    log(f"✅ Точка нанесена [{status_text}]: {result.get('address')}")
-                    existing.add(post)
-                    added += 1
-            except Exception as e:
-                log(f"Ошибка сохранения: {e}")
+                # Назначение цвета в зависимости от канала
+                marker_color = ch["color_clean"] if is_clean else ch["color_danger"]
 
-        time.sleep(2)
+                clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
+                final_text = f"{post}{clean_tag}"
 
-    if added > 0:
-        log(f"Добавлено новых точек: {added}")
+                payload = {
+                    "text": final_text,
+                    "address": result.get("address", "Дніпро"),
+                    "lat": float(result["lat"]),
+                    "lng": float(result["lng"]),
+                    "status": "чисто" if is_clean else "опасно",
+                    "color": marker_color,
+                    "time": now_ms,
+                    "timestamp": now_ms,
+                    "source": ch["id"],
+                    "channel_name": ch["name"]
+                }
+                try:
+                    r = requests.post(FIREBASE_URL, json=payload, timeout=10)
+                    if r.status_code == 200:
+                        log(f"✅ [{ch['name']}] Добавлена точка ({marker_color}): {result.get('address')}")
+                        existing_records.add((ch["id"], post))
+                        total_added += 1
+                except Exception as e:
+                    log(f"Ошибка сохранения: {e}")
+
+            time.sleep(2)
+
+    if total_added > 0:
+        log(f"🎉 Всего добавлено новых точек: {total_added}")
 
 if __name__ == "__main__":
-    log("🚀 Запуск 8-минутного непрерывного цикла (проверка каждые 60 сек)...")
+    log("🚀 Запуск непрерывного 8-минутного цикла радара (2 канала)...")
     for step in range(8):
         sync_cycle()
         if step < 7:
