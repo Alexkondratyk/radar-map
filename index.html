@@ -12,7 +12,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-    /* Панель управления — компактная ширина */
+    /* Панель управления — компактная ширина 200px */
     .dashboard {
       position: absolute;
       top: 15px;
@@ -124,6 +124,7 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
+    /* Светофор с динамическим зумом */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -197,6 +198,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Кнопка обновления */
     .btn-refresh {
       position: absolute;
       bottom: 25px;
@@ -218,6 +220,7 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
+    /* Попап */
     .leaflet-popup-content-wrapper {
       background: #1e293b !important;
       color: #f8fafc !important;
@@ -477,8 +480,6 @@
           }
         }
       });
-
-      renderMarkers();
     }
 
     function setFilter(type, btn) {
@@ -543,11 +544,10 @@
       return clean ? "#22c55e" : "#ef4444";
     }
 
-    // ЖЕЛЕЗНАЯ ЭКСКЛЮЗИВНАЯ ПРИВЯЗКА СООБЩЕНИЙ К СВЕТОФОРАМ
+    // Изолированная привязка отчётов строго к своим светофорам
     function getMatchedCheckpointId(p) {
       const text = (p.raw_text || p.text || "").toLowerCase();
       
-      // 1. СТРОГИЕ КЛЮЧЕВЫЕ СЛОВА ИЗ ТЕКСТА СООБЩЕНИЯ
       if (text.includes("павлов")) return "pavlova";
       if (text.includes("краснозавод")) return "krasnozavodska";
       if (text.includes("комбайн") || text.includes("ударник")) return "kombainoviy";
@@ -558,7 +558,6 @@
       if (text.includes("водолечеб") || text.includes("водолікарн") || text.includes("свобод")) return "vodolechebnitsa";
       if (text.includes("кайдак") || text.includes("ровд")) return "kaidak_rovd";
 
-      // 2. ЕСЛИ В ТЕКСТЕ НЕТ — ПРОВЕРЯЕМ АДРЕС
       const addr = (p.address || "").toLowerCase();
       if (addr.includes("павлов")) return "pavlova";
       if (addr.includes("краснозавод")) return "krasnozavodska";
@@ -570,7 +569,6 @@
       if (addr.includes("водолечеб") || addr.includes("водолікарн")) return "vodolechebnitsa";
       if (addr.includes("кайдак") || addr.includes("ровд")) return "kaidak_rovd";
 
-      // 3. ЖЕСТКИЙ УЗКИЙ РАДИУС 250 МЕТРОВ (Павлова и Краснозаводская не пересекутся)
       const stored = getStoredPositions();
       let closestId = null;
       let minDistance = 250;
@@ -602,7 +600,6 @@
           curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
         }
 
-        // Попадают ТОЛЬКО эксклюзивно привязанные к этому светофору отчёты
         const matched = allPoints.filter(p => getMatchedCheckpointId(p) === cp.id);
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
@@ -682,7 +679,6 @@
 
           marker.on('dragend', async function() {
             await saveAllPositionsToStorage();
-            renderMarkers();
           });
 
           marker.bindPopup(popupContent);
@@ -692,6 +688,7 @@
       });
     }
 
+    // Отрисовка ВСЕХ точек (ничего не скрываем!)
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -701,8 +698,6 @@
         const time = p.time || p.timestamp || 0;
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
-
-        if (getMatchedCheckpointId(p)) return;
 
         const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
         const channelTitle = isChannel2 ? "Канал 2" : "Канал 1";
