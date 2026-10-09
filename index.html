@@ -3,11 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Радар Дніпро</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body, #map { width: 100%; height: 100%; background: #e5e7eb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     /* Панель управления */
     .dashboard {
@@ -15,12 +18,12 @@
       top: 15px;
       left: 15px;
       z-index: 1000;
-      background: rgba(15, 23, 42, 0.94);
+      background: rgba(15, 23, 42, 0.92);
       backdrop-filter: blur(8px);
       padding: 10px 12px;
       border-radius: 12px;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
       width: 215px;
       transition: all 0.25s ease;
     }
@@ -79,7 +82,7 @@
     }
     .btn-setup.editing {
       background: #15803d;
-      border: 1px solid #22c55e;
+      border: 1px solid #00e676;
       color: #ffffff;
       animation: pulse-border 1.5s infinite;
     }
@@ -104,9 +107,9 @@
     .btn-secondary:hover { background: #334155; color: #fff; }
 
     @keyframes pulse-border {
-      0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(0, 230, 118, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 230, 118, 0); }
     }
 
     /* Легенда */
@@ -121,10 +124,10 @@
     }
     .legend-row { display: flex; align-items: center; gap: 7px; }
     .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .dot-green { background: #22c55e; }
-    .dot-red { background: #ef4444; }
+    .dot-green { background: #00e676; box-shadow: 0 0 6px #00e676; }
+    .dot-red { background: #ff334b; box-shadow: 0 0 6px #ff334b; }
 
-    /* ТОЧКИ: ЯРКИЕ, СОЧНЫЕ, ЧИСТЫЕ (КАК НА РЕФЕРЕНСЕ) */
+    /* ТОЧКИ: ЯРКИЕ СВЕТЛЫЕ СИГНАЛЬНЫЕ КРУГИ (БЕЗ ТЕМНОТЫ) */
     .custom-dot-marker {
       background: transparent !important;
       border: none !important;
@@ -136,22 +139,22 @@
       border-radius: 50%;
       cursor: pointer;
       position: relative;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.22);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
     }
     .radar-circle.color-green {
-      background-color: #22c55e;
+      background-color: #00e676 !important;
     }
     .radar-circle.color-red {
-      background-color: #ef4444;
+      background-color: #ff334b !important;
     }
 
-    /* Пульсирующий ореол свежих меток (не затемняет ядро) */
+    /* Пульсирующий ореол для свежих меток */
     .radar-circle.fresh.color-green::after {
       content: '';
       position: absolute;
       top: -2px; left: -2px; right: -2px; bottom: -2px;
       border-radius: 50%;
-      background: rgba(34, 197, 94, 0.45);
+      background: rgba(0, 230, 118, 0.6);
       animation: ripple-green 1.7s infinite ease-out;
       z-index: -1;
     }
@@ -160,47 +163,46 @@
       position: absolute;
       top: -2px; left: -2px; right: -2px; bottom: -2px;
       border-radius: 50%;
-      background: rgba(239, 68, 68, 0.45);
+      background: rgba(255, 51, 75, 0.6);
       animation: ripple-red 1.7s infinite ease-out;
       z-index: -1;
     }
 
     @keyframes ripple-green {
       0% { transform: scale(1); opacity: 0.9; }
-      100% { transform: scale(2.3); opacity: 0; }
+      100% { transform: scale(2.4); opacity: 0; }
     }
     @keyframes ripple-red {
       0% { transform: scale(1); opacity: 0.9; }
-      100% { transform: scale(2.3); opacity: 0; }
+      100% { transform: scale(2.4); opacity: 0; }
     }
 
-    /* КОМПАКТНЫЙ СТИЛЬНЫЙ СВЕТОФОР (НЕ ЗАГОРАЖИВАЕТ КАРТУ) */
+    /* СТЕКЛЯННЫЙ КОРПУС СВЕТОФОРА (GLASSMORPHISM) */
     .traffic-pill {
-      background: rgba(15, 23, 42, 0.88);
-      border: 1.5px solid #ffffff;
-      border-radius: 12px;
-      padding: 3px 2px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2.5px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-      cursor: pointer;
-      width: 17px;
-      height: 31px;
-      user-select: none;
-      backdrop-filter: blur(2px);
+      background: rgba(255, 255, 255, 0.35) !important;
+      backdrop-filter: blur(8px) !important;
+      -webkit-backdrop-filter: blur(8px) !important;
+      border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+      border-radius: 12px !important;
+      padding: 2.5px 2px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 3px !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18), inset 0 0 6px rgba(255, 255, 255, 0.5) !important;
+      width: 16px !important;
+      height: 31px !important;
+      user-select: none !important;
     }
     .traffic-pill.draggable-mode {
       cursor: grab;
-      border-color: #38bdf8;
-      box-shadow: 0 0 12px 3px #38bdf8;
+      border-color: #00f3ff !important;
+      box-shadow: 0 0 14px 4px #00f3ff !important;
     }
     .traffic-pill.standby-mode {
-      background: rgba(30, 41, 59, 0.65);
-      border-color: #94a3b8;
-      border-style: dashed;
-      opacity: 0.7;
+      background: rgba(255, 255, 255, 0.2) !important;
+      border: 1px dashed rgba(255, 255, 255, 0.6) !important;
+      opacity: 0.65;
     }
     .tl-lamp {
       width: 9.5px;
@@ -208,11 +210,24 @@
       border-radius: 50%;
       transition: all 0.25s ease;
     }
-    .tl-lamp.red-active { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
-    .tl-lamp.red-dim { background: #450a0a; opacity: 0.2; }
-    .tl-lamp.green-active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
-    .tl-lamp.green-dim { background: #052e16; opacity: 0.2; }
-    .tl-lamp.off { background: #475569; opacity: 0.35; }
+    .tl-lamp.red-active { 
+      background: #ff334b !important; 
+      box-shadow: 0 0 10px 3px #ff334b !important; 
+    }
+    .tl-lamp.red-dim { 
+      background: rgba(255, 51, 75, 0.2) !important; 
+    }
+    .tl-lamp.green-active { 
+      background: #00e676 !important; 
+      box-shadow: 0 0 10px 3px #00e676 !important; 
+    }
+    .tl-lamp.green-dim { 
+      background: rgba(0, 230, 118, 0.2) !important; 
+    }
+    .tl-lamp.off { 
+      background: rgba(255, 255, 255, 0.45) !important; 
+      border: 0.5px solid rgba(255, 255, 255, 0.6) !important;
+    }
 
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
@@ -256,13 +271,13 @@
       transition: all 0.2s;
     }
     .btn-neon-draw { background: #0284c7; color: #fff; }
-    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #22c55e; }
+    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #00e676; }
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
     .neon-svg-line {
       pointer-events: none !important;
-      filter: drop-shadow(0 0 3px currentColor);
+      filter: drop-shadow(0 0 4px currentColor);
     }
 
     /* Модальное окно */
@@ -347,18 +362,18 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       transition: background 0.2s;
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап как на референсе */
+    /* Попап карточка */
     .leaflet-popup-content-wrapper {
       background: #ffffff !important;
       color: #0f172a !important;
       border-radius: 12px !important;
       padding: 4px !important;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2) !important;
     }
     .leaflet-popup-tip { background: #ffffff !important; }
     .popup-card { padding: 4px; }
@@ -440,7 +455,7 @@
     <div style="font-size:10px; color:#94a3b8; margin-bottom:6px;">Колір неону:</div>
     <div class="neon-colors">
       <div class="btn-color active" style="background:#00f3ff;" onclick="selectNeonColor('#00f3ff', this)"></div>
-      <div class="btn-color" style="background:#22c55e;" onclick="selectNeonColor('#22c55e', this)"></div>
+      <div class="btn-color" style="background:#00e676;" onclick="selectNeonColor('#00e676', this)"></div>
       <div class="btn-color" style="background:#f59e0b;" onclick="selectNeonColor('#f59e0b', this)"></div>
       <div class="btn-color" style="background:#ec4899;" onclick="selectNeonColor('#ec4899', this)"></div>
       <div class="btn-color" style="background:#a855f7;" onclick="selectNeonColor('#a855f7', this)"></div>
@@ -451,7 +466,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно светофора -->
+  <!-- Модальное окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -539,10 +554,10 @@
       }
     ];
 
+    // Принудительная перезагрузка в обход кэша
     function hardReload() {
-      const url = new URL(window.location.href);
-      url.searchParams.set('t', Date.now());
-      window.location.href = url.toString();
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.location.href = cleanUrl + '?v=' + Date.now();
     }
 
     function togglePanelCollapse() {
@@ -633,9 +648,11 @@
     const isMobile = window.innerWidth < 768;
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+
+    // СВЕТЛАЯ КАРТА (КАК НА РЕФЕРЕНСЕ ФОТО 2)
+    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: 'Google Maps'
     }).addTo(map);
 
     const neonLayer = L.layerGroup().addTo(map);
@@ -663,7 +680,7 @@
       if (isEditMode) {
         btn.classList.add("editing");
         btnText.innerText = "💾 Зафіксувати позиції";
-        showToast("📍 Всі світлофори показано! Перетягуйте мишкою.");
+        showToast("📍 Всі світлофори показано! Перетягуйте їх мишкою.");
       } else {
         btn.classList.remove("editing");
         btnText.innerText = "📍 Розставити світлофори";
@@ -915,7 +932,7 @@
       return null;
     }
 
-    /* ЛОГИКА СВЕТОФОРОВ: ЕСЛИ НЕТ КРАСНОГО ИЛИ ЗЕЛЕНОГО — ПОЛНОСТЬЮ СКРЫВАЕМ */
+    /* ЛОГИКА СТЕКЛЯННЫХ СВЕТОФОРОВ: ЕСЛИ НЕТ ДАННЫХ — ОНИ СКРЫТЫ */
     function renderTrafficLights() {
       if (!showTrafficLights) return;
 
@@ -926,7 +943,7 @@
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
-        // ЕСЛИ СВЕТОФОР НЕ ГОРИТ КРАСНЫМ ИЛИ ЗЕЛЕНЫМ И МЫ НЕ В РЕЖИМЕ РАССТАНОВКИ — ПРЯЧЕМ ЕГО С КАРТЫ!
+        // ЕСЛИ НЕТ АКТИВНОГО ОТЧЁТА И НЕ РЕЖИМ РАССТАНОВКИ — ПОЛНОСТЬЮ СКРЫВАЕМ С КАРТЫ
         if (!latest && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
@@ -958,6 +975,7 @@
         const dragClass = isEditMode ? "draggable-mode" : "";
         const standbyClass = (!latest && isEditMode) ? "standby-mode" : "";
 
+        // СТЕКЛЯННЫЙ КОРПУС
         const iconHtml = `
           <div class="traffic-pill ${dragClass} ${standbyClass}" title="${cp.name}">
             <div class="${redClass}"></div>
@@ -968,8 +986,8 @@
         const tlIcon = L.divIcon({
           className: 'traffic-marker-icon',
           html: iconHtml,
-          iconSize: [17, 31],
-          iconAnchor: [8.5, 15.5],
+          iconSize: [16, 31],
+          iconAnchor: [8, 15.5],
           popupAnchor: [0, -16]
         });
 
@@ -1035,7 +1053,7 @@
       });
     }
 
-    /* ТОЧКИ: ЯРКО-ЗЕЛЕНЫЕ И ЯРКО-КРАСНЫЕ КРУГИ (БЕЗ ТЕМНОТЫ) */
+    /* ТОЧКИ: ЯРКИЙ НЕОН-ЛАЙМ И ЯРКИЙ НЕОН-АЛЫЙ (1 В 1 С ФОТО 2) */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
