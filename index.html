@@ -26,12 +26,12 @@
     .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .points-count { font-size: 16px; font-weight: 700; color: #fff; }
     .subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
-    .btn-group { display: flex; gap: 6px; margin-bottom: 8px; }
+    .btn-group { display: flex; gap: 6px; margin-bottom: 10px; }
     .btn-filter {
       background: #1e293b;
       border: 1px solid #334155;
       color: #cbd5e1;
-      padding: 5px 10px;
+      padding: 5px 12px;
       border-radius: 6px;
       font-size: 12px;
       cursor: pointer;
@@ -44,7 +44,7 @@
     .legend {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       font-size: 11px;
       color: #94a3b8;
       border-top: 1px solid #334155;
@@ -109,8 +109,8 @@
     <div class="subtitle">Маркери активні 40 хвилин</div>
     <div class="btn-group">
       <button class="btn-filter active" onclick="setFilter('all', this)">Всі</button>
-      <button class="btn-filter" onclick="setFilter('dnepr_bez_tck', this)">Канал 1</button>
-      <button class="btn-filter" onclick="setFilter('agendaDnepr', this)">Канал 2</button>
+      <button class="btn-filter" onclick="setFilter('Канал 1', this)">Канал 1</button>
+      <button class="btn-filter" onclick="setFilter('Канал 2', this)">Канал 2</button>
     </div>
     <div class="legend">
       <div class="legend-row">
@@ -174,14 +174,17 @@
     }
 
     function getMarkerColor(p) {
+      // 1. Если скрипт уже сохранил цвет явно
       if (p.color === "green") return "#22c55e";
       if (p.color === "red") return "#ef4444";
       if (p.color === "blue") return "#06b6d4";
       if (p.color === "purple") return "#a855f7";
 
-      // Резервное определение для старых записей
+      // 2. Для старых точек: определяем по источнику
+      const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
       const isClean = (p.status === "чисто") || (p.text && p.text.toLowerCase().includes("чисто"));
-      if (p.source === "agendaDnepr") {
+      
+      if (isChannel2) {
         return isClean ? "#06b6d4" : "#a855f7";
       }
       return isClean ? "#22c55e" : "#ef4444";
@@ -197,8 +200,11 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
+        const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
+        const channelTitle = isChannel2 ? "Канал 2" : "Канал 1";
+
         // Фильтрация
-        if (currentFilter !== 'all' && p.source !== currentFilter) return;
+        if (currentFilter !== 'all' && currentFilter !== channelTitle) return;
 
         // Расчёт времени до удаления
         const remainingMs = Math.max(0, LIFETIME_MS - diff);
@@ -207,7 +213,6 @@
 
         const date = new Date(time);
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const channelTitle = p.source === "agendaDnepr" ? "Канал 2" : "Канал 1";
         const markerColor = getMarkerColor(p);
 
         const marker = L.circleMarker([p.lat, p.lng], {
@@ -239,7 +244,7 @@
     // Первичный запуск
     loadPoints();
 
-    // Автообновление каждые 15 секунд без нажатия F5
+    // Автообновление без перезагрузки страницы F5 каждые 15 секунд
     setInterval(loadPoints, 15000);
   </script>
 </body>
