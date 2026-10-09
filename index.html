@@ -12,7 +12,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-    /* Панель управления */
+    /* Панель управления — компактная фикс-ширина */
     .dashboard {
       position: absolute;
       top: 15px;
@@ -20,11 +20,11 @@
       z-index: 1000;
       background: rgba(15, 23, 42, 0.94);
       backdrop-filter: blur(8px);
-      padding: 10px 14px;
+      padding: 10px 12px;
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      min-width: 230px;
+      width: 200px;
       transition: all 0.25s ease;
     }
     .dash-header { 
@@ -33,21 +33,21 @@
       align-items: center; 
       margin-bottom: 8px; 
     }
-    .points-count { font-size: 15px; font-weight: 700; color: #fff; }
+    .points-count { font-size: 14px; font-weight: 700; color: #fff; }
     
     /* Кнопка сворачивания */
     .btn-toggle {
       background: #1e293b;
       border: 1px solid #334155;
       color: #94a3b8;
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
+      width: 22px;
+      height: 22px;
+      border-radius: 5px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 11px;
+      font-size: 10px;
       transition: all 0.2s;
     }
     .btn-toggle:hover {
@@ -55,18 +55,19 @@
       color: #fff;
     }
 
-    .btn-group { display: flex; gap: 6px; }
+    .btn-group { display: flex; gap: 4px; }
     .btn-filter {
       background: #1e293b;
       border: 1px solid #334155;
       color: #cbd5e1;
-      padding: 5px 10px;
+      padding: 4px 2px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       font-weight: 500;
       transition: all 0.2s;
       flex: 1;
+      text-align: center;
     }
     .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
@@ -75,7 +76,7 @@
       margin-top: 8px;
       transition: all 0.25s ease;
     }
-    .subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 8px; }
+    .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 6px; }
 
     /* Кнопка режима расстановки */
     .btn-setup {
@@ -83,9 +84,9 @@
       background: #1e293b;
       border: 1px dashed #38bdf8;
       color: #38bdf8;
-      padding: 6px 10px;
+      padding: 5px 6px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       cursor: pointer;
       font-weight: 600;
       margin-bottom: 8px;
@@ -93,7 +94,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 4px;
     }
     .btn-setup.editing {
       background: #15803d;
@@ -112,14 +113,14 @@
     .legend {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      font-size: 11px;
+      gap: 4px;
+      font-size: 10px;
       color: #94a3b8;
       border-top: 1px solid #334155;
-      padding-top: 8px;
+      padding-top: 6px;
     }
-    .legend-row { display: flex; align-items: center; gap: 6px; }
-    .shape { width: 10px; height: 10px; display: inline-block; }
+    .legend-row { display: flex; align-items: center; gap: 5px; }
+    .shape { width: 9px; height: 9px; display: inline-block; flex-shrink: 0; }
     .shape.circle { border-radius: 50%; }
     .shape.square { border-radius: 2px; }
     .dot-green { background: #22c55e; }
@@ -127,7 +128,7 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
-    /* Светофор */
+    /* Светофор с динамическим масштабом */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -181,7 +182,7 @@
       border: none !important;
     }
 
-    /* Тост */
+    /* Тост уведомление */
     .toast-msg {
       position: absolute;
       top: 20px;
@@ -189,9 +190,9 @@
       z-index: 2000;
       background: #10b981;
       color: #fff;
-      padding: 10px 18px;
+      padding: 8px 14px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       box-shadow: 0 4px 15px rgba(0,0,0,0.4);
       display: none;
@@ -233,16 +234,16 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
     }
     .leaflet-popup-tip { background: #1e293b !important; }
-    .popup-title { font-size: 14px; font-weight: 700; color: #38bdf8; margin-bottom: 4px; }
-    .popup-text { font-size: 13px; margin-bottom: 8px; line-height: 1.4; color: #e2e8f0; }
+    .popup-title { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 4px; }
+    .popup-text { font-size: 12px; margin-bottom: 6px; line-height: 1.4; color: #e2e8f0; }
     .popup-meta {
-      font-size: 11px;
+      font-size: 10px;
       color: #94a3b8;
       display: flex;
       justify-content: space-between;
       border-top: 1px solid #334155;
-      padding-top: 6px;
-      gap: 10px;
+      padding-top: 5px;
+      gap: 8px;
     }
     .timer-badge { color: #f59e0b; font-weight: 600; }
   </style>
@@ -254,14 +255,16 @@
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
 
+    <!-- Кнопки выбора каналов -->
     <div class="btn-group">
       <button class="btn-filter active" onclick="setFilter('all', this)">Всі</button>
-      <button class="btn-filter" onclick="setFilter('Канал 1', this)">Канал 1</button>
-      <button class="btn-filter" onclick="setFilter('Канал 2', this)">Канал 2</button>
+      <button class="btn-filter" onclick="setFilter('Канал 1', this)">К 1</button>
+      <button class="btn-filter" onclick="setFilter('Канал 2', this)">К 2</button>
     </div>
 
+    <!-- Сворачиваемая часть -->
     <div id="collapsibleBody" class="collapsible-body">
-      <div class="subtitle">Маркери активні 40 хвилин</div>
+      <div class="subtitle">Активні 40 хв</div>
 
       <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
         <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
@@ -270,15 +273,15 @@
       <div class="legend">
         <div class="legend-row">
           <span class="shape circle dot-green"></span><span class="shape circle dot-red"></span>
-          <span>К1 (кружки): Чисто / Опасно</span>
+          <span>К1: Чисто / Опасно</span>
         </div>
         <div class="legend-row">
           <span class="shape square dot-blue"></span><span class="shape square dot-purple"></span>
-          <span>К2 (квадрати): Чисто / Опасно</span>
+          <span>К2: Чисто / Опасно</span>
         </div>
-        <div class="legend-row" style="margin-top: 3px;">
-          <span style="font-size: 13px;">🚦</span>
-          <span>Світлофори: Кайдацький, Водолікарня, Комбайновий, Краснозаводська, Павлова, Річпорт, Водокачка, Стан 550</span>
+        <div class="legend-row" style="margin-top: 2px;">
+          <span style="font-size: 11px;">🚦</span>
+          <span>Світлофори (8 точок)</span>
         </div>
       </div>
     </div>
@@ -294,7 +297,6 @@
     const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
-    // 8 ключевых светофоров с точной привязкой
     const DEFAULT_CHECKPOINTS = [
       {
         id: "kaidak_rovd",
@@ -439,7 +441,7 @@
 
       if (isEditMode) {
         btn.classList.add("editing");
-        btnText.innerText = "💾 Зафіксувати позиції";
+        btnText.innerText = "💾 Зафіксувати";
         showToast("📍 Перетягніть світлофори мишкою у потрібні місця!");
       } else {
         btn.classList.remove("editing");
@@ -529,7 +531,6 @@
       return clean ? "#22c55e" : "#ef4444";
     }
 
-    // Проверка ключевых слов с защитой от ложных совпадений слова "стан"
     function checkKeysMatch(text, cp) {
       return cp.keys.some(k => {
         if (k === "стан") {
