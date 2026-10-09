@@ -18,8 +18,6 @@ def log(msg):
 def find_working_model():
     """Находит реально работающую модель путем отправки тестового запроса."""
     log("🔍 Проверяем доступные модели Gemini живым тестом...")
-    
-    # Список кандидатов: сначала быстрые Flash, исключая закрытые 1.0
     candidates = []
     for api_ver in ["v1beta", "v1"]:
         try:
@@ -30,24 +28,20 @@ def find_working_model():
                 for m in raw_models:
                     name = m.get("name", "").replace("models/", "")
                     methods = m.get("supportedGenerationMethods", [])
-                    # Отсекаем старые закрытые версии 1.0 и эмбеддинги
                     if "generateContent" in methods and "1.0" not in name:
                         candidates.append((api_ver, name))
         except Exception as e:
             log(f"Сбой чтения списка моделей для {api_ver}: {e}")
 
-    # Сортируем: Flash-модели ставим первыми
     candidates.sort(key=lambda x: (0 if "flash" in x[1].lower() else 1))
 
-    # Запасной список, если API не вернул модели через поиск
     if not candidates:
         for ver in ["v1beta", "v1"]:
-            for m in ["gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-2.0-flash", "gemini-1.5-pro-latest"]:
+            for m in ["gemini-flash-lite-latest", "gemini-1.5-flash-latest", "gemini-2.0-flash"]:
                 candidates.append((ver, m))
 
     log(f"Найдено подходящих моделей для проверки: {len(candidates)}")
 
-    # Тестируем каждую модель реальным запросом, пока не получим 200 OK
     for api_ver, model_name in candidates:
         test_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_name}:generateContent?key={GEMINI_KEY}"
         payload = {"contents": [{"parts": [{"text": "ping"}]}]}
@@ -61,8 +55,8 @@ def find_working_model():
         except Exception:
             continue
 
-    log("⚠️ Живой тест не прошел, пробуем резервный gemini-1.5-flash-latest")
-    return "v1beta", "gemini-1.5-flash-latest"
+    log("⚠️ Живой тест не прошел, берем проверенную gemini-flash-lite-latest")
+    return "v1beta", "gemini-flash-lite-latest"
 
 API_VERSION, MODEL_NAME = find_working_model()
 
@@ -94,19 +88,38 @@ def fetch_tg_posts():
             if text:
                 clean.append(text)
         log(f"Успешно прочитано сообщений из канала: {len(clean)}")
-        return clean[-6:]  # Берем последние 6 постов для защиты от минутного лимита
+        return clean[-10:]
     except Exception as e:
         log(f"Ошибка загрузки постов: {e}")
         return []
 
 def parse_with_gemini(text):
     url = f"https://generativelanguage.googleapis.com/{API_VERSION}/models/{MODEL_NAME}:generateContent?key={GEMINI_KEY}"
-    prompt = f"""Ты картографический аналитик города Днепр (Украина).
-Проанализируй текст сообщения: "{text}"
-Определи точную локацию/перекресток/район в черте г. Днепр.
-Верни строго чистый JSON без markdown:
-{{"valid": true, "address": "краткое место", "lat": 48.46, "lng": 35.04}}
-Если точной локации в Днепре нет, спам, опрос или реклама — верни строго:
+    prompt = f"""Ты эксперт-штурман дорожной обстановки в городе Днепр (Украина).
+Определи точную географическую точку в Днепре из сообщения водителей: "{text}"
+
+ОБЯЗАТЕЛЬНО используй карту ключевых народных ориентиров Днепра:
+1. "Огни" -> Вечный огонь / мемориал на пр. Сергея Нигояна, угол с пр. Ивана Мазепы (бывш. Петровского) [lat: 48.4716, lng: 34.9892]
+2. "Водолечебница" / "РОВД водолечебница" -> заводы/промзона перед Кайдакским мостом со стороны Комбайнового завода (ул. Ударников / Кайдакский съезд) [lat: 48.4845, lng: 34.9648]
+3. "Комбайновый" -> Днепрокомбайн / ул. Ударников, перед мостом [lat: 48.4820, lng: 34.9620]
+4. "Павлова" -> ул. Академика Павлова (между пр. Нигояна и Набережной) [lat: 48.4775, lng: 34.9985]
+5. "Речпорт" -> Речной вокзал / пл. Десантников / Набережная Заводская [lat: 48.4802, lng: 35.0210]
+6. "Озерка" -> рынок Озёрка / ул. Степана Бандеры (бывш. Шмидта) [lat: 48.4687, lng: 35.0265]
+7. "Кротова" -> ул. Бориса Кротова / 12-й квартал [lat: 48.3970, lng: 34.9870]
+8. "Гальченко" -> ул. Василия Гальченко (12 квартал) [lat: 48.3990, lng: 34.9820]
+9. "Шинная" -> ул. Шинная / район пр. Богдана Хмельницкого [lat: 48.4285, lng: 35.0194]
+10. "Брама" -> ЖК Брама / Слобожанское [lat: 48.5330, lng: 35.0800]
+11. "Лакокраска" -> район завода Лакокраска / ул. Журналистов [lat: 48.5030, lng: 35.0990]
+12. "Островского" -> пл. Старомостовая / ж/д вокзал [lat: 48.4760, lng: 35.0240]
+13. "Караван" -> ТРЦ Караван, Донецкое шоссе [lat: 48.5350, lng: 35.0240]
+14. "Парус" -> ж/м Парус [lat: 48.4835, lng: 34.9080]
+15. "Подстанция" -> кольцо пр. Науки (Гагарина) / Запорожское шоссе [lat: 48.4230, lng: 35.0250]
+16. "Нагорка" -> Нагорный рынок / пр. Науки [lat: 48.4490, lng: 35.0620]
+
+Верни СТРОГО чистый JSON без markdown:
+{{"valid": true, "address": "Название места", "lat": 48.46, "lng": 35.04}}
+
+Если сообщения вообще не содержат места (спам, чистый вопрос, реклама):
 {{"valid": false}}"""
 
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
@@ -120,8 +133,8 @@ def parse_with_gemini(text):
                 if match:
                     return json.loads(match.group(0))
             elif resp.status_code in [429, 503]:
-                log(f"Временная заминка Google ({resp.status_code}), пауза 5 сек...")
-                time.sleep(5)
+                log(f"Временная заминка Google ({resp.status_code}), пауза 4 сек...")
+                time.sleep(4)
             else:
                 log(f"Ответ Gemini API: код {resp.status_code}")
         except Exception as e:
@@ -163,9 +176,9 @@ def sync_cycle():
             except Exception as e:
                 log(f"Сбой отправки в Firebase: {e}")
         else:
-            log("-> Координаты не найдены (не привязано к улице)")
+            log("-> Координаты не найдены")
 
-        time.sleep(4)  # Пауза 4 сек держит нас строго в рамках бесплатного лимита 15 RPM
+        time.sleep(3)
 
     log(f"Итог проверки: добавлено новых точек: {added}")
 
