@@ -175,7 +175,6 @@
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 2px 5px rgba(0,0,0,0.3) !important;
     }
 
-    /* Пульсирующее кольцо свежих меток */
     .radar-circle.fresh.color-green::after {
       content: '';
       position: absolute;
@@ -204,7 +203,7 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
-    /* СВЕТОФОРЫ: КРУПНЫЙ УДОБНЫЙ РАЗМЕР (20x36 px) */
+    /* СВЕТОФОРЫ */
     .traffic-pill {
       background: #0f172a !important;
       border: 1.5px solid #ffffff !important;
@@ -297,15 +296,25 @@
       border: none;
       transition: all 0.2s;
     }
-    .btn-neon-toggle { background: #334155; color: #38bdf8; border: 1px solid #0284c7; }
+    .btn-neon-toggle { background: #1e293b; color: #38bdf8; border: 1px solid #0284c7; }
+    .btn-neon-recolor { background: #1e293b; color: #facc15; border: 1px solid #eab308; }
+    .btn-neon-recolor.active-mode { background: #ca8a04; color: #fff; box-shadow: 0 0 12px #eab308; }
     .btn-neon-draw { background: #0284c7; color: #fff; }
     .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px var(--color-green); }
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
     .neon-svg-line {
-      pointer-events: none !important;
       filter: drop-shadow(0 0 4px currentColor);
+    }
+    .neon-svg-line.clickable-line {
+      cursor: pointer !important;
+      stroke-dasharray: 6, 6;
+      animation: dashMove 1s linear infinite;
+    }
+    @keyframes dashMove {
+      from { stroke-dashoffset: 0; }
+      to { stroke-dashoffset: 12; }
     }
 
     /* Модальное окно */
@@ -445,7 +454,6 @@
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle">Свіжі пульсують (до 10 хв)</div>
 
-      <!-- Переключатель карт -->
       <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
         <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
       </button>
@@ -486,12 +494,17 @@
       <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
     </div>
     
-    <!-- Кнопка ВКЛ/ВЫКЛ линий без удаления из памяти -->
+    <!-- 1. Скрыть / показать без удаления -->
     <button id="btnToggleNeonVisible" class="btn-neon-action btn-neon-toggle" onclick="toggleNeonLinesVisibility()">
-      👁️ Сховати лінії
+      👁️ Сховати неон
     </button>
 
-    <div style="font-size:10px; color:#94a3b8; margin-bottom:6px;">Колір неону:</div>
+    <!-- 2. Сменить цвет нарисованной линии -->
+    <button id="btnNeonRecolor" class="btn-neon-action btn-neon-recolor" onclick="toggleNeonRecolorMode()">
+      🎨 Перефарбувати лінію
+    </button>
+
+    <div style="font-size:10px; color:#94a3b8; margin: 4px 0 6px;">Колір неону:</div>
     <div class="neon-colors">
       <div class="btn-color active" style="background:#00f3ff;" onclick="selectNeonColor('#00f3ff', this)"></div>
       <div class="btn-color" style="background:#25d366;" onclick="selectNeonColor('#25d366', this)"></div>
@@ -621,18 +634,16 @@
       document.getElementById("btnToggle").innerText = "▼";
     }
 
-    /* ПОДКЛЮЧЕНИЕ СЛОЕВ КАРТ */
+    /* КАРТА */
     const isMobile = window.innerWidth < 768;
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
-    // Google с украинскими четкими подписями всех улиц
     const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=uk&gl=ua&x={x}&y={y}&z={z}', {
       maxZoom: 20,
       attribution: 'Google Maps'
     });
 
-    // Альтернативный OSM
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
@@ -817,13 +828,14 @@
     }
 
     /* ------------------------------------------------------------------
-       НЕОНОВАЯ РАЗМЕТКА: ВКЛ/ВЫКЛ БЕЗ УДАЛЕНИЯ ИЗ ПАМЯТИ
+       НЕОН: КРЕШЛЕННЯ, ПЕРЕФАРБУВАННЯ, ПРИХОВУВАННЯ
     ------------------------------------------------------------------ */
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
     let currentNeonColor = "#00f3ff";
     let isDrawingNeon = false;
+    let isRecoloringNeon = false; // Режим перекраски
     let tempPoints = [];
     let activeDrawingPolyline = null;
 
@@ -842,6 +854,7 @@
 
     function closeNeonPanel() {
       if (isDrawingNeon) toggleNeonDrawMode();
+      if (isRecoloringNeon) toggleNeonRecolorMode();
       document.getElementById("neonPanel").style.display = "none";
     }
 
@@ -877,7 +890,32 @@
       }
     }
 
+    // Режим смены цвета нарисованной линии
+    function toggleNeonRecolorMode() {
+      if (isDrawingNeon) toggleNeonDrawMode();
+      if (!showNeonLines) {
+        showNeonLines = true;
+        localStorage.setItem("radar_neon_visible", true);
+        updateNeonVisibleBtnUI();
+      }
+
+      isRecoloringNeon = !isRecoloringNeon;
+      const btn = document.getElementById("btnNeonRecolor");
+
+      if (isRecoloringNeon) {
+        btn.classList.add("active-mode");
+        btn.innerText = "🛑 Завершити фарбування";
+        showToast("🎨 Виберіть колір вище і натискайте на лінії для перефарбування!");
+      } else {
+        btn.classList.remove("active-mode");
+        btn.innerText = "🎨 Перефарбувати лінію";
+      }
+
+      renderAllNeonLines();
+    }
+
     function toggleNeonDrawMode() {
+      if (isRecoloringNeon) toggleNeonRecolorMode();
       if (!showNeonLines) {
         showNeonLines = true;
         localStorage.setItem("radar_neon_visible", true);
@@ -979,16 +1017,27 @@
 
     function renderAllNeonLines() {
       neonLayer.clearLayers();
-      if (!showNeonLines) return; // При выключенном режиме не рисуем, но держим в базе
+      if (!showNeonLines) return;
 
       neonLines.forEach(line => {
-        L.polyline(line.points, {
+        const poly = L.polyline(line.points, {
           color: line.color,
-          weight: 3,
-          opacity: 0.85,
-          interactive: false,
-          className: 'neon-svg-line'
+          weight: isRecoloringNeon ? 7 : 3, // В режиме покраски делаем толще, чтобы легко попасть пальцем
+          opacity: 0.9,
+          interactive: isRecoloringNeon,
+          className: isRecoloringNeon ? 'neon-svg-line clickable-line' : 'neon-svg-line'
         }).addTo(neonLayer);
+
+        // КЛИК ДЛЯ ПЕРЕКРАШИВАНИЯ
+        if (isRecoloringNeon) {
+          poly.on('click', async function(e) {
+            L.DomEvent.stopPropagation(e);
+            line.color = currentNeonColor;
+            poly.setStyle({ color: currentNeonColor });
+            await saveNeonLines();
+            showToast("🎨 Колір лінії успішно змінено та збережено!");
+          });
+        }
       });
     }
 
@@ -1045,7 +1094,6 @@
       return null;
     }
 
-    /* СВЕТОФОРЫ: НЕАКТИВНЫЕ СКРЫТЫ НА 100% */
     function renderTrafficLights() {
       if (!showTrafficLights) return;
 
@@ -1164,7 +1212,6 @@
       });
     }
 
-    /* ТОЧКИ: ЯРКИЕ КРУГИ С БЕЛЫМ ОБОДКОМ */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
