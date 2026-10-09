@@ -2,14 +2,15 @@ name: Radar 24/7 Sync
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # Облачный запуск каждые 10 минут
-  workflow_dispatch:        # Кнопка ручного запуска в один клик
+    # Запуск каждые 12 минут с 05:00 до 21:00 по будням (Пн-Пт)
+    - cron: '*/12 2-18 * * 1-5'
+  workflow_dispatch: # Оставляет кнопку для ручного запуска в любое время
 
 jobs:
   run-radar:
     runs-on: ubuntu-latest
     steps:
-      - name: Загрузка репозитория
+      - name: Клонирование репозитория
         uses: actions/checkout@v4
 
       - name: Установка Python
