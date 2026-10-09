@@ -9,11 +9,6 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-    /* Плавная анимация изменения прозрачности меток */
-    path.leaflet-interactive {
-      transition: fill-opacity 1s ease, stroke-opacity 1s ease;
-    }
-
     /* Панель управления */
     .dashboard {
       position: absolute;
@@ -26,7 +21,7 @@
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      width: 215px;
+      width: 220px;
       transition: all 0.25s ease;
     }
     .dash-header { 
@@ -35,7 +30,7 @@
       align-items: center; 
       margin-bottom: 6px; 
     }
-    /* Три клика по надписи "Точок" открывают скрытое меню неона */
+    /* Три клика по счетчику открывают скрытое меню неона */
     .points-count { 
       font-size: 14px; 
       font-weight: 700; 
@@ -115,7 +110,7 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Легенда */
+    /* Легенда с разделением по времени */
     .legend {
       display: flex;
       flex-direction: column;
@@ -129,6 +124,80 @@
     .shape { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
     .dot-green { background: #22c55e; }
     .dot-red { background: #ef4444; }
+
+    .legend-time {
+      margin-top: 4px;
+      padding-top: 4px;
+      border-top: 1px dashed #334155;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 9px;
+    }
+
+    /* СТИЛИ ТОЧЕК-МЕТОК (3 СОСТОЯНИЯ) */
+    .marker-wrap {
+      position: relative;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 1. Свежие (0-10 мин): Живой Радар-Пинг */
+    .pulse-ring {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: radar-wave 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+    .pulse-green { border: 2px solid #22c55e; box-shadow: 0 0 6px #22c55e; }
+    .pulse-red { border: 2px solid #ef4444; box-shadow: 0 0 6px #ef4444; }
+
+    @keyframes radar-wave {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(2.5); opacity: 0; }
+    }
+
+    /* Основа точки */
+    .radar-core {
+      border-radius: 50%;
+      transition: all 0.3s ease;
+      box-sizing: border-box;
+    }
+
+    /* Свежая: крупная плотная */
+    .radar-core.fresh {
+      width: 12px;
+      height: 12px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    }
+    .radar-core.fresh.green { background: #22c55e; }
+    .radar-core.fresh.red { background: #ef4444; }
+
+    /* Актуальная (10-25 мин): монолитная стандартная */
+    .radar-core.mid {
+      width: 10px;
+      height: 10px;
+      border: 1.5px solid #ffffff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .radar-core.mid.green { background: #16a34a; }
+    .radar-core.mid.red { background: #dc2626; }
+
+    /* Угасающая (25-40 мин): "Бублик" (пустая внутри, только контур) */
+    .radar-core.fading {
+      width: 9px;
+      height: 9px;
+      background: transparent !important;
+      box-shadow: none;
+    }
+    .radar-core.fading.green { border: 2px solid #22c55e; opacity: 0.7; }
+    .radar-core.fading.red { border: 2px solid #ef4444; opacity: 0.7; }
 
     /* Светофор */
     .traffic-light-body {
@@ -163,7 +232,7 @@
     .tl-lamp.green-dim { background: #052e16; opacity: 0.25; }
     .tl-lamp.off { background: #334155; opacity: 0.35; }
 
-    .traffic-marker-icon { background: transparent !important; border: none !important; }
+    .traffic-marker-icon, .custom-point-icon { background: transparent !important; border: none !important; }
 
     /* Скрытое меню Неона */
     .neon-panel {
@@ -384,6 +453,13 @@
         <div class="legend-row" style="margin-top: 2px;">
           <span style="font-size: 11px;">🚦</span>
           <span id="tlLegendCount">Світлофори</span>
+        </div>
+
+        <!-- Подсказка по шкале времени -->
+        <div class="legend-time">
+          <div>💥 <b>Пульсує:</b> 0–10 хв (прямо зараз)</div>
+          <div>🟢/🔴 <b>Суцільна:</b> 10–25 хв (актуально)</div>
+          <div>⭕ <b>Контур (бублик):</b> 25–40 хв (згасає)</div>
         </div>
       </div>
     </div>
@@ -694,9 +770,7 @@
       showToast("🗑️ Світлофор видалено!");
     }
 
-    /* ----------------------------------------------------
-       НЕОНОВАЯ ПОДСВЕТКА
-    ---------------------------------------------------- */
+    /* НЕОН */
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -835,9 +909,7 @@
       });
     }
 
-    /* ----------------------------------------------------
-       ЗАГРУЗКА ТОЧЕК И СВЕТОФОРОВ
-    ---------------------------------------------------- */
+    /* ТОЧКИ И СВЕТОФОРЫ */
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
@@ -999,7 +1071,7 @@
     }
 
     /* ----------------------------------------------------
-       ОТРИСОВКА КРУЖОЧКОВ С ДИНАМИЧЕСКИМ УГАСАНИЕМ
+       ОТРИСОВКА КРУЖКОВ: 3 ВОЗРАСТНЫХ СТАТУСА
     ---------------------------------------------------- */
     function renderMarkers() {
       markersLayer.clearLayers();
@@ -1011,38 +1083,58 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
+        const ageMinutes = diff / 60000;
         const remainingMs = Math.max(0, LIFETIME_MS - diff);
         const remMinutes = Math.floor(remainingMs / 60000);
         const remSeconds = Math.floor((remainingMs % 60000) / 1000);
 
-        // Коэффициент свежести: от 1.0 (только что создана) до 0.12 (скоро исчезнет)
-        const freshnessRatio = Math.max(0.12, 1 - (diff / LIFETIME_MS));
-        const currentFillOpacity = Number((freshnessRatio * 0.95).toFixed(2));
-        const currentStrokeOpacity = Number((Math.max(0.25, freshnessRatio)).toFixed(2));
+        const clean = isCleanPoint(p);
+        const colorClass = clean ? "green" : "red";
+
+        // Определяем возрастное состояние:
+        let ageClass = "mid";
+        let pulseHtml = "";
+
+        if (ageMinutes < 10) {
+          // 0-10 мин: СВЕЖАЯ (Пульсирует волной)
+          ageClass = "fresh";
+          pulseHtml = `<div class="pulse-ring pulse-${colorClass}"></div>`;
+        } else if (ageMinutes >= 25) {
+          // 25-40 мин: СТАРАЯ (Пустой контур "бублик")
+          ageClass = "fading";
+        } else {
+          // 10-25 мин: АКТУАЛЬНАЯ (Плотная монолитная)
+          ageClass = "mid";
+        }
+
+        const iconHtml = `
+          <div class="marker-wrap">
+            ${pulseHtml}
+            <div class="radar-core ${ageClass} ${colorClass}"></div>
+          </div>
+        `;
+
+        const pointIcon = L.divIcon({
+          className: 'custom-point-icon',
+          html: iconHtml,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+          popupAnchor: [0, -10]
+        });
 
         const date = new Date(time);
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        const clean = isCleanPoint(p);
-        const markerColor = clean ? "#22c55e" : "#ef4444";
-
-        const marker = L.circleMarker([p.lat, p.lng], {
-          radius: 8,
-          fillColor: markerColor,
-          color: "#ffffff",
-          weight: 2,
-          opacity: currentStrokeOpacity,
-          fillOpacity: currentFillOpacity
-        });
 
         const popupContent = `
           <div class="popup-title">${p.address || "Дніпро"}</div>
           <div class="popup-text">${p.text || ""}</div>
           <div class="popup-meta">
-            <span>🕒 ${timeStr}</span>
+            <span>🕒 ${timeStr} (${Math.floor(ageMinutes)} хв тому)</span>
             <span class="timer-badge">⏳ До видалення: ${remMinutes} хв ${remSeconds} с</span>
           </div>
         `;
 
+        const marker = L.marker([p.lat, p.lng], { icon: pointIcon });
         marker.bindPopup(popupContent);
         markersLayer.addLayer(marker);
         visibleCount++;
