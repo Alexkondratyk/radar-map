@@ -20,7 +20,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
       width: 215px;
       transition: all 0.25s ease;
     }
@@ -30,7 +30,6 @@
       align-items: center; 
       margin-bottom: 6px; 
     }
-    /* Три клика по счетчику открывают скрытое меню неона */
     .points-count { 
       font-size: 14px; 
       font-weight: 700; 
@@ -110,109 +109,114 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Компактная легенда */
+    /* Легенда */
     .legend {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 5px;
       font-size: 10px;
       color: #94a3b8;
       border-top: 1px solid #334155;
       padding-top: 6px;
     }
-    .legend-row { display: flex; align-items: center; gap: 6px; }
-    .shape { 
-      width: 10px; 
-      height: 10px; 
-      border-radius: 50%; 
-      display: inline-block; 
-      flex-shrink: 0;
-      border: none;
-    }
-    .dot-green { background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.6); }
-    .dot-red { background: #ff5252; box-shadow: 0 0 6px rgba(255, 82, 82, 0.6); }
+    .legend-row { display: flex; align-items: center; gap: 7px; }
+    .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-green { background: #22c55e; }
+    .dot-red { background: #ef4444; }
 
-    /* СТИЛИ ТОЧЕК: ОДИНАКОВЫЕ 14px, БЕЗ ОБОДКА */
-    .marker-wrap {
-      position: relative;
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    /* Мягкая волна только для свежих (до 10 мин) */
-    .pulse-ring {
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      pointer-events: none;
-      animation: radar-wave 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
-    }
-    .pulse-green { border: 2px solid #34d399; box-shadow: 0 0 8px #34d399; }
-    .pulse-red { border: 2px solid #ff5252; box-shadow: 0 0 8px #ff5252; }
-
-    @keyframes radar-wave {
-      0% { transform: scale(0.9); opacity: 0.9; }
-      100% { transform: scale(2.8); opacity: 0; }
-    }
-
-    /* Основа метки: одинаковая для всех, чистый сплошной цвет без ободка */
-    .radar-core {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
+    /* ТОЧКИ: ЯРКИЕ, СОЧНЫЕ, ЧИСТЫЕ (КАК НА РЕФЕРЕНСЕ) */
+    .custom-dot-marker {
+      background: transparent !important;
       border: none !important;
-      box-sizing: border-box;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.65);
+      overflow: visible !important;
     }
-    .radar-core.green { 
-      background: #34d399; 
-      box-shadow: 0 0 7px rgba(52, 211, 153, 0.7), 0 2px 6px rgba(0,0,0,0.65); 
+    .radar-circle {
+      width: 17px;
+      height: 17px;
+      border-radius: 50%;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.22);
     }
-    .radar-core.red { 
-      background: #ff5252; 
-      box-shadow: 0 0 7px rgba(255, 82, 82, 0.7), 0 2px 6px rgba(0,0,0,0.65); 
+    .radar-circle.color-green {
+      background-color: #22c55e;
+    }
+    .radar-circle.color-red {
+      background-color: #ef4444;
     }
 
-    /* Светофор */
-    .traffic-light-body {
-      background: #020617;
-      border: 2px solid #ffffff;
-      border-radius: 14px;
+    /* Пульсирующий ореол свежих меток (не затемняет ядро) */
+    .radar-circle.fresh.color-green::after {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      border-radius: 50%;
+      background: rgba(34, 197, 94, 0.45);
+      animation: ripple-green 1.7s infinite ease-out;
+      z-index: -1;
+    }
+    .radar-circle.fresh.color-red::after {
+      content: '';
+      position: absolute;
+      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.45);
+      animation: ripple-red 1.7s infinite ease-out;
+      z-index: -1;
+    }
+
+    @keyframes ripple-green {
+      0% { transform: scale(1); opacity: 0.9; }
+      100% { transform: scale(2.3); opacity: 0; }
+    }
+    @keyframes ripple-red {
+      0% { transform: scale(1); opacity: 0.9; }
+      100% { transform: scale(2.3); opacity: 0; }
+    }
+
+    /* КОМПАКТНЫЙ СТИЛЬНЫЙ СВЕТОФОР (НЕ ЗАГОРАЖИВАЕТ КАРТУ) */
+    .traffic-pill {
+      background: rgba(15, 23, 42, 0.88);
+      border: 1.5px solid #ffffff;
+      border-radius: 12px;
       padding: 3px 2px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 3px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.85);
+      gap: 2.5px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.4);
       cursor: pointer;
-      width: 20px;
-      height: 36px;
+      width: 17px;
+      height: 31px;
       user-select: none;
+      backdrop-filter: blur(2px);
     }
-    .traffic-light-body.draggable-mode {
+    .traffic-pill.draggable-mode {
       cursor: grab;
       border-color: #38bdf8;
-      box-shadow: 0 0 14px 4px #38bdf8;
+      box-shadow: 0 0 12px 3px #38bdf8;
+    }
+    .traffic-pill.standby-mode {
+      background: rgba(30, 41, 59, 0.65);
+      border-color: #94a3b8;
+      border-style: dashed;
+      opacity: 0.7;
     }
     .tl-lamp {
-      width: 11px;
-      height: 11px;
+      width: 9.5px;
+      height: 9.5px;
       border-radius: 50%;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
     }
-    .tl-lamp.red-active { background: #ef4444; box-shadow: 0 0 10px 3px #ef4444; }
-    .tl-lamp.red-dim { background: #450a0a; opacity: 0.25; }
-    .tl-lamp.green-active { background: #22c55e; box-shadow: 0 0 10px 3px #22c55e; }
-    .tl-lamp.green-dim { background: #052e16; opacity: 0.25; }
-    .tl-lamp.off { background: #334155; opacity: 0.35; }
+    .tl-lamp.red-active { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+    .tl-lamp.red-dim { background: #450a0a; opacity: 0.2; }
+    .tl-lamp.green-active { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .tl-lamp.green-dim { background: #052e16; opacity: 0.2; }
+    .tl-lamp.off { background: #475569; opacity: 0.35; }
 
-    .traffic-marker-icon, .custom-point-icon { background: transparent !important; border: none !important; }
+    .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* Меню Неона */
+    /* Скрытое меню Неона */
     .neon-panel {
       position: absolute;
       top: 15px;
@@ -237,22 +241,9 @@
       justify-content: space-between;
       align-items: center;
     }
-    .neon-colors {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 10px;
-    }
-    .btn-color {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid #334155;
-      cursor: pointer;
-    }
-    .btn-color.active {
-      border-color: #fff;
-      box-shadow: 0 0 8px #fff;
-    }
+    .neon-colors { display: flex; gap: 6px; margin-bottom: 10px; }
+    .btn-color { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #334155; cursor: pointer; }
+    .btn-color.active { border-color: #fff; box-shadow: 0 0 8px #fff; }
     .btn-neon-action {
       width: 100%;
       padding: 6px 8px;
@@ -361,31 +352,37 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
+    /* Попап как на референсе */
     .leaflet-popup-content-wrapper {
-      background: #1e293b !important;
-      color: #f8fafc !important;
-      border-radius: 10px !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      border-radius: 12px !important;
       padding: 4px !important;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.25) !important;
     }
-    .leaflet-popup-tip { background: #1e293b !important; }
-    .popup-title { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 4px; }
-    .popup-text { font-size: 12px; margin-bottom: 6px; line-height: 1.4; color: #e2e8f0; }
-    .popup-meta {
-      font-size: 10px;
-      color: #94a3b8;
+    .leaflet-popup-tip { background: #ffffff !important; }
+    .popup-card { padding: 4px; }
+    .popup-text { font-size: 13px; font-weight: 600; line-height: 1.45; color: #1e293b; margin-bottom: 8px; }
+    .popup-meta-row {
       display: flex;
-      justify-content: space-between;
-      border-top: 1px solid #334155;
-      padding-top: 5px;
-      gap: 8px;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
     }
-    .timer-badge { color: #f59e0b; font-weight: 600; }
+    .popup-badge {
+      background: #f1f5f9;
+      color: #334155;
+      padding: 2px 6px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
     .btn-delete-tl {
       margin-top: 8px;
       width: 100%;
-      background: #991b1b;
-      color: #fee2e2;
+      background: #ef4444;
+      color: #ffffff;
       border: none;
       padding: 6px;
       border-radius: 6px;
@@ -393,19 +390,17 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .btn-delete-tl:hover { background: #dc2626; }
   </style>
 </head>
 <body>
   <div class="dashboard">
     <div class="dash-header">
-      <!-- 3 быстрых клика открывают меню неона -->
       <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
 
     <div id="collapsibleBody" class="collapsible-body">
-      <div class="subtitle">Мітки активні 40 хв</div>
+      <div class="subtitle">Свіжі пульсують (до 10 хв)</div>
 
       <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
         <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
@@ -430,13 +425,13 @@
         </div>
         <div class="legend-row" style="margin-top: 2px;">
           <span style="font-size: 11px;">🚦</span>
-          <span id="tlLegendCount">Світлофори</span>
+          <span id="tlLegendCount">Світлофори (активні)</span>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- СКРЫТОЕ МЕНЮ НЕОНОВОЙ ПОДСВЕТКИ -->
+  <!-- Скрытое меню Неона -->
   <div id="neonPanel" class="neon-panel">
     <div class="neon-title">
       <span>⚡ Неон вулиць</span>
@@ -456,7 +451,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно создания светофора -->
+  <!-- Модальное окно светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -479,7 +474,9 @@
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
+    
     const LIFETIME_MS = 40 * 60 * 1000;
+    const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
 
     let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
 
@@ -577,7 +574,7 @@
       if (showTrafficLights) {
         if (!map.hasLayer(trafficLightLayer)) map.addLayer(trafficLightLayer);
         renderTrafficLights();
-        showToast("🚦 Світлофори показано!");
+        showToast("🚦 Світлофори увімкнено!");
       } else {
         trafficLightLayer.clearLayers();
         trafficMarkersMap = {};
@@ -630,7 +627,7 @@
     }
 
     function updateLegendCount() {
-      document.getElementById("tlLegendCount").innerText = `Світлофори (${checkpoints.length})`;
+      document.getElementById("tlLegendCount").innerText = `Світлофори (активні)`;
     }
 
     const isMobile = window.innerWidth < 768;
@@ -666,7 +663,7 @@
       if (isEditMode) {
         btn.classList.add("editing");
         btnText.innerText = "💾 Зафіксувати позиції";
-        showToast("📍 Перетягніть світлофори мишкою у потрібні місця!");
+        showToast("📍 Всі світлофори показано! Перетягуйте мишкою.");
       } else {
         btn.classList.remove("editing");
         btnText.innerText = "📍 Розставити світлофори";
@@ -674,21 +671,6 @@
         showToast("✅ Позиції збережено та зафіксовано!");
       }
 
-      Object.values(trafficMarkersMap).forEach(marker => {
-        if (isEditMode) {
-          marker.dragging.enable();
-          if (marker._icon) {
-            const body = marker._icon.querySelector('.traffic-light-body');
-            if (body) body.classList.add('draggable-mode');
-          }
-        } else {
-          marker.dragging.disable();
-          if (marker._icon) {
-            const body = marker._icon.querySelector('.traffic-light-body');
-            if (body) body.classList.remove('draggable-mode');
-          }
-        }
-      });
       renderTrafficLights();
     }
 
@@ -741,7 +723,7 @@
       showToast("🗑️ Світлофор видалено!");
     }
 
-    /* НЕОН */
+    /* НЕОНОВАЯ РАЗМЕТКА */
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -758,7 +740,7 @@
       if (secretClickCount >= 3) {
         secretClickCount = 0;
         document.getElementById("neonPanel").style.display = "block";
-        showToast("⚡ Секретне меню неонової розмітки активовано!");
+        showToast("⚡ Секретне меню неону активовано!");
       }
     }
 
@@ -781,7 +763,7 @@
         tempPoints = [];
         btn.classList.add("drawing");
         btn.innerText = "🛑 Завершити креслення";
-        showToast("👆 Клікайте по дорозі для прокладання тонкої неонової лінії!");
+        showToast("👆 Клікайте по дорозі для неонової лінії!");
       } else {
         btn.classList.remove("drawing");
         btn.innerText = "✏️ Почати нову лінію";
@@ -822,7 +804,7 @@
           points: [...tempPoints]
         });
         await saveNeonLines();
-        showToast("✅ Неонову лінію надійно збережено!");
+        showToast("✅ Неонову лінію зафіксовано!");
       }
       tempPoints = [];
       activeDrawingPolyline = null;
@@ -933,27 +915,30 @@
       return null;
     }
 
+    /* ЛОГИКА СВЕТОФОРОВ: ЕСЛИ НЕТ КРАСНОГО ИЛИ ЗЕЛЕНОГО — ПОЛНОСТЬЮ СКРЫВАЕМ */
     function renderTrafficLights() {
       if (!showTrafficLights) return;
 
       const now = Date.now();
-
-      Object.keys(trafficMarkersMap).forEach(id => {
-        if (!checkpoints.some(cp => cp.id === id)) {
-          trafficLightLayer.removeLayer(trafficMarkersMap[id]);
-          delete trafficMarkersMap[id];
-        }
-      });
 
       checkpoints.forEach(cp => {
         const matched = allPoints.filter(p => getMatchedCheckpointId(p) === cp.id);
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
+        // ЕСЛИ СВЕТОФОР НЕ ГОРИТ КРАСНЫМ ИЛИ ЗЕЛЕНЫМ И МЫ НЕ В РЕЖИМЕ РАССТАНОВКИ — ПРЯЧЕМ ЕГО С КАРТЫ!
+        if (!latest && !isEditMode) {
+          if (trafficMarkersMap[cp.id]) {
+            trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
+            delete trafficMarkersMap[cp.id];
+          }
+          return;
+        }
+
         let state = "off";
         let redClass = "tl-lamp off";
         let greenClass = "tl-lamp off";
-        let statusTitle = "⚪ Немає звітів (черговий режим)";
+        let statusTitle = "⚪ Очікування звітів";
 
         if (latest) {
           const clean = isCleanPoint(latest);
@@ -966,13 +951,15 @@
             state = "danger";
             redClass = "tl-lamp red-active";
             greenClass = "tl-lamp green-dim";
-            statusTitle = "🔴 УВАГА / НЕБЕЗПЕЧНО (БП/перевірка)";
+            statusTitle = "🔴 УВАГА / НЕБЕЗПЕЧНО";
           }
         }
 
         const dragClass = isEditMode ? "draggable-mode" : "";
+        const standbyClass = (!latest && isEditMode) ? "standby-mode" : "";
+
         const iconHtml = `
-          <div class="traffic-light-body ${dragClass}" title="${cp.name}">
+          <div class="traffic-pill ${dragClass} ${standbyClass}" title="${cp.name}">
             <div class="${redClass}"></div>
             <div class="${greenClass}"></div>
           </div>
@@ -981,16 +968,17 @@
         const tlIcon = L.divIcon({
           className: 'traffic-marker-icon',
           html: iconHtml,
-          iconSize: [20, 36],
-          iconAnchor: [10, 18],
-          popupAnchor: [0, -18]
+          iconSize: [17, 31],
+          iconAnchor: [8.5, 15.5],
+          popupAnchor: [0, -16]
         });
 
         let popupContent = `
-          <div class="popup-title">🚦 Світлофор: ${cp.name}</div>
-          <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px; color: ${state === 'clean' ? '#22c55e' : (state === 'danger' ? '#ef4444' : '#94a3b8')}">
-            ${statusTitle}
-          </div>
+          <div style="padding:4px;">
+            <div style="font-size:13px; font-weight:700; color:#0284c7; margin-bottom:4px;">🚦 ${cp.name}</div>
+            <div style="font-size:12px; font-weight:700; margin-bottom:6px; color:${state === 'clean' ? '#16a34a' : (state === 'danger' ? '#dc2626' : '#64748b')}">
+              ${statusTitle}
+            </div>
         `;
 
         if (latest) {
@@ -999,27 +987,33 @@
           const remainingMs = Math.max(0, LIFETIME_MS - diff);
           const remMin = Math.floor(remainingMs / 60000);
           const remSec = Math.floor((remainingMs % 60000) / 1000);
-          const timeStr = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
           popupContent += `
             <div class="popup-text">${latest.text || ""}</div>
-            <div class="popup-meta">
-              <span>🕒 ${timeStr}</span>
-              <span class="timer-badge">⏳ До скидання: ${remMin} хв ${remSec} с</span>
+            <div class="popup-meta-row">
+              <span>⏳ До зникнення:</span>
+              <span class="popup-badge">${remMin}:${remSec.toString().padStart(2, '0')}</span>
+            </div>
+            <div class="popup-meta-row">
+              <span>🕒 Додано:</span>
+              <span>${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
             </div>
           `;
         } else {
-          popupContent += `<div class="popup-text" style="color: #94a3b8;">Повідомлень за останні 40 хв не було.</div>`;
+          popupContent += `<div style="font-size:11px; color:#64748b;">(Світлофор у режимі очікування)</div>`;
         }
 
         if (isEditMode) {
-          popupContent += `<button class="btn-delete-tl" onclick="deleteTrafficLight('${cp.id}')">🗑️ Видалити цей світлофор</button>`;
+          popupContent += `<button class="btn-delete-tl" onclick="deleteTrafficLight('${cp.id}')">🗑️ Видалити світлофор</button>`;
         }
+        popupContent += `</div>`;
 
         if (trafficMarkersMap[cp.id]) {
           const marker = trafficMarkersMap[cp.id];
           marker.setIcon(tlIcon);
           marker.setPopupContent(popupContent);
+          if (isEditMode) marker.dragging.enable();
+          else marker.dragging.disable();
         } else {
           const marker = L.marker([cp.lat, cp.lng], {
             icon: tlIcon,
@@ -1041,10 +1035,7 @@
       });
     }
 
-    /* ----------------------------------------------------
-       ОТРИСОВКА КРУЖКОВ: 2 СОСТОЯНИЯ (СВЕЖИЕ ИЛИ СТОЯЩИЕ)
-       БЕЗ ОБОДКОВ, НЕ БУБЛИК, ОДИНАКОВЫЙ РАЗМЕР (14px)
-    ---------------------------------------------------- */
+    /* ТОЧКИ: ЯРКО-ЗЕЛЕНЫЕ И ЯРКО-КРАСНЫЕ КРУГИ (БЕЗ ТЕМНОТЫ) */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -1055,46 +1046,46 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
-        const ageMinutes = diff / 60000;
+        const isFresh = diff <= FRESH_THRESHOLD_MS;
+        const clean = isCleanPoint(p);
+        
+        const colorClass = clean ? "color-green" : "color-red";
+        const freshClass = isFresh ? "fresh" : "";
+        const emoji = clean ? "🟢" : "🔴";
+
+        const markerHtml = `<div class="radar-circle ${colorClass} ${freshClass}"></div>`;
+
+        const dotIcon = L.divIcon({
+          className: 'custom-dot-marker',
+          html: markerHtml,
+          iconSize: [17, 17],
+          iconAnchor: [8.5, 8.5],
+          popupAnchor: [0, -10]
+        });
+
         const remainingMs = Math.max(0, LIFETIME_MS - diff);
         const remMinutes = Math.floor(remainingMs / 60000);
         const remSeconds = Math.floor((remainingMs % 60000) / 1000);
 
-        const clean = isCleanPoint(p);
-        const colorClass = clean ? "green" : "red";
-
-        // Если младше 10 минут — свежая (с мягкой волной), если старше — стоящая
-        const isFresh = ageMinutes < 10;
-        const pulseHtml = isFresh ? `<div class="pulse-ring pulse-${colorClass}"></div>` : "";
-
-        const iconHtml = `
-          <div class="marker-wrap">
-            ${pulseHtml}
-            <div class="radar-core ${colorClass}"></div>
-          </div>
-        `;
-
-        const pointIcon = L.divIcon({
-          className: 'custom-point-icon',
-          html: iconHtml,
-          iconSize: [28, 28],
-          iconAnchor: [14, 14],
-          popupAnchor: [0, -12]
-        });
-
         const date = new Date(time);
-        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const dateStr = date.toLocaleDateString('uk-UA');
+        const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
         const popupContent = `
-          <div class="popup-title">${p.address || "Дніпро"}</div>
-          <div class="popup-text">${p.text || ""}</div>
-          <div class="popup-meta">
-            <span>🕒 ${timeStr} (${Math.floor(ageMinutes)} хв тому)</span>
-            <span class="timer-badge">⏳ До видалення: ${remMinutes} хв ${remSeconds} с</span>
+          <div class="popup-card">
+            <div class="popup-text">${emoji} ${p.text || ""}</div>
+            <div class="popup-meta-row">
+              <span>⏳ До зникнення:</span>
+              <span class="popup-badge">${remMinutes}:${remSeconds.toString().padStart(2, '0')}</span>
+            </div>
+            <div class="popup-meta-row">
+              <span>🕒 Додано:</span>
+              <span>${dateStr}, ${timeStr}</span>
+            </div>
           </div>
         `;
 
-        const marker = L.marker([p.lat, p.lng], { icon: pointIcon });
+        const marker = L.marker([p.lat, p.lng], { icon: dotIcon });
         marker.bindPopup(popupContent);
         markersLayer.addLayer(marker);
         visibleCount++;
