@@ -212,7 +212,38 @@
     }
     @keyframes pulse-trainer {
       from { transform: scale(1); }
-      to { transform: scale(1.2); }
+      to { transform: scale(1.15); }
+    }
+
+    /* ПОСТОЯННЫЕ НАДПИСИ НАД ШАРИКАМИ В РЕЖИМЕ ТРЕНЕРА */
+    .leaflet-tooltip.trainer-marker-tooltip {
+      background: rgba(15, 23, 42, 0.94) !important;
+      border: 1.5px solid #38bdf8 !important;
+      border-radius: 8px !important;
+      color: #ffffff !important;
+      padding: 3px 7px !important;
+      font-family: inherit !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.4) !important;
+      white-space: nowrap !important;
+      user-select: none !important;
+    }
+    .leaflet-tooltip-top.trainer-marker-tooltip::before {
+      border-top-color: #38bdf8 !important;
+    }
+    .trainer-tooltip-badge {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      max-width: 220px;
+    }
+    .trainer-emoji { font-size: 11px; flex-shrink: 0; }
+    .trainer-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #f1f5f9;
     }
 
     /* СВЕТОФОРЫ */
@@ -269,7 +300,7 @@
 
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* Секретное меню (Неон + Секторы + Тренер) */
+    /* Секретное меню */
     .neon-panel {
       position: absolute;
       top: 15px;
@@ -384,7 +415,7 @@
       to { stroke-dashoffset: 12; }
     }
 
-    /* Модальное окно */
+    /* Модальное окно создания светофора */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -555,14 +586,14 @@
     </div>
   </div>
 
-  <!-- Секретное меню (Фильтры секторов + Неон + Тренер ИИ) -->
+  <!-- Секретное меню -->
   <div id="neonPanel" class="neon-panel">
     <div class="neon-title">
       <span>⚙️ Секретне меню</span>
       <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
     </div>
 
-    <!-- 1. ФИЛЬТР РАЙОНОВ / МАРШРУТОВ -->
+    <!-- 1. ФИЛЬТР РАЙОНОВ -->
     <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🏙️ Фільтр районів міста:</div>
     <div class="sector-quick-btns">
       <button id="btnQuickRoute" class="btn-sector-quick active" onclick="setSectorPreset('route')">🎯 Тільки мій</button>
@@ -581,7 +612,7 @@
     <!-- 2. РЕЖИМ ТРЕНЕРА ИИ -->
     <div class="neon-section-title">🎯 Навчання системи (Корекція)</div>
     <button id="btnTrainer" class="btn-trainer" onclick="toggleTrainerMode()">🎯 Режим тренера: ВИМКНЕНО</button>
-    <div style="font-size:10px; color:#94a3b8; margin:4px 0 8px;">Коли увімкнено: перетягуйте неточні шарики пальцем або мишкою на точне місце.</div>
+    <div style="font-size:10px; color:#94a3b8; margin:4px 0 8px;">Коли увімкнено: над кожним шариком з'явиться напис. Перетягуйте шарики на точні перехрестя.</div>
 
     <!-- 3. НЕОНОВЫЕ ЛИНИИ -->
     <div class="neon-section-title">⚡ Неон вулиць</div>
@@ -602,7 +633,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно добавления светофора -->
+  <!-- Модальное окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -626,7 +657,7 @@
       <input type="text" id="trainerAddress" class="modal-input" placeholder="напр. перехрестя Павлова та Белелюбського" />
       <div class="modal-btns">
         <button class="btn-m btn-m-cancel" onclick="closeTrainerModal()">Скасувати</button>
-        <button class="btn-m btn-m-save" onclick="saveTrainerKnowledge()">💾 Навчити систему</button>
+        <button class="btn-m btn-m-save" onclick="saveTrainerKnowledge()">💾 Навчити систему (Enter)</button>
       </div>
     </div>
   </div>
@@ -652,7 +683,6 @@
     let isTrainerMode = false;
     let pendingTrainerData = null;
 
-    // СЕКТОРЫ (ПО УМОЛЧАНИЮ ТОЛЬКО МАРШРУТ s1)
     let activeSectors = JSON.parse(localStorage.getItem("radar_active_sectors") || '["s1"]');
 
     const SECTOR_DEFS = {
@@ -767,9 +797,7 @@
       setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    /* ----------------------------------------------------
-       ЛОГИКА ФИЛЬТРА СЕКТОРОВ
-    ---------------------------------------------------- */
+    /* ФИЛЬТР СЕКТОРОВ */
     function syncSectorCheckboxesUI() {
       ["s1", "s2", "s3", "s4", "s5", "s6"].forEach(id => {
         const el = document.getElementById(`sec_${id}`);
@@ -803,7 +831,7 @@
         const el = document.getElementById(`sec_${id}`);
         if (el && el.checked) activeSectors.push(id);
       });
-      if (activeSectors.length === 0) activeSectors = ['s1']; // Минимум свой маршрут
+      if (activeSectors.length === 0) activeSectors = ['s1'];
       localStorage.setItem("radar_active_sectors", JSON.stringify(activeSectors));
       syncSectorCheckboxesUI();
       renderMarkers();
@@ -812,7 +840,7 @@
     syncSectorCheckboxesUI();
 
     function isPointInActiveSectors(p) {
-      if (activeSectors.length === 6) return true; // Включен весь Днепр
+      if (activeSectors.length === 6) return true;
       const fullText = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
       const lat = p.lat, lng = p.lng;
 
@@ -825,16 +853,14 @@
       });
     }
 
-    /* ----------------------------------------------------
-       ЛОГИКА ТРЕНЕРА ИИ (ОБУЧЕНИЕ ЧЕРЕЗ ПЕРЕТАСКИВАНИЕ)
-    ---------------------------------------------------- */
+    /* РЕЖИМ ТРЕНЕРА ИИ (ПЕРЕТАСКИВАНИЕ С НАДПИСЯМИ) */
     function toggleTrainerMode() {
       isTrainerMode = !isTrainerMode;
       const btn = document.getElementById("btnTrainer");
       if (isTrainerMode) {
         btn.classList.add("trainer-on");
         btn.innerText = "🎯 Режим тренера: УВІМКНЕНО";
-        showToast("🎯 Перетягніть неточну точку пальцем на потрібне місце!");
+        showToast("🎯 Написи показано! Перетягуйте шарики на точні місця.");
       } else {
         btn.classList.remove("trainer-on");
         btn.innerText = "🎯 Режим тренера: ВИМКНЕНО";
@@ -848,11 +874,18 @@
       document.getElementById("modalTrainer").style.display = "flex";
       document.getElementById("trainerPostText").innerText = p.raw_text || p.text || "";
       
-      // Автоподстановка ключевой фразы
       let guessKey = (p.address || "").toLowerCase().replace("дніпро", "").replace("вул.", "").replace("пр.", "").trim();
-      if (!guessKey) guessKey = (p.text || "").slice(0, 30);
-      document.getElementById("trainerKeyPhrase").value = guessKey;
-      document.getElementById("trainerAddress").value = p.address || "Дніпро";
+      if (!guessKey) guessKey = (p.text || "").replace(" (чисто)", "").slice(0, 30);
+      
+      const keyInput = document.getElementById("trainerKeyPhrase");
+      const addrInput = document.getElementById("trainerAddress");
+      keyInput.value = guessKey;
+      addrInput.value = p.address || "Дніпро";
+
+      setTimeout(() => keyInput.focus(), 80);
+
+      keyInput.onkeydown = (e) => { if (e.key === 'Enter') saveTrainerKnowledge(); };
+      addrInput.onkeydown = (e) => { if (e.key === 'Enter') saveTrainerKnowledge(); };
     }
 
     function closeTrainerModal() {
@@ -879,29 +912,25 @@
       };
 
       try {
-        // Сохраняем в Базу Знаний Firebase
         await fetch(FIREBASE_KB_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(kbEntry)
         });
 
-        // Сразу обновляем текущую точку
         pendingTrainerData.point.lat = pendingTrainerData.newLat;
         pendingTrainerData.point.lng = pendingTrainerData.newLng;
         pendingTrainerData.point.address = address;
 
         closeTrainerModal();
-        showToast("🎯 ІІ навчено! Орієнтир назавжди закріплено в базі знань.");
+        showToast("🎯 ІІ навчено! Локацію надійно зафіксовано.");
         renderMarkers();
       } catch (e) {
         alert("Помилка збереження: " + e.message);
       }
     }
 
-    /* ----------------------------------------------------
-       СВЕТОФОРЫ
-    ---------------------------------------------------- */
+    /* СВЕТОФОРЫ */
     function toggleTrafficLights() {
       showTrafficLights = !showTrafficLights;
       localStorage.setItem("radar_tl_visible", showTrafficLights);
@@ -1245,9 +1274,7 @@
       });
     }
 
-    /* ----------------------------------------------------
-       ЗАГРУЗКА ТОЧЕК И РЕНДЕР
-    ---------------------------------------------------- */
+    /* ЗАГРУЗКА ТОЧЕК И РЕНДЕР */
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
@@ -1306,7 +1333,6 @@
       const now = Date.now();
 
       checkpoints.forEach(cp => {
-        // Проверяем попадание светофора в активные секторы
         const cpPointLike = { lat: cp.lat, lng: cp.lng, address: cp.name, raw_text: cp.name };
         if (!isPointInActiveSectors(cpPointLike) && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
@@ -1483,17 +1509,38 @@
 
         const marker = L.marker([p.lat, p.lng], { 
           icon: dotIcon,
-          draggable: isTrainerMode
+          draggable: isTrainerMode,
+          zIndexOffset: isTrainerMode ? 500 : 0
         });
 
+        // НАДПИСИ НАД ШАРИКАМИ В РЕЖИМЕ ТРЕНЕРА
         if (isTrainerMode) {
+          const rawText = (p.text || p.raw_text || p.address || "").replace(" (чисто)", "").trim();
+          const cleanSnippet = rawText.length > 38 ? rawText.slice(0, 35) + "..." : rawText;
+
+          marker.bindTooltip(`
+            <div class="trainer-tooltip-badge">
+              <span class="trainer-emoji">${emoji}</span>
+              <span class="trainer-text">${cleanSnippet}</span>
+            </div>
+          `, {
+            permanent: true,
+            direction: 'top',
+            offset: [0, -12],
+            className: 'trainer-marker-tooltip'
+          });
+
+          marker.on('dragstart', function() {
+            marker.closePopup();
+          });
+
           marker.on('dragend', function(e) {
             const newPos = e.target.getLatLng();
             openTrainerModal(p, newPos);
           });
-        } else {
-          marker.bindPopup(popupContent);
         }
+
+        marker.bindPopup(popupContent);
 
         markersLayer.addLayer(marker);
         visibleCount++;
