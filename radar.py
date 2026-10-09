@@ -29,11 +29,9 @@ if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
 
 def log(msg):
-    """Мгновенный вывод лога в консоль GitHub."""
     print(msg, flush=True)
 
 def find_working_model():
-    """Быстрый поиск проверенной рабочей модели."""
     for api_ver in ["v1beta", "v1"]:
         for model_name in ["gemini-flash-lite-latest", "gemini-1.5-flash-latest", "gemini-2.0-flash"]:
             test_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_name}:generateContent?key={GEMINI_KEY}"
@@ -49,7 +47,6 @@ def find_working_model():
 API_VERSION, MODEL_NAME = find_working_model()
 
 def cleanup_old_points():
-    """Молниеносная очистка точек старше 40 минут."""
     try:
         r = requests.get(FIREBASE_URL, timeout=8)
         if r.status_code == 200 and r.json():
@@ -64,7 +61,6 @@ def cleanup_old_points():
         log(f"Ошибка очистки базы: {e}")
 
 def get_existing_records():
-    """Получает сохраненные посты для мгновенной сверки."""
     try:
         r = requests.get(FIREBASE_URL, timeout=8)
         if r.status_code == 200 and r.json():
@@ -82,14 +78,10 @@ def get_existing_records():
     return set()
 
 def fetch_tg_posts(channel_url):
-    """Считывает последние посты из веб-зеркала Telegram."""
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     try:
         r = requests.get(channel_url, headers=headers, timeout=10)
         if r.status_code != 200:
-            log(f"⚠️ Ошибка запроса к {channel_url}: код {r.status_code}")
             return []
         raw_posts = re.findall(r'<div class="tgme_widget_message_text[^>]*>(.*?)</div>', r.text, re.DOTALL)
         clean = []
@@ -103,94 +95,59 @@ def fetch_tg_posts(channel_url):
         return []
 
 def parse_batch_gemini(posts_list):
-    """Анализирует ВСЕ посты разом со строгим JSON-режимом."""
     if not posts_list:
         return []
 
-    cleaned_posts = []
-    for p in posts_list:
-        c = p.replace('"', "'").replace('\\', '/').replace('\n', ' ').strip()
-        cleaned_posts.append(c)
-
+    cleaned_posts = [p.replace('"', "'").replace('\\', '/').replace('\n', ' ').strip() for p in posts_list]
     items = "\n".join([f"[{i}] {p}" for i, p in enumerate(cleaned_posts)])
     url = f"https://generativelanguage.googleapis.com/{API_VERSION}/models/{MODEL_NAME}:generateContent?key={GEMINI_KEY}"
     
     prompt = f"""Ты опытный диспетчер дорожной обстановки в городе Днепр (Украина).
-Проанализируй список сообщений от водителей. Для КАЖДОГО определи локацию в г. Днепр и статус опасности.
+Определи локацию в г. Днепр и статус опасности.
 
-ВАЖНЫЕ ПРАВИЛА ЛОКАЦИЙ И ТОЧНЫХ ОРИЕНТИРОВ:
-1. "Комбайновый" -> по ул. Академика Белелюбского (бывш. Краснозаводской), сразу за 2-м поворотом от ул. Павлова [lat: 48.4765, lng: 34.9830].
-2. "Краснозаводская" / "Белелюбского" / "Павлова угол Белелюбского" -> ул. Академика Белелюбского (Краснозаводская) от ул. Павлова [lat: 48.4795, lng: 34.9960].
-3. "Павлова" -> ул. Академика Павлова [lat: 48.4780, lng: 35.0005].
-4. "Водолечебница" -> пр. Свободы в районе заводской водолечебницы / больницы перед Кайдакским мостом [lat: 48.4820, lng: 34.9535].
-5. "РОВД" / "Кайдакский съезд" / "съезд с кайдакского" -> правый съезд с Кайдакского моста / ул. Кайдакский Шлях [lat: 48.4905, lng: 34.9450].
-6. "Огни" -> Вечный огонь на пр. Сергея Нигояна угол с пр. Ивана Мазепы [lat: 48.4716, lng: 34.9892].
-7. "Речпорт" -> Речной вокзал / Набережная Заводская [lat: 48.4802, lng: 35.0210].
-8. "Озерка" -> рынок Озёрка / ул. Степана Бандеры [lat: 48.4687, lng: 35.0265].
-9. "Артёма верх" / "верх Артёма" -> ул. Сечевых Стрельцов вверху [lat: 48.4370, lng: 35.0330].
-10. "Артёма низ" / "низ Артёма" -> ул. Сечевых Стрельцов внизу [lat: 48.4600, lng: 35.0440].
-11. "Кирова верх" / "верх Кирова" -> пр. Александра Поля вверху [lat: 48.4320, lng: 35.0180].
-12. "Кирова низ" / "низ Кирова" -> пр. Александра Поля внизу [lat: 48.4610, lng: 35.0320].
-13. "Рабочая верх" -> ул. Рабочая район ЮМЗ [lat: 48.4350, lng: 34.9980].
-14. "Рабочая низ" -> ул. Рабочая район пр. Леси Украинки [lat: 48.4680, lng: 35.0080].
-15. "Кротова" -> ул. Бориса Кротова / 12-й квартал [lat: 48.3970, lng: 34.9870].
-16. "Гальченко" -> ул. Василия Гальченко [lat: 48.3990, lng: 34.9820].
-17. "Шинная" -> ул. Шинная [lat: 48.4285, lng: 35.0194].
-18. "Брама" -> ЖК Брама, Слобожанское [lat: 48.5330, lng: 35.0800].
-19. "Лакокраска" -> район завода Лакокраска / ул. Журналистов [lat: 48.5030, lng: 35.0990].
-20. "Островского" -> пл. Старомостовая / вокзал [lat: 48.4760, lng: 35.0240].
-21. "Караван" -> ТРЦ Караван, Донецкое шоссе [lat: 48.5350, lng: 35.0240].
-22. "Подстанция" -> кольцо пр. Науки / Дафи [lat: 48.4230, lng: 35.0250].
-23. "Нагорка" -> Нагорный рынок / пр. Науки [lat: 48.4490, lng: 35.0620].
-24. "Парус", "Победа", "Тополь", "Сокол", "Космическая" и другие улицы города.
+СТРОГИЕ ТОЧНЫЕ КООРДИНАТЫ ДЛЯ НАРОДНЫХ ОРИЕНТИРОВ:
+1. "Краснозаводская" / "Белелюбского" -> ул. Академика Белелюбского (бывш. Краснозаводская) возле ДТРЗ [lat: 48.4812, lng: 34.9940]
+2. "Павлова" / "угол Павлова" -> ул. Академика Павлова угол Белелюбского [lat: 48.4818, lng: 35.0012]
+3. "Комбайновый" -> ул. Белелюбского за 2-м поворотом от Павлова [lat: 48.4795, lng: 34.9845]
+4. "Водолечебница" -> пр. Свободы, 2 перед Кайдакским мостом [lat: 48.4848, lng: 34.9735]
+5. "Кайдакский съезд" / "РОВД" / "съезд с кайдакского" -> съезд с Кайдакского моста на ул. Кайдакский Шлях [lat: 48.4925, lng: 34.9625]
+6. "Речпорт" / "речной порт" -> Речной вокзал / Набережная Заводская / пл. Десантников [lat: 48.4805, lng: 35.0210]
+7. "Водокачка" / "водокачка набережная" -> Набережная Заводская район водокачки [lat: 48.4910, lng: 34.9480]
+8. "Огни" -> Вечный огонь на пр. Сергея Нигояна угол с пр. Ивана Мазепы [lat: 48.4716, lng: 34.9892]
 
-ПРАВИЛО ДЛЯ СЛОВ БП:
-- Слова "БП", "б.п.", "б/п", "блокпост", "мобпост", "фишка", "шлагбаум", "бус", "патруль" — это указание на проверку (status: danger), а улицу бери из соседних слов сообщения!
+ПРАВИЛО БП:
+Слова "БП", "б.п.", "б/п", "блокпост", "бус", "патруль", "проверка", "дождь", "готовят" — это признак опасности (status: danger), адрес бери из самого названия места!
 
 СТАТУС:
-- "danger" (опасность): бп, б.п., блокпост, мобпост, дождь, гроза, тучи, мокро, поливают, оливки, синие, зеленые, пишут, обилечивают, тормозят, проверяют, бус, 🫒, 🌧️, ⚡, 👮, 📄.
-- "clean" (чисто): чисто, пусто, спокойно, ясно, сухо, проехал, ок, 👍, 🫡, ✌️, 👌, ☀️, 🟢.
+- danger: бп, б.п., б/п, блокпост, мобпост, бус, поливают, дождь, оливки, синие, пишут, обилечивают, тормозят, готовят, 🫒, 🌧️, ⚡.
+- clean: чисто, сухо, пусто, спокойно, ок, 👍, 🫡, ✌️, ☀️, 🟢.
 
 Сообщения:
 {items}
 
 Верни строго JSON массив:
 [
-  {{"id": 0, "valid": true, "address": "Название улицы/места", "lat": 48.46, "lng": 35.04, "status": "clean"}},
+  {{"id": 0, "valid": true, "address": "Название места", "lat": 48.4812, "lng": 34.9940, "status": "danger"}},
   {{"id": 1, "valid": false}}
 ]"""
 
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "responseMimeType": "application/json"
-        }
+        "generationConfig": {"responseMimeType": "application/json"}
     }
 
     try:
         resp = requests.post(url, json=payload, timeout=20)
         if resp.status_code == 200:
             raw_text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-            try:
-                parsed = json.loads(raw_text)
-                if isinstance(parsed, list):
-                    return parsed
-                elif isinstance(parsed, dict):
-                    for v in parsed.values():
-                        if isinstance(v, list):
-                            return v
-                    return [parsed]
-            except Exception:
-                pass
-
-            match = re.search(r'\[.*\]', raw_text, re.DOTALL)
-            if match:
-                try:
-                    return json.loads(match.group(0))
-                except Exception:
-                    pass
-        else:
-            log(f"Ответ Gemini API: код {resp.status_code}")
+            parsed = json.loads(raw_text)
+            if isinstance(parsed, list):
+                return parsed
+            if isinstance(parsed, dict):
+                for v in parsed.values():
+                    if isinstance(v, list):
+                        return v
+                return [parsed]
     except Exception as e:
         log(f"Ошибка вызова Gemini: {e}")
     return []
@@ -198,15 +155,12 @@ def parse_batch_gemini(posts_list):
 def is_danger_text(text):
     t = text.lower()
     danger_patterns = [
-        r'\bбп\b', r'б\.п', r'б/п', r'блокпост', r'блок\s*пост', r'мобпост', r'моб\.пост',
-        r'фишк', r'шлагбаум', r'стоп-контрол', r'бус', r'патрул', r'дожд', r'туч', r'хмар',
-        r'злив', r'оливк', r'баклажан', r'синие', r'зелен', r'пиксел', r'пиш[уе]', r'разда',
-        r'обилеч', r'тормоз', r'останавл', r'провер', r'паку', r'кошмар'
+        r'\bбп\b', r'б\.п', r'б/п', r'блокпост', r'блок\s*пост', r'мобпост',
+        r'фишк', r'шлагбаум', r'бус', r'патрул', r'дожд', r'туч', r'хмар',
+        r'злив', r'оливк', r'баклажан', r'синие', r'зелен', r'пиш[уе]', r'разда',
+        r'обилеч', r'тормоз', r'останавл', r'провер', r'паку', r'готовят'
     ]
-    for pattern in danger_patterns:
-        if re.search(pattern, t):
-            return True
-    return False
+    return any(re.search(p, t) for p in danger_patterns)
 
 def sync_cycle():
     cleanup_old_points()
@@ -215,8 +169,7 @@ def sync_cycle():
     for ch in CHANNELS:
         posts = fetch_tg_posts(ch["url"])
         new_posts = [p for p in posts if (ch["id"], p) not in existing_records]
-
-        log(f"📡 [{ch['name']}] Всего постов: {len(posts)} | Новых для анализа: {len(new_posts)}")
+        log(f"📡 [{ch['name']}] Всего: {len(posts)} | Новых: {len(new_posts)}")
 
         if not new_posts:
             continue
@@ -230,7 +183,6 @@ def sync_cycle():
                 post = new_posts[idx]
                 if item.get("valid") and "lat" in item and "lng" in item:
                     now_ms = int(time.time() * 1000)
-                    
                     force_danger = is_danger_text(post)
                     has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто", "сухо"])
                     
@@ -269,12 +221,12 @@ def sync_cycle():
                     except Exception as e:
                         log(f"Ошибка сохранения: {e}")
 
-        log(f"  🏁 [{ch['name']}] Обработано! Добавлено меток: {added_count}")
+        log(f"  🏁 [{ch['name']}] Обработано! Добавлено: {added_count}")
 
 if __name__ == "__main__":
-    log("🚀 Запуск быстрого радара (2 канала синхронно)...")
+    log("🚀 Запуск быстрого радара...")
     for step in range(8):
         sync_cycle()
         if step < 7:
             time.sleep(60)
-    log("🏁 Цикл завершён успешно!")
+    log("🏁 Цикл завершён!")
