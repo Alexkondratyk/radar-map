@@ -8,55 +8,65 @@ GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
 TG_URL = "https://t.me/s/dnepr_bez_tck"
 
-if not FIREBASE_URL.endswith(".json"):
+if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
 
 def log(msg):
     """Мгновенный вывод сообщения в консоль GitHub."""
     print(msg, flush=True)
 
-def find_active_gemini_model():
-    """Скрипт сам спрашивает у Google список доступных моделей и выбирает лучшую."""
-    log("🔍 Автопоиск активной модели Gemini для вашего ключа...")
+def find_working_model():
+    """Находит реально работающую модель путем отправки тестового запроса."""
+    log("🔍 Проверяем доступные модели Gemini живым тестом...")
+    
+    # Список кандидатов: сначала быстрые Flash, исключая закрытые 1.0
+    candidates = []
     for api_ver in ["v1beta", "v1"]:
         try:
             url = f"https://generativelanguage.googleapis.com/{api_ver}/models?key={GEMINI_KEY}"
             resp = requests.get(url, timeout=10)
             if resp.status_code == 200:
-                data = resp.json()
-                models = data.get("models", [])
-                
-                # Фильтруем только те, что умеют генерировать текст
-                available = [
-                    m["name"].replace("models/", "")
-                    for m in models
-                    if "generateContent" in m.get("supportedGenerationMethods", [])
-                ]
-                
-                log(f"Найдено моделей в {api_ver}: {len(available)}")
-                
-                # Приоритет быстрых моделей Flash
-                for pref in ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.0-flash-exp"]:
-                    if pref in available:
-                        log(f"✅ Выбрана оптимальная модель: {pref} ({api_ver})")
-                        return api_ver, pref
-                
-                if available:
-                    chosen = available[0]
-                    log(f"✅ Выбрана доступная модель: {chosen} ({api_ver})")
-                    return api_ver, chosen
-            else:
-                log(f"Проверка {api_ver} вернула код {resp.status_code}: {resp.text[:120]}")
+                raw_models = resp.json().get("models", [])
+                for m in raw_models:
+                    name = m.get("name", "").replace("models/", "")
+                    methods = m.get("supportedGenerationMethods", [])
+                    # Отсекаем старые закрытые версии 1.0 и эмбеддинги
+                    if "generateContent" in methods and "1.0" not in name:
+                        candidates.append((api_ver, name))
         except Exception as e:
-            log(f"Сбой подключения к {api_ver}: {e}")
-            
-    log("⚠️ Автопоиск не удался, пробуем базовый gemini-2.0-flash в v1beta")
-    return "v1beta", "gemini-2.0-flash"
+            log(f"Сбой чтения списка моделей для {api_ver}: {e}")
 
-API_VERSION, MODEL_NAME = find_active_gemini_model()
+    # Сортируем: Flash-модели ставим первыми
+    candidates.sort(key=lambda x: (0 if "flash" in x[1].lower() else 1))
+
+    # Запасной список, если API не вернул модели через поиск
+    if not candidates:
+        for ver in ["v1beta", "v1"]:
+            for m in ["gemini-1.5-flash-latest", "gemini-1.5-flash-8b", "gemini-2.0-flash", "gemini-1.5-pro-latest"]:
+                candidates.append((ver, m))
+
+    log(f"Найдено подходящих моделей для проверки: {len(candidates)}")
+
+    # Тестируем каждую модель реальным запросом, пока не получим 200 OK
+    for api_ver, model_name in candidates:
+        test_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_name}:generateContent?key={GEMINI_KEY}"
+        payload = {"contents": [{"parts": [{"text": "ping"}]}]}
+        try:
+            r = requests.post(test_url, json=payload, timeout=8)
+            if r.status_code == 200:
+                log(f"🎯 РАБОЧАЯ МОДЕЛЬ НАЙДЕНА: {model_name} (версия {api_ver})")
+                return api_ver, model_name
+            else:
+                log(f"Пропуск {model_name}: код {r.status_code}")
+        except Exception:
+            continue
+
+    log("⚠️ Живой тест не прошел, пробуем резервный gemini-1.5-flash-latest")
+    return "v1beta", "gemini-1.5-flash-latest"
+
+API_VERSION, MODEL_NAME = find_working_model()
 
 def get_existing_messages():
-    """Получает тексты сообщений, которые уже есть в базе."""
     try:
         r = requests.get(FIREBASE_URL, timeout=10)
         if r.status_code == 200 and r.json():
@@ -69,7 +79,6 @@ def get_existing_messages():
     return set()
 
 def fetch_tg_posts():
-    """Забирает последние сообщения из открытого веб-зеркала Telegram."""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
@@ -85,13 +94,12 @@ def fetch_tg_posts():
             if text:
                 clean.append(text)
         log(f"Успешно прочитано сообщений из канала: {len(clean)}")
-        return clean[-10:]
+        return clean[-6:]  # Берем последние 6 постов для защиты от минутного лимита
     except Exception as e:
         log(f"Ошибка загрузки постов: {e}")
         return []
 
 def parse_with_gemini(text):
-    """Отправляет пост в выбранную модель Gemini для извлечения координат."""
     url = f"https://generativelanguage.googleapis.com/{API_VERSION}/models/{MODEL_NAME}:generateContent?key={GEMINI_KEY}"
     prompt = f"""Ты картографический аналитик города Днепр (Украина).
 Проанализируй текст сообщения: "{text}"
@@ -108,17 +116,16 @@ def parse_with_gemini(text):
             resp = requests.post(url, json=payload, timeout=15)
             if resp.status_code == 200:
                 raw_text = resp.json()['candidates'][0]['content']['parts'][0]['text']
-                # Извлекаем валидный JSON из любого ответа
                 match = re.search(r'\{.*\}', raw_text, re.DOTALL)
                 if match:
                     return json.loads(match.group(0))
             elif resp.status_code in [429, 503]:
-                log(f"Временная заминка Google ({resp.status_code}), ждем 4 сек...")
-                time.sleep(4)
+                log(f"Временная заминка Google ({resp.status_code}), пауза 5 сек...")
+                time.sleep(5)
             else:
-                log(f"Ответ Gemini API: код {resp.status_code} - {resp.text[:120]}")
+                log(f"Ответ Gemini API: код {resp.status_code}")
         except Exception as e:
-            log(f"Исключение при запросе к Gemini: {e}")
+            log(f"Исключение при запросе: {e}")
             time.sleep(2)
     return None
 
@@ -131,7 +138,7 @@ def sync_cycle():
         if post in existing:
             continue
 
-        log(f"Обрабатываем пост: {post[:45]}...")
+        log(f"Обрабатываем пост: {post[:40]}...")
         result = parse_with_gemini(post)
 
         if result and result.get("valid") and "lat" in result and "lng" in result:
@@ -158,14 +165,11 @@ def sync_cycle():
         else:
             log("-> Координаты не найдены (не привязано к улице)")
 
-        time.sleep(2)
+        time.sleep(4)  # Пауза 4 сек держит нас строго в рамках бесплатного лимита 15 RPM
 
     log(f"Итог проверки: добавлено новых точек: {added}")
 
 if __name__ == "__main__":
-    log("🚀 Старт синхронизации радара (цикл 8 минут с шагом 60 сек)...")
-    for step in range(8):
-        log(f"--- Проверка {step + 1}/8 ---")
-        sync_cycle()
-        if step < 7:
-            time.sleep(60)
+    log("🚀 Старт синхронизации радара...")
+    sync_cycle()
+    log("🏁 Проверка завершена успешно!")
