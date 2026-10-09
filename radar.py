@@ -7,6 +7,7 @@ import requests
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
 TG_URL = "https://t.me/s/dnepr_bez_tck"
+LIFETIME_MS = 40 * 60 * 1000  # 40 минут в миллисекундах
 
 if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
@@ -40,8 +41,6 @@ def find_working_model():
             for m in ["gemini-flash-lite-latest", "gemini-1.5-flash-latest", "gemini-2.0-flash"]:
                 candidates.append((ver, m))
 
-    log(f"Найдено подходящих моделей для проверки: {len(candidates)}")
-
     for api_ver, model_name in candidates:
         test_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{model_name}:generateContent?key={GEMINI_KEY}"
         payload = {"contents": [{"parts": [{"text": "ping"}]}]}
@@ -50,26 +49,39 @@ def find_working_model():
             if r.status_code == 200:
                 log(f"🎯 РАБОЧАЯ МОДЕЛЬ НАЙДЕНА: {model_name} (версия {api_ver})")
                 return api_ver, model_name
-            else:
-                log(f"Пропуск {model_name}: код {r.status_code}")
         except Exception:
             continue
 
-    log("⚠️ Живой тест не прошел, берем проверенную gemini-flash-lite-latest")
     return "v1beta", "gemini-flash-lite-latest"
 
 API_VERSION, MODEL_NAME = find_working_model()
+
+def cleanup_old_points():
+    """Удаляет из базы Firebase точки, которые старше 40 минут."""
+    try:
+        r = requests.get(FIREBASE_URL, timeout=10)
+        if r.status_code == 200 and r.json():
+            data = r.json()
+            now_ms = int(time.time() * 1000)
+            base_url = FIREBASE_URL.replace("/points.json", "")
+            
+            for key, val in data.items():
+                if isinstance(val, dict):
+                    pt_time = val.get("time") or val.get("timestamp") or 0
+                    if now_ms - pt_time > LIFETIME_MS:
+                        del_url = f"{base_url}/points/{key}.json"
+                        requests.delete(del_url, timeout=5)
+    except Exception as e:
+        log(f"Ошибка очистки устаревших точек: {e}")
 
 def get_existing_messages():
     try:
         r = requests.get(FIREBASE_URL, timeout=10)
         if r.status_code == 200 and r.json():
             data = r.json()
-            existing = {v.get("text", "").strip() for v in data.values() if isinstance(v, dict)}
-            log(f"В базе Firebase уже сохранено точек: {len(existing)}")
-            return existing
+            return {v.get("text", "").strip() for v in data.values() if isinstance(v, dict)}
     except Exception as e:
-        log(f"Ошибка проверки базы Firebase: {e}")
+        log(f"Ошибка базы: {e}")
     return set()
 
 def fetch_tg_posts():
@@ -79,7 +91,6 @@ def fetch_tg_posts():
     try:
         r = requests.get(TG_URL, headers=headers, timeout=10)
         if r.status_code != 200:
-            log(f"Ошибка запроса к Telegram: статус {r.status_code}")
             return []
         raw_posts = re.findall(r'<div class="tgme_widget_message_text[^>]*>(.*?)</div>', r.text, re.DOTALL)
         clean = []
@@ -87,7 +98,6 @@ def fetch_tg_posts():
             text = re.sub(r'<[^>]+>', '', p).strip()
             if text:
                 clean.append(text)
-        log(f"Успешно прочитано сообщений из канала: {len(clean)}")
         return clean[-10:]
     except Exception as e:
         log(f"Ошибка загрузки постов: {e}")
@@ -113,21 +123,20 @@ def parse_with_gemini(text):
 12. "Островского" -> пл. Старомостовая / вокзал [lat: 48.4760, lng: 35.0240]
 13. "Караван" -> ТРЦ Караван, Донецкое шоссе [lat: 48.5350, lng: 35.0240]
 14. "Парус" -> ж/м Парус [lat: 48.4835, lng: 34.9080]
-15. "Подстанция" -> кольцо пр. Науки (Гагарина) / Дафи [lat: 48.4230, lng: 35.0250]
+15. "Подстанция" -> кольцо пр. Науки / Дафи [lat: 48.4230, lng: 35.0250]
 16. "Нагорка" -> Нагорный рынок / пр. Науки [lat: 48.4490, lng: 35.0620]
 
-ОПРЕДЕЛЕНИЕ СТАТУСА (status):
-- "clean" (зеленый / безопасно): если есть значки 👍, 🫡, ✌️, 👌, ☀️, 🟢, или слова "чисто", "пусто", "спокойно", "ясно", "проехал", "ок".
-- "danger" (красный / опасность): если есть значки 🫒, 🌧️, ⚡, 👮, 📄, или слова "бп", "повестки", "дождь", "тучи", "синие", "оливки", "баклажаны", "пишут", "бус", "тормозят", "проверяют".
+СТАТУС (status):
+- "clean" (зеленый): 👍, 🫡, ✌️, 👌, ☀️, 🟢, или слова "чисто", "пусто", "спокойно", "ясно", "проехал", "ок".
+- "danger" (красный): 🫒, 🌧️, ⚡, 👮, 📄, или слова "бп", "повестки", "дождь", "тучи", "синие", "оливки", "баклажаны", "пишут", "бус", "тормозят".
 
 Верни СТРОГО чистый JSON:
 {{"valid": true, "address": "Название улицы", "lat": 48.46, "lng": 35.04, "status": "clean" или "danger"}}
 
-Если сообщения вообще не содержат места (спам, чистый вопрос, реклама):
+Если сообщению нет соответствия в Днепре (спам, вопрос):
 {{"valid": false}}"""
 
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
-    
     for attempt in range(3):
         try:
             resp = requests.post(url, json=payload, timeout=15)
@@ -137,16 +146,13 @@ def parse_with_gemini(text):
                 if match:
                     return json.loads(match.group(0))
             elif resp.status_code in [429, 503]:
-                log(f"Временная заминка Google ({resp.status_code}), пауза 4 сек...")
                 time.sleep(4)
-            else:
-                log(f"Ответ Gemini API: код {resp.status_code}")
-        except Exception as e:
-            log(f"Исключение при запросе: {e}")
+        except Exception:
             time.sleep(2)
     return None
 
 def sync_cycle():
+    cleanup_old_points()
     existing = get_existing_messages()
     posts = fetch_tg_posts()
 
@@ -155,18 +161,13 @@ def sync_cycle():
         if post in existing:
             continue
 
-        log(f"Обрабатываем пост: {post[:40]}...")
         result = parse_with_gemini(post)
-
         if result and result.get("valid") and "lat" in result and "lng" in result:
             now_ms = int(time.time() * 1000)
-            
-            # Определяем, чистый ли пост (по ответу Gemini или по смайликам в тексте)
             gemini_status = result.get("status", "").lower()
-            has_clean_symbols = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто"])
-            is_clean = (gemini_status == "clean") or has_clean_symbols
+            has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто"])
+            is_clean = (gemini_status == "clean") or has_clean
 
-            # Для карты: если статус чистый, но в тексте нет слова "чисто", добавляем его, чтобы карта сразу нарисовала зеленый маркер
             clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
             final_text = f"{post}{clean_tag}"
 
@@ -184,22 +185,22 @@ def sync_cycle():
             try:
                 r = requests.post(FIREBASE_URL, json=payload, timeout=10)
                 if r.status_code == 200:
-                    icon_status = "🟢 ЧИСТО" if is_clean else "🔴 ОПАСНО"
-                    log(f"✅ Точка нанесена [{icon_status}]: {result.get('address')} ({result['lat']}, {result['lng']})")
+                    status_text = "🟢 ЧИСТО" if is_clean else "🔴 ОПАСНО"
+                    log(f"✅ Точка нанесена [{status_text}]: {result.get('address')}")
                     existing.add(post)
                     added += 1
-                else:
-                    log(f"Ошибка записи в Firebase: код {r.status_code}")
             except Exception as e:
-                log(f"Сбой отправки в Firebase: {e}")
-        else:
-            log("-> Координаты не найдены")
+                log(f"Ошибка сохранения: {e}")
 
-        time.sleep(3)
+        time.sleep(2)
 
-    log(f"Итог проверки: добавлено новых точек: {added}")
+    if added > 0:
+        log(f"Добавлено новых точек: {added}")
 
 if __name__ == "__main__":
-    log("🚀 Старт синхронизации радара...")
-    sync_cycle()
-    log("🏁 Проверка завершена успешно!")
+    log("🚀 Запуск 8-минутного непрерывного цикла (проверка каждые 60 сек)...")
+    for step in range(8):
+        sync_cycle()
+        if step < 7:
+            time.sleep(60)
+    log("🏁 Цикл завершён успешно!")
