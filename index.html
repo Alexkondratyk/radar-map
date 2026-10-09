@@ -127,7 +127,7 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
-    /* Светофор с динамическим масштабом */
+    /* Светофор */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -181,7 +181,7 @@
       border: none !important;
     }
 
-    /* Тост уведомление */
+    /* Тост */
     .toast-msg {
       position: absolute;
       top: 20px;
@@ -202,7 +202,7 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Кнопка физического обновления F5 */
+    /* Кнопка обновления */
     .btn-refresh {
       position: absolute;
       bottom: 25px;
@@ -278,7 +278,7 @@
         </div>
         <div class="legend-row" style="margin-top: 3px;">
           <span style="font-size: 13px;">🚦</span>
-          <span>Світлофори ключових точок (🔴/🟢)</span>
+          <span>Світлофори: Кайдацький, Водолікарня, Комбайновий, Краснозаводська, Павлова, Річпорт, Водокачка, Стан 550</span>
         </div>
       </div>
     </div>
@@ -294,6 +294,7 @@
     const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
+    // 8 ключевых светофоров с точной привязкой
     const DEFAULT_CHECKPOINTS = [
       {
         id: "kaidak_rovd",
@@ -343,6 +344,13 @@
         lat: 48.4910,
         lng: 34.9480,
         keys: ["водокачк"]
+      },
+      {
+        id: "stan_550",
+        name: "Стан 550 / Набережна Заводська",
+        lat: 48.4865,
+        lng: 34.9850,
+        keys: ["стан 550", "стан550", "набережная заводская", "набережна заводська", "заводская набережная", "заводська набережна", "стан"]
       }
     ];
 
@@ -382,7 +390,6 @@
       }
     }
 
-    // Сохранение всех текущих позиций сразу
     function saveAllPositionsToStorage() {
       const stored = getStoredPositions();
       Object.keys(trafficMarkersMap).forEach(id => {
@@ -425,7 +432,6 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // Переключение режима расстановки
     function toggleEditMode() {
       isEditMode = !isEditMode;
       const btn = document.getElementById("btnSetup");
@@ -438,7 +444,6 @@
       } else {
         btn.classList.remove("editing");
         btnText.innerText = "📍 Розставити світлофори";
-        // Железно сохраняем координаты ВСЕХ светофоров при фиксации
         saveAllPositionsToStorage();
         showToast("✅ Всі позиції надійно збережено та зафіксовано!");
       }
@@ -524,6 +529,16 @@
       return clean ? "#22c55e" : "#ef4444";
     }
 
+    // Проверка ключевых слов с защитой от ложных совпадений слова "стан"
+    function checkKeysMatch(text, cp) {
+      return cp.keys.some(k => {
+        if (k === "стан") {
+          return /\bстан\b/i.test(text) || /\bстане\b/i.test(text) || /\bстану\b/i.test(text);
+        }
+        return text.includes(k);
+      });
+    }
+
     function matchesCheckpoint(p) {
       const stored = getStoredPositions();
       const text = (p.text + " " + (p.address || "")).toLowerCase();
@@ -531,19 +546,17 @@
         const curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
         const curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
         const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
-        const matchKey = cp.keys.some(k => text.includes(k));
+        const matchKey = checkKeysMatch(text, cp);
         if (dist <= 450 || matchKey) return cp;
       }
       return null;
     }
 
-    // Отрисовка светофоров без сброса координат
     function renderTrafficLights() {
       const now = Date.now();
       const stored = getStoredPositions();
 
       DEFAULT_CHECKPOINTS.forEach(cp => {
-        // Текущие координаты: берём из уже созданного на карте маркера (если есть) или из памяти
         let curLat, curLng;
         if (trafficMarkersMap[cp.id]) {
           const currentPos = trafficMarkersMap[cp.id].getLatLng();
@@ -557,8 +570,8 @@
         const matched = allPoints.filter(p => {
           const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
           const text = (p.text + " " + (p.address || "")).toLowerCase();
-          const matchKey = cp.keys.some(k => text.includes(k));
-          return (dist <= 500) || matchKey;
+          const matchKey = checkKeysMatch(text, cp);
+          return (dist <= 600) || matchKey;
         });
 
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
@@ -626,7 +639,6 @@
           popupContent += `<div class="popup-text" style="color: #94a3b8;">Повідомлень за останні 40 хв не було.</div>`;
         }
 
-        // Если маркер уже есть на карте — меняем ТОЛЬКО иконку и попап, координаты НЕ ТРОГАЕМ!
         if (trafficMarkersMap[cp.id]) {
           const marker = trafficMarkersMap[cp.id];
           marker.setIcon(tlIcon);
