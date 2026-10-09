@@ -22,7 +22,7 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     #map {
       position: absolute;
@@ -101,12 +101,13 @@
     .btn-secondary:hover { background: #334155; color: #fff; }
 
     .btn-stats-link {
-      background: #1e1b4b;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
       border: 1px solid #6366f1;
       color: #a5b4fc;
       font-weight: 700;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
     }
-    .btn-stats-link:hover { background: #312e81; color: #fff; }
+    .btn-stats-link:hover { background: #4338ca; color: #fff; }
 
     .legend {
       display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #94a3b8;
@@ -127,7 +128,7 @@
       cursor: pointer;
       position: relative;
       touch-action: none;
-      transition: transform 0.2s ease;
+      transition: transform 0.15s ease;
     }
     .radar-circle.color-green {
       background: var(--color-green) !important;
@@ -156,24 +157,26 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
+    /* АКТИВНЫЙ МАРКЕР ПРИ ЗАЖАТИИ */
     .radar-circle.active-dragging-target {
-      transform: scale(1.45) !important;
-      box-shadow: 0 0 0 4px #f59e0b, 0 0 22px 8px #f59e0b !important;
+      transform: scale(1.5) !important;
+      box-shadow: 0 0 0 4px #f59e0b, 0 0 24px 8px #f59e0b !important;
       cursor: grab !important;
       animation: target-pulse 0.7s infinite alternate !important;
       z-index: 9999 !important;
     }
     @keyframes target-pulse {
-      from { transform: scale(1.35); } to { transform: scale(1.55); }
+      from { transform: scale(1.4); } to { transform: scale(1.6); }
     }
 
+    /* НЕОНОВАЯ ПОДСВЕТКА НАСТОЯЩЕЙ ДОРОГИ */
     .street-highlight-polyline {
-      stroke: #f59e0b !important;
+      stroke: #00f3ff !important;
       stroke-width: 9px !important;
-      stroke-opacity: 0.9 !important;
+      stroke-opacity: 0.95 !important;
       stroke-dasharray: 8, 8 !important;
-      animation: dashMove 0.9s linear infinite !important;
-      filter: drop-shadow(0 0 10px #f59e0b) drop-shadow(0 0 22px #d97706) !important;
+      animation: dashMove 0.8s linear infinite !important;
+      filter: drop-shadow(0 0 10px #00f3ff) drop-shadow(0 0 25px #0284c7) !important;
       pointer-events: none !important;
     }
     @keyframes dashMove {
@@ -231,9 +234,9 @@
 
     .toast-msg {
       position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-      z-index: 2000; background: #10b981; color: #fff; padding: 8px 16px;
+      z-index: 2000; background: #0f172a; border: 1px solid #38bdf8; color: #fff; padding: 8px 18px;
       border-radius: 8px; font-size: 12px; font-weight: 600;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.4); display: none; text-align: center;
+      box-shadow: 0 4px 20px rgba(0, 243, 255, 0.35); display: none; text-align: center;
     }
 
     .btn-refresh {
@@ -377,6 +380,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // WAKE LOCK
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
@@ -401,26 +405,20 @@
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
     let currentMapType = localStorage.getItem("radar_map_type") || "google";
     
-    // ЕДИНЫЙ КОНТРОЛЛЕР ПЕРЕНОСА (НАДЁЖНАЯ ЗАЩИТА ОТ МУЛЬТИ-НАЖАТИЙ)
+    // БЕЗУПРЕЧНЫЙ ДИСПЕТЧЕР ЖЕСТОВ
     const dragController = {
       activeMarker: null,
       activePoint: null,
-      pressTimer: null,
-      startX: 0,
-      startY: 0,
+      isDraggingActive: false,
       reset: function() {
-        if (this.pressTimer) {
-          clearTimeout(this.pressTimer);
-          this.pressTimer = null;
-        }
         if (this.activeMarker) {
-          this.activeMarker.dragging.disable();
           const el = this.activeMarker.getElement()?.querySelector('.radar-circle');
           if (el) el.classList.remove('active-dragging-target');
         }
         map.dragging.enable();
         this.activeMarker = null;
         this.activePoint = null;
+        this.isDraggingActive = false;
         streetHighlightGroup.clearLayers();
       }
     };
@@ -431,7 +429,7 @@
       if (stored) activeSectors = JSON.parse(stored);
     } catch(e) {}
 
-    // ТОЧНАЯ ГЕОМЕТРИЯ УЛИЦ: ПОЛНАЯ ПОДДЕРЖКА РУССКИХ И УКРАИНСКИХ НАЗВАНИЙ
+    // ТОЧНАЯ ГЕОМЕТРИЯ РЕАЛЬНЫХ УЛИЦ ДНЕПРА (РУССКИЙ + УКРАИНСКИЙ + СЛЕНГ)
     const STREET_GEOMETRIES = [
       {
         name: "вул. Павлова",
@@ -439,12 +437,12 @@
         points: [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048], [48.4705, 35.0065]]
       },
       {
-        name: "Краснозаводська / Белелюбського",
+        name: "Краснозаводська / Белелюбського / Комбайновий",
         regex: /(?:белелюб|краснозавод|комбайн|дтрз|ударник|белелюбского|белелюбського)/i,
         points: [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780], [48.4828, 34.9725]]
       },
       {
-        name: "Водолікарня / пр. Свободи",
+        name: "Водолікарня (пр. Свободи)",
         regex: /(?:водолечеб|водолікарн|водогрязелечеб|водолечебк|водолечебниц)/i,
         points: [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]]
       },
@@ -454,12 +452,12 @@
         points: [[48.4930, 34.9420], [48.4910, 34.9480], [48.4890, 34.9560]]
       },
       {
-        name: "Річпорт",
+        name: "Річпорт (Речной вокзал)",
         regex: /(?:речпорт|річпорт|речной\s*вокзал|річковий\s*вокзал|десантник|десантников|десантників)/i,
         points: [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]]
       },
       {
-        name: "Набережна Заводська / Стан 550 / РОВД",
+        name: "Набережна Заводська (Стан 550, РОВД)",
         regex: /(?:набережн.*завод|набка.*завод|заводск.*набережн|стан\s*550|стан550|\bстан\b|кайдак|ровд)/i,
         points: [[48.4975, 34.9280], [48.4940, 34.9400], [48.4910, 34.9480], [48.4885, 34.9650], [48.4865, 34.9850], [48.4830, 35.0050], [48.4805, 35.0210], [48.4770, 35.0350]]
       },
@@ -586,7 +584,7 @@
       maxZoom: 20, attribution: 'Google Maps'
     });
 
-    // 2. Esri World Street Map (Официальный надежный слой без 403)
+    // 2. Esri World Street Map (Официальный надежный слой без 403 и без API Key)
     const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19, attribution: 'Esri World Street Map'
     });
@@ -631,7 +629,7 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // ПОДСВЕТКА НАСТОЯЩЕЙ УЛИЦЫ
+    // ПОДСВЕТКА ТОЛЬКО РЕАЛЬНОЙ УЛИЦЫ
     function highlightStreetForPoint(point) {
       streetHighlightGroup.clearLayers();
       const txt = ((point.raw_text || point.text || "") + " " + (point.address || "")).toLowerCase();
@@ -647,9 +645,9 @@
       if (matched) {
         L.polyline(matched.points, { className: 'street-highlight-polyline' }).addTo(streetHighlightGroup);
         map.fitBounds(L.latLngBounds(matched.points), { padding: [50, 50], maxZoom: 16, animate: true });
-        showToast(`📍 Підсвічено: ${matched.name.toUpperCase()}!`);
+        showToast(`📍 Підсвічено реальну дорогу: ${matched.name.toUpperCase()}!`);
       } else {
-        showToast("💡 Вулицю в тексті не розпізнано. Перетягніть мітку на потрібне місце вручну.");
+        showToast("🔍 Назву вулиці в тексті не розпізнано. Перетягніть мітку пальцем вручну.");
       }
     }
 
@@ -692,9 +690,44 @@
         });
       } catch(e) {}
 
-      showToast(`🎯 Навчено! «${phrase}» зафіксовано.`);
+      showToast(`🎯 Навчено! «${phrase}» надійно зафіксовано.`);
       renderMarkers();
     }
+
+    // ГЛОБАЛЬНЫЙ ТРЕКИНГ ПАЛЬЦА / МЫШКИ (ЖЕЛЕЗНОЕ ПЕРЕТАСКИВАНИЕ)
+    function onGlobalMove(clientX, clientY) {
+      if (dragController.activeMarker && dragController.isDraggingActive) {
+        const pt = map.mouseEventToContainerPoint({ clientX, clientY });
+        const latlng = map.containerPointToLatLng(pt);
+        dragController.activeMarker.setLatLng(latlng);
+      }
+    }
+
+    window.addEventListener('touchmove', (e) => {
+      if (dragController.isDraggingActive) {
+        const t = e.touches[0];
+        onGlobalMove(t.clientX, t.clientY);
+        if (e.cancelable) e.preventDefault();
+      }
+    }, { passive: false });
+
+    window.addEventListener('mousemove', (e) => {
+      if (dragController.isDraggingActive) {
+        onGlobalMove(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener('touchend', () => {
+      if (dragController.isDraggingActive) {
+        dragController.isDraggingActive = false; // Отпустили палец: точка ждёт подтверждения кликом по карте
+      }
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (dragController.isDraggingActive) {
+        dragController.isDraggingActive = false;
+      }
+    });
 
     // КАСАНИЕ КАРТЫ СНИМАЕТ ВЫДЕЛЕНИЕ И ЗАВЕРШАЕТ ПЕРЕНОС
     map.on('click', function() {
@@ -1125,30 +1158,25 @@
         const marker = L.marker([p.lat, p.lng], { icon: dotIcon, draggable: false, zIndexOffset: 50 });
         marker.bindPopup(popupContent);
 
-        // ЖЕСТ: 0.5с ДОЛГОЕ НАЖАТИЕ С ПОЛНОЙ ЗАЩИТОЙ
-        function handleStart(e) {
-          if (dragController.activeMarker && dragController.activeMarker !== marker) {
-            const oldPoint = dragController.activePoint;
-            const oldPos = dragController.activeMarker.getLatLng();
-            dragController.reset();
-            finishDragAndTrainAI(oldPoint, oldPos);
-          }
+        // ЖЕСТ 0.5с С АБСОЛЮТНОЙ ЗАЩИТОЙ
+        let timer = null;
+        let startX = 0, startY = 0;
+
+        function startGesture(clientX, clientY) {
           dragController.reset();
+          startX = clientX;
+          startY = clientY;
 
-          const touch = e.touches ? e.touches[0] : e;
-          dragController.startX = touch.clientX;
-          dragController.startY = touch.clientY;
-
-          dragController.pressTimer = setTimeout(() => {
-            dragController.pressTimer = null;
-            if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+          timer = setTimeout(() => {
+            timer = null;
+            if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
 
             dragController.activeMarker = marker;
             dragController.activePoint = p;
-            marker.closePopup();
+            dragController.isDraggingActive = true;
 
+            marker.closePopup();
             map.dragging.disable();
-            marker.dragging.enable();
 
             const iconEl = marker.getElement()?.querySelector('.radar-circle');
             if (iconEl) iconEl.classList.add('active-dragging-target');
@@ -1157,32 +1185,44 @@
           }, 450);
         }
 
-        function handleMove(e) {
-          if (dragController.pressTimer) {
-            const touch = e.touches ? e.touches[0] : e;
-            if (Math.hypot(touch.clientX - dragController.startX, touch.clientY - dragController.startY) > 12) {
-              clearTimeout(dragController.pressTimer);
-              dragController.pressTimer = null;
+        function cancelGesture(clientX, clientY) {
+          if (timer) {
+            if (Math.hypot(clientX - startX, clientY - startY) > 8) {
+              clearTimeout(timer);
+              timer = null;
             }
-          }
-        }
-
-        function handleEnd() {
-          if (dragController.pressTimer) {
-            clearTimeout(dragController.pressTimer);
-            dragController.pressTimer = null;
           }
         }
 
         marker.on('add', () => {
           const el = marker.getElement();
           if (!el) return;
-          el.addEventListener('touchstart', handleStart, { passive: true });
-          el.addEventListener('touchend', handleEnd);
-          el.addEventListener('touchmove', handleMove);
-          el.addEventListener('mousedown', handleStart);
-          el.addEventListener('mouseup', handleEnd);
-          el.addEventListener('mouseleave', handleEnd);
+
+          el.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            startGesture(t.clientX, t.clientY);
+          }, { passive: true });
+
+          el.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            cancelGesture(t.clientX, t.clientY);
+          }, { passive: true });
+
+          el.addEventListener('touchend', () => {
+            if (timer) { clearTimeout(timer); timer = null; }
+          });
+
+          el.addEventListener('mousedown', (e) => {
+            startGesture(e.clientX, e.clientY);
+          });
+
+          el.addEventListener('mousemove', (e) => {
+            cancelGesture(e.clientX, e.clientY);
+          });
+
+          el.addEventListener('mouseup', () => {
+            if (timer) { clearTimeout(timer); timer = null; }
+          });
         });
 
         markersLayer.addLayer(marker);
