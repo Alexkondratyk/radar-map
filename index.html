@@ -44,7 +44,7 @@
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-      width: 215px;
+      width: 220px;
       transition: all 0.25s ease;
     }
     .dash-header { 
@@ -203,6 +203,18 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
+    /* РЕЖИМ ТРЕНЕРА */
+    .trainer-active-dot {
+      cursor: grab !important;
+      outline: 2px dashed #f59e0b;
+      outline-offset: 3px;
+      animation: pulse-trainer 1s infinite alternate;
+    }
+    @keyframes pulse-trainer {
+      from { transform: scale(1); }
+      to { transform: scale(1.2); }
+    }
+
     /* СВЕТОФОРЫ */
     .traffic-pill {
       background: #0f172a !important;
@@ -257,7 +269,7 @@
 
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* Скрытое меню Неона */
+    /* Секретное меню (Неон + Секторы + Тренер) */
     .neon-panel {
       position: absolute;
       top: 15px;
@@ -268,7 +280,9 @@
       border-radius: 12px;
       padding: 12px 14px;
       color: #fff;
-      width: 235px;
+      width: 260px;
+      max-height: 85vh;
+      overflow-y: auto;
       box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);
       display: none;
       animation: fadeIn 0.25s ease;
@@ -282,9 +296,18 @@
       justify-content: space-between;
       align-items: center;
     }
-    .neon-colors { display: flex; gap: 6px; margin-bottom: 10px; }
-    .btn-color { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #334155; cursor: pointer; }
+    .neon-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 10px 0 5px;
+      border-top: 1px solid #334155;
+      padding-top: 6px;
+    }
+    .neon-colors { display: flex; gap: 6px; margin-bottom: 8px; }
+    .btn-color { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #334155; cursor: pointer; }
     .btn-color.active { border-color: #fff; box-shadow: 0 0 8px #fff; }
+    
     .btn-neon-action {
       width: 100%;
       padding: 6px 8px;
@@ -292,7 +315,7 @@
       font-size: 11px;
       font-weight: 600;
       cursor: pointer;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       border: none;
       transition: all 0.2s;
     }
@@ -304,9 +327,53 @@
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
-    .neon-svg-line {
-      filter: drop-shadow(0 0 4px currentColor);
+    /* Кнопки секторов */
+    .sector-quick-btns { display: flex; gap: 5px; margin-bottom: 6px; }
+    .btn-sector-quick {
+      flex: 1;
+      padding: 5px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #1e293b;
+      border: 1px solid #475569;
+      color: #fff;
     }
+    .btn-sector-quick.active { background: #0284c7; border-color: #38bdf8; }
+
+    .sector-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+      cursor: pointer;
+    }
+    .sector-item input { cursor: pointer; }
+
+    /* Кнопка тренера */
+    .btn-trainer {
+      background: #334155;
+      color: #f59e0b;
+      border: 1px solid #f59e0b;
+      width: 100%;
+      padding: 7px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+    .btn-trainer.trainer-on {
+      background: #b45309;
+      color: #fff;
+      box-shadow: 0 0 12px #f59e0b;
+      animation: pulse-border 1.2s infinite;
+    }
+
+    .neon-svg-line { filter: drop-shadow(0 0 4px currentColor); }
     .neon-svg-line.clickable-line {
       cursor: pointer !important;
       stroke-dasharray: 6, 6;
@@ -321,7 +388,7 @@
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.65);
       backdrop-filter: blur(4px);
       z-index: 3000;
       display: none;
@@ -333,11 +400,12 @@
       padding: 16px;
       border-radius: 12px;
       color: #fff;
-      width: 290px;
+      width: 300px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       border: 1px solid #334155;
     }
-    .modal-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: #38bdf8; }
+    .modal-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #38bdf8; }
+    .modal-subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
     .modal-input {
       width: 100%;
       background: #0f172a;
@@ -404,7 +472,7 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап карточка */
+    /* Попап */
     .leaflet-popup-content-wrapper {
       background: #ffffff !important;
       color: #0f172a !important;
@@ -452,7 +520,7 @@
     </div>
 
     <div id="collapsibleBody" class="collapsible-body">
-      <div class="subtitle">Свіжі пульсують (до 10 хв)</div>
+      <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
       <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
         <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
@@ -487,22 +555,38 @@
     </div>
   </div>
 
-  <!-- Скрытое меню Неона -->
+  <!-- Секретное меню (Фильтры секторов + Неон + Тренер ИИ) -->
   <div id="neonPanel" class="neon-panel">
     <div class="neon-title">
-      <span>⚡ Неон вулиць</span>
+      <span>⚙️ Секретне меню</span>
       <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
     </div>
-    
-    <!-- 1. Скрыть / показать без удаления -->
-    <button id="btnToggleNeonVisible" class="btn-neon-action btn-neon-toggle" onclick="toggleNeonLinesVisibility()">
-      👁️ Сховати неон
-    </button>
 
-    <!-- 2. Сменить цвет нарисованной линии -->
-    <button id="btnNeonRecolor" class="btn-neon-action btn-neon-recolor" onclick="toggleNeonRecolorMode()">
-      🎨 Перефарбувати лінію
-    </button>
+    <!-- 1. ФИЛЬТР РАЙОНОВ / МАРШРУТОВ -->
+    <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🏙️ Фільтр районів міста:</div>
+    <div class="sector-quick-btns">
+      <button id="btnQuickRoute" class="btn-sector-quick active" onclick="setSectorPreset('route')">🎯 Тільки мій</button>
+      <button id="btnQuickAll" class="btn-sector-quick" onclick="setSectorPreset('all')">🌐 Весь Дніпро</button>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:8px;">
+      <label class="sector-item"><input type="checkbox" id="sec_s1" onchange="onSectorChange()" checked> 📍 Мій маршрут (Парус — Вокзал — Робоча)</label>
+      <label class="sector-item"><input type="checkbox" id="sec_s2" onchange="onSectorChange()"> 🏙️ Центр, Нагірка, Перемога</label>
+      <label class="sector-item"><input type="checkbox" id="sec_s3" onchange="onSectorChange()"> 🚗 Південь (12 Квартал, Тополя, Поля)</label>
+      <label class="sector-item"><input type="checkbox" id="sec_s4" onchange="onSectorChange()"> 🏭 Мазепи / Нігояна, Західний</label>
+      <label class="sector-item"><input type="checkbox" id="sec_s5" onchange="onSectorChange()"> 🌉 Лівий берег (Шосе, Калинова)</label>
+      <label class="sector-item"><input type="checkbox" id="sec_s6" onchange="onSectorChange()"> 🏢 Лівий берег (Слобожанський, Сонячний)</label>
+    </div>
+
+    <!-- 2. РЕЖИМ ТРЕНЕРА ИИ -->
+    <div class="neon-section-title">🎯 Навчання системи (Корекція)</div>
+    <button id="btnTrainer" class="btn-trainer" onclick="toggleTrainerMode()">🎯 Режим тренера: ВИМКНЕНО</button>
+    <div style="font-size:10px; color:#94a3b8; margin:4px 0 8px;">Коли увімкнено: перетягуйте неточні шарики пальцем або мишкою на точне місце.</div>
+
+    <!-- 3. НЕОНОВЫЕ ЛИНИИ -->
+    <div class="neon-section-title">⚡ Неон вулиць</div>
+    <button id="btnToggleNeonVisible" class="btn-neon-action btn-neon-toggle" onclick="toggleNeonLinesVisibility()">👁️ Сховати неон</button>
+    <button id="btnNeonRecolor" class="btn-neon-action btn-neon-recolor" onclick="toggleNeonRecolorMode()">🎨 Перефарбувати лінію</button>
 
     <div style="font-size:10px; color:#94a3b8; margin: 4px 0 6px;">Колір неону:</div>
     <div class="neon-colors">
@@ -518,7 +602,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно создания светофора -->
+  <!-- Модальное окно добавления светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -527,6 +611,22 @@
       <div class="modal-btns">
         <button class="btn-m btn-m-cancel" onclick="closeAddModal()">Скасувати</button>
         <button class="btn-m btn-m-save" onclick="saveNewTrafficLight()">Додати</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно обучения тренера -->
+  <div id="modalTrainer" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-title">🎯 Навчити систему (База знань)</div>
+      <div class="modal-subtitle" id="trainerPostText">Текст повідомлення...</div>
+      <div style="font-size:11px; margin-bottom:4px; color:#38bdf8;">Ключові слова або орієнтир:</div>
+      <input type="text" id="trainerKeyPhrase" class="modal-input" placeholder="напр. павлова, озерка, каруны атб" />
+      <div style="font-size:11px; margin-bottom:4px; color:#38bdf8;">Назва локації:</div>
+      <input type="text" id="trainerAddress" class="modal-input" placeholder="напр. перехрестя Павлова та Белелюбського" />
+      <div class="modal-btns">
+        <button class="btn-m btn-m-cancel" onclick="closeTrainerModal()">Скасувати</button>
+        <button class="btn-m btn-m-save" onclick="saveTrainerKnowledge()">💾 Навчити систему</button>
       </div>
     </div>
   </div>
@@ -541,6 +641,7 @@
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
+    const FIREBASE_KB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/knowledge_base.json";
     
     const LIFETIME_MS = 40 * 60 * 1000;
     const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
@@ -548,64 +649,48 @@
     let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
     let currentMapType = localStorage.getItem("radar_map_type") || "google";
+    let isTrainerMode = false;
+    let pendingTrainerData = null;
+
+    // СЕКТОРЫ (ПО УМОЛЧАНИЮ ТОЛЬКО МАРШРУТ s1)
+    let activeSectors = JSON.parse(localStorage.getItem("radar_active_sectors") || '["s1"]');
+
+    const SECTOR_DEFS = {
+      s1: {
+        keys: ["парус", "покровськ", "комунар", "коммунар", "червон.*кам", "камни", "набережн.*завод", "речпорт", "річпорт", "водокачк", "стан.*550", "водолікарн", "свобод", "кайдак", "павлов", "белелюб", "краснозавод", "дтрз", "комбайн", "ударник", "вокзал", "старомостов", "островськ", "озерк", "курчатов", "шмідт", "бандер", "робоч", "канатн", "філософськ", "савченко", "свердлов", "криворізьк"],
+        bounds: { minLat: 48.435, maxLat: 48.510, minLng: 34.885, maxLng: 35.038 }
+      },
+      s2: {
+        keys: ["центр", "міст.*сіті", "мост.*сити", "європейськ", "яворницьк", "нагірк", "гагарін", "науки", "перемог", "побед", "соборн", "барикад"],
+        bounds: { minLat: 48.410, maxLat: 48.480, minLng: 35.038, maxLng: 35.120 }
+      },
+      s3: {
+        keys: ["12.*квартал", "квартал", "топол", "сокіл", "сокол", "мирн", "кротов", "гальченк", "шинн", "хмельницьк", "сталінград", "поля", "кіров", "титов"],
+        bounds: { minLat: 48.380, maxLat: 48.445, minLng: 34.980, maxLng: 35.070 }
+      },
+      s4: {
+        keys: ["мазеп", "петровськ", "нігоян", "калінін", "металург", "західн", "западн", "діївк", "диевк"],
+        bounds: { minLat: 48.450, maxLat: 48.485, minLng: 34.910, maxLng: 34.980 }
+      },
+      s5: {
+        keys: ["донецьк.*шосе", "караван", "лівобереж", "левобереж", "березинк", "калинов", "янтарн", "клочко", "образцов"],
+        bounds: { minLat: 48.500, maxLat: 48.560, minLng: 34.960, maxLng: 35.070 }
+      },
+      s6: {
+        keys: ["слобожанськ", "правд", "калнишевськ", "косіор", "сонячн", "солнечн", "малиновськ", "придніпров", "ігрень", "рибальськ", "самар"],
+        bounds: { minLat: 48.460, maxLat: 48.530, minLng: 35.040, maxLng: 35.150 }
+      }
+    };
 
     let checkpoints = [
-      {
-        id: "kaidak_rovd",
-        name: "РОВД / Кайдацький з'їзд",
-        lat: 48.4925,
-        lng: 34.9625,
-        keys: ["кайдак", "ровд", "з'їзд з кайдак", "съезд с кайдак"]
-      },
-      {
-        id: "vodolechebnitsa",
-        name: "Водолікарня (пр. Свободи)",
-        lat: 48.4848,
-        lng: 34.9735,
-        keys: ["водолечеб", "водолікарн", "пр свободи", "пр. свободи", "проспект свободи"]
-      },
-      {
-        id: "kombainoviy",
-        name: "Комбайновий (Белелюбського)",
-        lat: 48.4795,
-        lng: 34.9845,
-        keys: ["комбайн", "ударник"]
-      },
-      {
-        id: "krasnozavodska",
-        name: "Краснозаводська (ДТРЗ)",
-        lat: 48.4812,
-        lng: 34.9940,
-        keys: ["краснозавод", "белелюб", "дтрз"]
-      },
-      {
-        id: "pavlova",
-        name: "вул. Академіка Павлова",
-        lat: 48.4818,
-        lng: 35.0012,
-        keys: ["павлов"]
-      },
-      {
-        id: "rechport",
-        name: "Річпорт (Набережна Заводська)",
-        lat: 48.4805,
-        lng: 35.0210,
-        keys: ["речпорт", "річпорт", "десантник", "річковий вокзал"]
-      },
-      {
-        id: "vodokachka",
-        name: "Водокачка (Набережна Заводська)",
-        lat: 48.4910,
-        lng: 34.9480,
-        keys: ["водокачк"]
-      },
-      {
-        id: "stan_550",
-        name: "Стан 550 / Набережна Заводська",
-        lat: 48.4865,
-        lng: 34.9850,
-        keys: ["стан 550", "стан550", "стан"]
-      }
+      { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак", "съезд с кайдак"] },
+      { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи", "пр. свободи", "проспект свободи"] },
+      { id: "kombainoviy", name: "Комбайновий (Белелюбського)", lat: 48.4795, lng: 34.9845, keys: ["комбайн", "ударник"] },
+      { id: "krasnozavodska", name: "Краснозаводська (ДТРЗ)", lat: 48.4812, lng: 34.9940, keys: ["краснозавод", "белелюб", "дтрз"] },
+      { id: "pavlova", name: "вул. Академіка Павлова", lat: 48.4818, lng: 35.0012, keys: ["павлов"] },
+      { id: "rechport", name: "Річпорт (Набережна Заводська)", lat: 48.4805, lng: 35.0210, keys: ["речпорт", "річпорт", "десантник", "річковий вокзал"] },
+      { id: "vodokachka", name: "Водокачка (Набережна Заводська)", lat: 48.4910, lng: 34.9480, keys: ["водокачк"] },
+      { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан550", "стан"] }
     ];
 
     function hardReload() {
@@ -617,7 +702,6 @@
       const body = document.getElementById("collapsibleBody");
       const btn = document.getElementById("btnToggle");
       const isHidden = body.style.display === "none";
-
       if (isHidden) {
         body.style.display = "block";
         btn.innerText = "▲";
@@ -628,38 +712,28 @@
         localStorage.setItem("radar_panel_collapsed", "true");
       }
     }
-
     if (localStorage.getItem("radar_panel_collapsed") === "true") {
       document.getElementById("collapsibleBody").style.display = "none";
       document.getElementById("btnToggle").innerText = "▼";
     }
 
-    /* КАРТА */
     const isMobile = window.innerWidth < 768;
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
     const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=uk&gl=ua&x={x}&y={y}&z={z}', {
-      maxZoom: 20,
-      attribution: 'Google Maps'
+      maxZoom: 20, attribution: 'Google Maps'
     });
-
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+      maxZoom: 19, attribution: '© OpenStreetMap contributors'
     });
 
-    if (currentMapType === "osm") {
-      osmLayer.addTo(map);
-    } else {
-      googleLayer.addTo(map);
-    }
+    if (currentMapType === "osm") osmLayer.addTo(map);
+    else googleLayer.addTo(map);
 
     function updateMapLayerBtnUI() {
       const btnText = document.getElementById("btnMapLayerText");
-      if (btnText) {
-        btnText.innerText = currentMapType === "google" ? "Карта: Google (з вулицями)" : "Карта: OpenStreetMap";
-      }
+      if (btnText) btnText.innerText = currentMapType === "google" ? "Карта: Google (з вулицями)" : "Карта: OpenStreetMap";
     }
     updateMapLayerBtnUI();
 
@@ -675,7 +749,7 @@
       }
       localStorage.setItem("radar_map_type", currentMapType);
       updateMapLayerBtnUI();
-      showToast(currentMapType === "google" ? "🗺️ Увімкнено Google Карту з назвами!" : "🗺️ Увімкнено OpenStreetMap");
+      showToast(currentMapType === "google" ? "🗺️ Google Карта увімкнена!" : "🗺️ OpenStreetMap увімкнена!");
     }
 
     const neonLayer = L.layerGroup().addTo(map);
@@ -693,6 +767,141 @@
       setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
+    /* ----------------------------------------------------
+       ЛОГИКА ФИЛЬТРА СЕКТОРОВ
+    ---------------------------------------------------- */
+    function syncSectorCheckboxesUI() {
+      ["s1", "s2", "s3", "s4", "s5", "s6"].forEach(id => {
+        const el = document.getElementById(`sec_${id}`);
+        if (el) el.checked = activeSectors.includes(id);
+      });
+      const isOnlyRoute = activeSectors.length === 1 && activeSectors[0] === "s1";
+      const isAll = activeSectors.length === 6;
+
+      document.getElementById("btnQuickRoute").classList.toggle("active", isOnlyRoute);
+      document.getElementById("btnQuickAll").classList.toggle("active", isAll);
+
+      const subtitle = document.getElementById("sectorSubtitle");
+      if (isOnlyRoute) subtitle.innerText = "📍 Режим: Мій маршрут";
+      else if (isAll) subtitle.innerText = "🌐 Режим: Весь Дніпро";
+      else subtitle.innerText = `🎯 Обрано секторів: ${activeSectors.length}`;
+    }
+
+    function setSectorPreset(type) {
+      if (type === 'route') activeSectors = ['s1'];
+      else if (type === 'all') activeSectors = ['s1', 's2', 's3', 's4', 's5', 's6'];
+      localStorage.setItem("radar_active_sectors", JSON.stringify(activeSectors));
+      syncSectorCheckboxesUI();
+      renderMarkers();
+      renderTrafficLights();
+      showToast(type === 'route' ? "🎯 Фільтр: Тільки ваш маршрут!" : "🌐 Фільтр: Відображається весь Дніпро!");
+    }
+
+    function onSectorChange() {
+      activeSectors = [];
+      ["s1", "s2", "s3", "s4", "s5", "s6"].forEach(id => {
+        const el = document.getElementById(`sec_${id}`);
+        if (el && el.checked) activeSectors.push(id);
+      });
+      if (activeSectors.length === 0) activeSectors = ['s1']; // Минимум свой маршрут
+      localStorage.setItem("radar_active_sectors", JSON.stringify(activeSectors));
+      syncSectorCheckboxesUI();
+      renderMarkers();
+      renderTrafficLights();
+    }
+    syncSectorCheckboxesUI();
+
+    function isPointInActiveSectors(p) {
+      if (activeSectors.length === 6) return true; // Включен весь Днепр
+      const fullText = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
+      const lat = p.lat, lng = p.lng;
+
+      return activeSectors.some(secId => {
+        const def = SECTOR_DEFS[secId];
+        if (!def) return false;
+        if (def.keys.some(k => new RegExp(k, "i").test(fullText))) return true;
+        if (lat >= def.bounds.minLat && lat <= def.bounds.maxLat && lng >= def.bounds.minLng && lng <= def.bounds.maxLng) return true;
+        return false;
+      });
+    }
+
+    /* ----------------------------------------------------
+       ЛОГИКА ТРЕНЕРА ИИ (ОБУЧЕНИЕ ЧЕРЕЗ ПЕРЕТАСКИВАНИЕ)
+    ---------------------------------------------------- */
+    function toggleTrainerMode() {
+      isTrainerMode = !isTrainerMode;
+      const btn = document.getElementById("btnTrainer");
+      if (isTrainerMode) {
+        btn.classList.add("trainer-on");
+        btn.innerText = "🎯 Режим тренера: УВІМКНЕНО";
+        showToast("🎯 Перетягніть неточну точку пальцем на потрібне місце!");
+      } else {
+        btn.classList.remove("trainer-on");
+        btn.innerText = "🎯 Режим тренера: ВИМКНЕНО";
+        showToast("🛑 Режим тренера вимкнено.");
+      }
+      renderMarkers();
+    }
+
+    function openTrainerModal(p, newPos) {
+      pendingTrainerData = { point: p, newLat: Number(newPos.lat.toFixed(5)), newLng: Number(newPos.lng.toFixed(5)) };
+      document.getElementById("modalTrainer").style.display = "flex";
+      document.getElementById("trainerPostText").innerText = p.raw_text || p.text || "";
+      
+      // Автоподстановка ключевой фразы
+      let guessKey = (p.address || "").toLowerCase().replace("дніпро", "").replace("вул.", "").replace("пр.", "").trim();
+      if (!guessKey) guessKey = (p.text || "").slice(0, 30);
+      document.getElementById("trainerKeyPhrase").value = guessKey;
+      document.getElementById("trainerAddress").value = p.address || "Дніпро";
+    }
+
+    function closeTrainerModal() {
+      document.getElementById("modalTrainer").style.display = "none";
+      pendingTrainerData = null;
+      renderMarkers();
+    }
+
+    async function saveTrainerKnowledge() {
+      if (!pendingTrainerData) return;
+      const phrase = document.getElementById("trainerKeyPhrase").value.trim().toLowerCase();
+      const address = document.getElementById("trainerAddress").value.trim();
+      if (!phrase) {
+        alert("Вкажіть ключову фразу або орієнтир!");
+        return;
+      }
+
+      const kbEntry = {
+        phrase: phrase,
+        address: address || "Дніпро",
+        lat: pendingTrainerData.newLat,
+        lng: pendingTrainerData.newLng,
+        updated_at: Date.now()
+      };
+
+      try {
+        // Сохраняем в Базу Знаний Firebase
+        await fetch(FIREBASE_KB_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(kbEntry)
+        });
+
+        // Сразу обновляем текущую точку
+        pendingTrainerData.point.lat = pendingTrainerData.newLat;
+        pendingTrainerData.point.lng = pendingTrainerData.newLng;
+        pendingTrainerData.point.address = address;
+
+        closeTrainerModal();
+        showToast("🎯 ІІ навчено! Орієнтир назавжди закріплено в базі знань.");
+        renderMarkers();
+      } catch (e) {
+        alert("Помилка збереження: " + e.message);
+      }
+    }
+
+    /* ----------------------------------------------------
+       СВЕТОФОРЫ
+    ---------------------------------------------------- */
     function toggleTrafficLights() {
       showTrafficLights = !showTrafficLights;
       localStorage.setItem("radar_tl_visible", showTrafficLights);
@@ -774,7 +983,6 @@
         await syncCheckpointsToCloud();
         showToast("✅ Позиції збережено та зафіксовано!");
       }
-
       renderTrafficLights();
     }
 
@@ -827,15 +1035,13 @@
       showToast("🗑️ Світлофор видалено!");
     }
 
-    /* ------------------------------------------------------------------
-       НЕОН: КРЕШЛЕННЯ, ПЕРЕФАРБУВАННЯ, ПРИХОВУВАННЯ
-    ------------------------------------------------------------------ */
+    /* НЕОНОВАЯ РАЗМЕТКА */
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
     let currentNeonColor = "#00f3ff";
     let isDrawingNeon = false;
-    let isRecoloringNeon = false; // Режим перекраски
+    let isRecoloringNeon = false;
     let tempPoints = [];
     let activeDrawingPolyline = null;
 
@@ -848,7 +1054,8 @@
         secretClickCount = 0;
         document.getElementById("neonPanel").style.display = "block";
         updateNeonVisibleBtnUI();
-        showToast("⚡ Секретне меню неону активовано!");
+        syncSectorCheckboxesUI();
+        showToast("⚡ Секретне меню активовано!");
       }
     }
 
@@ -890,7 +1097,6 @@
       }
     }
 
-    // Режим смены цвета нарисованной линии
     function toggleNeonRecolorMode() {
       if (isDrawingNeon) toggleNeonDrawMode();
       if (!showNeonLines) {
@@ -905,12 +1111,11 @@
       if (isRecoloringNeon) {
         btn.classList.add("active-mode");
         btn.innerText = "🛑 Завершити фарбування";
-        showToast("🎨 Виберіть колір вище і натискайте на лінії для перефарбування!");
+        showToast("🎨 Виберіть колір і натискайте на лінії для перефарбування!");
       } else {
         btn.classList.remove("active-mode");
         btn.innerText = "🎨 Перефарбувати лінію";
       }
-
       renderAllNeonLines();
     }
 
@@ -1022,13 +1227,12 @@
       neonLines.forEach(line => {
         const poly = L.polyline(line.points, {
           color: line.color,
-          weight: isRecoloringNeon ? 7 : 3, // В режиме покраски делаем толще, чтобы легко попасть пальцем
+          weight: isRecoloringNeon ? 7 : 3,
           opacity: 0.9,
           interactive: isRecoloringNeon,
           className: isRecoloringNeon ? 'neon-svg-line clickable-line' : 'neon-svg-line'
         }).addTo(neonLayer);
 
-        // КЛИК ДЛЯ ПЕРЕКРАШИВАНИЯ
         if (isRecoloringNeon) {
           poly.on('click', async function(e) {
             L.DomEvent.stopPropagation(e);
@@ -1041,7 +1245,9 @@
       });
     }
 
-    /* ТОЧКИ И СВЕТОФОРЫ */
+    /* ----------------------------------------------------
+       ЗАГРУЗКА ТОЧЕК И РЕНДЕР
+    ---------------------------------------------------- */
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
@@ -1100,6 +1306,16 @@
       const now = Date.now();
 
       checkpoints.forEach(cp => {
+        // Проверяем попадание светофора в активные секторы
+        const cpPointLike = { lat: cp.lat, lng: cp.lng, address: cp.name, raw_text: cp.name };
+        if (!isPointInActiveSectors(cpPointLike) && !isEditMode) {
+          if (trafficMarkersMap[cp.id]) {
+            trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
+            delete trafficMarkersMap[cp.id];
+          }
+          return;
+        }
+
         const matched = allPoints.filter(p => getMatchedCheckpointId(p) === cp.id);
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
@@ -1222,14 +1438,18 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
+        // Фильтр по активным секторам
+        if (!isPointInActiveSectors(p)) return;
+
         const isFresh = diff <= FRESH_THRESHOLD_MS;
         const clean = isCleanPoint(p);
         
         const colorClass = clean ? "color-green" : "color-red";
         const freshClass = isFresh ? "fresh" : "";
+        const trainerClass = isTrainerMode ? "trainer-active-dot" : "";
         const emoji = clean ? "🟢" : "🔴";
 
-        const markerHtml = `<div class="radar-circle ${colorClass} ${freshClass}"></div>`;
+        const markerHtml = `<div class="radar-circle ${colorClass} ${freshClass} ${trainerClass}"></div>`;
 
         const dotIcon = L.divIcon({
           className: 'custom-dot-marker',
@@ -1261,8 +1481,20 @@
           </div>
         `;
 
-        const marker = L.marker([p.lat, p.lng], { icon: dotIcon });
-        marker.bindPopup(popupContent);
+        const marker = L.marker([p.lat, p.lng], { 
+          icon: dotIcon,
+          draggable: isTrainerMode
+        });
+
+        if (isTrainerMode) {
+          marker.on('dragend', function(e) {
+            const newPos = e.target.getLatLng();
+            openTrainerModal(p, newPos);
+          });
+        } else {
+          marker.bindPopup(popupContent);
+        }
+
         markersLayer.addLayer(marker);
         visibleCount++;
       });
