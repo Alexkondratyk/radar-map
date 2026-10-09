@@ -156,10 +156,9 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
-    /* АКТИВНЫЙ МАРКЕР ПРИ ЗАЖАТИИ */
     .radar-circle.active-dragging-target {
       transform: scale(1.45) !important;
-      box-shadow: 0 0 0 4px #f59e0b, 0 0 20px 8px #f59e0b !important;
+      box-shadow: 0 0 0 4px #f59e0b, 0 0 22px 8px #f59e0b !important;
       cursor: grab !important;
       animation: target-pulse 0.7s infinite alternate !important;
       z-index: 9999 !important;
@@ -168,14 +167,14 @@
       from { transform: scale(1.35); } to { transform: scale(1.55); }
     }
 
-    /* НЕОНОВАЯ ПОДСВЕТКА ДОРОГИ */
+    /* ПОДСВЕТКА НАСТОЯЩЕЙ УЛИЦЫ */
     .street-highlight-polyline {
       stroke: #f59e0b !important;
       stroke-width: 9px !important;
       stroke-opacity: 0.9 !important;
       stroke-dasharray: 8, 8 !important;
       animation: dashMove 0.9s linear infinite !important;
-      filter: drop-shadow(0 0 10px #f59e0b) drop-shadow(0 0 20px #d97706) !important;
+      filter: drop-shadow(0 0 10px #f59e0b) drop-shadow(0 0 22px #d97706) !important;
       pointer-events: none !important;
     }
     @keyframes dashMove {
@@ -286,6 +285,7 @@
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
+      <!-- КНОПКА ПОЛНОЙ АНАЛИТИКИ -->
       <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
         <span>📊</span><span>Аналітика блокпостів</span>
       </a>
@@ -433,35 +433,41 @@
       if (stored) activeSectors = JSON.parse(stored);
     } catch(e) {}
 
-    // БАЗА УЛИЦ ДЛЯ ПОДСВЕТКИ (С РАСШИРЕННЫМ ПОКРЫТИЕМ)
+    // ТОЧНАЯ ГЕОМЕТРИЯ РЕАЛЬНЫХ УЛИЦ ДНЕПРА ДЛЯ ПОДСВЕТКИ
     const STREET_GEOMETRIES = {
-      "павлов": [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048]],
-      "белелюб": [[48.4820, 34.9750], [48.4795, 34.9845], [48.4812, 34.9940], [48.4818, 35.0012], [48.4800, 35.0090]],
-      "краснозавод": [[48.4820, 34.9750], [48.4795, 34.9845], [48.4812, 34.9940]],
+      "павлов": [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048], [48.4705, 35.0065]],
+      "белелюб": [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780], [48.4828, 34.9725]],
+      "краснозавод": [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780]],
       "комбайн": [[48.4820, 34.9750], [48.4795, 34.9845], [48.4805, 34.9890]],
-      "ровд": [[48.4940, 34.9610], [48.4925, 34.9625], [48.4900, 34.9660]],
-      "кайдак": [[48.4960, 34.9600], [48.4925, 34.9625], [48.4890, 34.9680]],
+      "дтрз": [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845]],
       "водолікарн": [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]],
       "водолечеб": [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]],
-      "свобод": [[48.4905, 34.9580], [48.4848, 34.9735], [48.4795, 34.9810], [48.4740, 34.9770]],
-      "набережн": [[48.4990, 34.9350], [48.4910, 34.9480], [48.4865, 34.9850], [48.4805, 35.0210], [48.4740, 35.0500]],
       "водокачк": [[48.4930, 34.9420], [48.4910, 34.9480], [48.4890, 34.9560]],
+      "речпорт": [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]],
+      "річпорт": [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]],
+      "десантник": [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280]],
+      "набережн": [[48.4975, 34.9280], [48.4940, 34.9400], [48.4910, 34.9480], [48.4885, 34.9650], [48.4865, 34.9850], [48.4830, 35.0050], [48.4805, 35.0210], [48.4770, 35.0350]],
       "стан 550": [[48.4880, 34.9780], [48.4865, 34.9850], [48.4850, 34.9930]],
-      "стан": [[48.4880, 34.9780], [48.4865, 34.9850], [48.4850, 34.9930]],
+      "стан550": [[48.4880, 34.9780], [48.4865, 34.9850], [48.4850, 34.9930]],
+      "ровд": [[48.4950, 34.9580], [48.4925, 34.9625], [48.4895, 34.9680]],
+      "кайдак": [[48.4960, 34.9600], [48.4925, 34.9625], [48.4890, 34.9680]],
+      "свобод": [[48.4915, 34.9605], [48.4880, 34.9675], [48.4848, 34.9735], [48.4800, 34.9785], [48.4740, 34.9770], [48.4700, 34.9720]],
       "робоч": [[48.4716, 34.9930], [48.4600, 34.9985], [48.4480, 35.0035], [48.4380, 35.0070]],
       "канатн": [[48.4680, 35.0130], [48.4650, 35.0050], [48.4610, 34.9980]],
       "нігоян": [[48.4770, 35.0110], [48.4716, 34.9892], [48.4690, 34.9760]],
       "мазеп": [[48.4690, 34.9760], [48.4630, 34.9600], [48.4550, 34.9450]],
-      "петровськ": [[48.4690, 34.9760], [48.4630, 34.9600], [48.4550, 34.9450]],
-      "вокзал": [[48.4760, 35.0170], [48.4745, 35.0150], [48.4735, 35.0210]],
+      "вокзал": [[48.4765, 35.0150], [48.4745, 35.0175], [48.4735, 35.0210]],
       "озерк": [[48.4725, 35.0250], [48.4705, 35.0210], [48.4680, 35.0240]],
       "шмідт": [[48.4735, 35.0210], [48.4680, 35.0240], [48.4630, 35.0270]],
-      "слобожанськ": [[48.4830, 35.0520], [48.4980, 35.0680], [48.5180, 35.0870]],
+      "слобожанськ": [[48.4830, 35.0520], [48.4980, 35.0680], [48.5180, 35.0870], [48.5350, 35.1050]],
       "калинов": [[48.5130, 35.0580], [48.5150, 35.0750], [48.5170, 35.0950]],
       "донецьк.*шосе": [[48.4970, 34.9580], [48.5150, 34.9950], [48.5280, 35.0350]],
       "поля": [[48.4620, 35.0280], [48.4500, 35.0230], [48.4350, 35.0180]],
       "хмельницьк": [[48.4500, 35.0350], [48.4300, 35.0300], [48.4050, 35.0250]],
-      "титов": [[48.4360, 35.0070], [48.4350, 35.0180], [48.4340, 35.0300]]
+      "титов": [[48.4360, 35.0070], [48.4350, 35.0180], [48.4340, 35.0300]],
+      "яворницьк": [[48.4745, 35.0175], [48.4680, 35.0380], [48.4570, 35.0620]],
+      "гагарін": [[48.4520, 35.0600], [48.4400, 35.0500], [48.4280, 35.0400]],
+      "науки": [[48.4520, 35.0600], [48.4400, 35.0500], [48.4280, 35.0400]]
     };
 
     const SECTOR_DEFS = {
@@ -526,34 +532,33 @@
       maxZoom: 20, attribution: 'Google Maps'
     });
 
-    // 2. CartoDB Voyager: OSM данные, украинский язык, БЕЗ 403 БЛОКИРОВОК НА ПК!
-    const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      maxZoom: 19, attribution: '© OpenStreetMap, © CARTO'
+    // 2. Esri World Street Map (Официальный бесплатный провайдер, без API Key и 403)
+    const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, attribution: 'Esri, DeLorme, NAVTEQ'
     });
 
-    if (currentMapType === "osm") cartoLayer.addTo(map);
+    if (currentMapType === "osm") esriLayer.addTo(map);
     else googleLayer.addTo(map);
 
     function updateMapLayerBtnUI() {
       const btnText = document.getElementById("btnMapLayerText");
-      if (btnText) btnText.innerText = currentMapType === "google" ? "Карта: Google (з вулицями)" : "Карта: Детальна (CARTO)";
+      if (btnText) btnText.innerText = currentMapType === "google" ? "Карта: Google (з вулицями)" : "Карта: Світова вулична (Esri)";
     }
     updateMapLayerBtnUI();
 
     function toggleMapLayer() {
       if (currentMapType === "google") {
         if (map.hasLayer(googleLayer)) map.removeLayer(googleLayer);
-        cartoLayer.addTo(map);
+        esriLayer.addTo(map);
         currentMapType = "osm";
       } else {
-        if (map.hasLayer(cartoLayer)) map.removeLayer(cartoLayer);
+        if (map.hasLayer(esriLayer)) map.removeLayer(esriLayer);
         googleLayer.addTo(map);
         currentMapType = "google";
       }
       localStorage.setItem("radar_map_type", currentMapType);
       updateMapLayerBtnUI();
-      showToast(currentMapType === "google" ? "🗺️ Google Карта увімкнена!" : "🗺️ Детальна Карта увімкнена!");
+      showToast(currentMapType === "google" ? "🗺️ Google Карта увімкнена!" : "🗺️ Вулична Карта (Esri) увімкнена!");
     }
 
     const streetHighlightGroup = L.layerGroup().addTo(map);
@@ -572,36 +577,28 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    // ГАРАНТИРОВАННАЯ ПОДСВЕТКА УЛИЦЫ
+    // ПОДСВЕТКА НАСТОЯЩЕЙ УЛИЦЫ
     function highlightStreetForPoint(point) {
       streetHighlightGroup.clearLayers();
       const txt = ((point.raw_text || point.text || "") + " " + (point.address || "")).toLowerCase();
       
       let matchedLine = null;
+      let matchedName = "";
       for (const key in STREET_GEOMETRIES) {
         if (new RegExp(key, "i").test(txt)) {
           matchedLine = STREET_GEOMETRIES[key];
+          matchedName = key;
           break;
         }
       }
 
-      // Если улица известна — подсвечиваем ее траекторию
       if (matchedLine) {
         L.polyline(matchedLine, { className: 'street-highlight-polyline' }).addTo(streetHighlightGroup);
-      } else if (point.lat && point.lng) {
-        // ЕСЛИ УЛИЦА НЕСТАНДАРТНАЯ — РИСУЕМ ДИНАМИЧЕСКИЙ НЕОНОВЫЙ ЛУЧ ДОРОГИ ЧЕРЕЗ ЭТУ ТОЧКУ!
-        const offsetLat = 0.0035;
-        const offsetLng = 0.0055;
-        const fallbackLine = [
-          [point.lat - offsetLat, point.lng - offsetLng],
-          [point.lat, point.lng],
-          [point.lat + offsetLat, point.lng + offsetLng]
-        ];
-        L.polyline(fallbackLine, { className: 'street-highlight-polyline' }).addTo(streetHighlightGroup);
-      }
-
-      if (point.lat && point.lng) {
-        map.panTo([point.lat, point.lng], { animate: true, duration: 0.4 });
+        // Масштабируем так, чтобы было видно всю настоящую улицу!
+        map.fitBounds(L.latLngBounds(matchedLine), { padding: [40, 40], maxZoom: 15, animate: true });
+        showToast(`📍 Підсвічено вулицю: ${matchedName.toUpperCase()}! Перетягніть мітку туди.`);
+      } else {
+        showToast("🔍 Вулицю в тексті не розпізнано. Перетягніть мітку вручну.");
       }
     }
 
@@ -955,7 +952,7 @@
       });
     }
 
-    // ЗАГРУЗКА ТОЧЕК
+    // ТОЧКИ
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -1093,7 +1090,6 @@
             if (iconEl) iconEl.classList.add('active-dragging-target');
 
             highlightStreetForPoint(p);
-            showToast("📍 Вулицю підсвічено! Перетягніть мітку та торкніться карти поруч.");
           }, 500);
         }
 
