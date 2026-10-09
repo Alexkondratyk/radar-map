@@ -30,18 +30,7 @@
     /* ============================================================== */
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-
-    /* КАРТА НА ВЕСЬ ЭКРАН */
-    #map {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-      background: #e2e8f0;
-    }
+    html, body, #map { width: 100%; height: 100%; background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     /* Панель управления */
     .dashboard {
@@ -137,14 +126,6 @@
     }
     .btn-secondary:hover { background: #334155; color: #fff; }
 
-    .btn-stats {
-      background: #1e1b4b;
-      border: 1px solid #6366f1;
-      color: #a5b4fc;
-      font-weight: 600;
-    }
-    .btn-stats:hover { background: #312e81; color: #fff; }
-
     @keyframes pulse-border {
       0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
       70% { box-shadow: 0 0 0 8px rgba(37, 211, 102, 0); }
@@ -234,6 +215,7 @@
       to { transform: scale(1.15); }
     }
 
+    /* ПОСТОЯННЫЕ НАДПИСИ НАД ШАРИКАМИ В РЕЖИМЕ ТРЕНЕРА */
     .leaflet-tooltip.trainer-marker-tooltip {
       background: rgba(15, 23, 42, 0.94) !important;
       border: 1.5px solid #38bdf8 !important;
@@ -376,6 +358,7 @@
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
+    /* Кнопки секторов */
     .sector-quick-btns { display: flex; gap: 5px; margin-bottom: 6px; }
     .btn-sector-quick {
       flex: 1;
@@ -401,6 +384,7 @@
     }
     .sector-item input { cursor: pointer; }
 
+    /* Кнопка тренера */
     .btn-trainer {
       background: #334155;
       color: #f59e0b;
@@ -431,7 +415,7 @@
       to { stroke-dashoffset: 12; }
     }
 
-    /* Модальные окна */
+    /* Модальное окно создания светофора */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -447,13 +431,11 @@
       padding: 16px;
       border-radius: 12px;
       color: #fff;
-      width: 310px;
-      max-height: 90vh;
-      overflow-y: auto;
+      width: 300px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.6);
       border: 1px solid #334155;
     }
-    .modal-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #38bdf8; display: flex; justify-content: space-between; align-items: center; }
+    .modal-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; color: #38bdf8; }
     .modal-subtitle { font-size: 11px; color: #94a3b8; margin-bottom: 10px; line-height: 1.4; }
     .modal-input {
       width: 100%;
@@ -478,102 +460,6 @@
     }
     .btn-m-save { background: #2563eb; color: #fff; }
     .btn-m-cancel { background: #334155; color: #94a3b8; }
-
-    /* СТИЛИ ЭКРАНА СТАТИСТИКИ */
-    .stats-card {
-      width: 360px;
-      max-width: 95vw;
-    }
-    .stats-tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-    .btn-tab {
-      flex: 1;
-      padding: 7px;
-      background: #0f172a;
-      border: 1px solid #334155;
-      color: #94a3b8;
-      border-radius: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-    .btn-tab.active {
-      background: #2563eb;
-      color: #fff;
-      border-color: #38bdf8;
-    }
-    .stats-kpi-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-bottom: 14px;
-    }
-    .stats-kpi-box {
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 8px 10px;
-      border-radius: 8px;
-      text-align: center;
-    }
-    .kpi-num {
-      font-size: 18px;
-      font-weight: 800;
-      color: #ff334b;
-    }
-    .kpi-label {
-      font-size: 10px;
-      color: #94a3b8;
-      margin-top: 2px;
-    }
-
-    /* СТОЛБЧАТЫЙ ГРАФИК */
-    .chart-container {
-      background: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 10px;
-      padding: 12px 10px 8px;
-      min-height: 180px;
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-    }
-    .chart-col {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      height: 100%;
-      justify-content: flex-end;
-      min-width: 0;
-    }
-    .chart-bar-val {
-      font-size: 9px;
-      font-weight: 700;
-      color: #f1f5f9;
-      margin-bottom: 2px;
-    }
-    .chart-bar {
-      width: 100%;
-      background: #ff334b;
-      border-radius: 3px 3px 0 0;
-      min-height: 3px;
-      transition: height 0.4s ease;
-      box-shadow: 0 0 6px rgba(255, 51, 75, 0.4);
-    }
-    .chart-bar.peak-bar {
-      background: #f59e0b;
-      box-shadow: 0 0 8px #f59e0b;
-    }
-    .chart-label {
-      font-size: 9px;
-      color: #64748b;
-      margin-top: 4px;
-      text-align: center;
-      white-space: nowrap;
-    }
 
     .toast-msg {
       position: absolute;
@@ -658,9 +544,6 @@
   </style>
 </head>
 <body>
-  <!-- КАРТА С ФИКСИРОВАННЫМ ПОЗИЦИОНИРОВАНИЕМ -->
-  <div id="map"></div>
-
   <div class="dashboard">
     <div class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
@@ -670,12 +553,8 @@
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
-      <button class="btn-secondary btn-stats" onclick="openStatsModal()">
-        <span>📊</span><span>Статистика (7 днів)</span>
-      </button>
-
       <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
-        <span>🗺️</span><span id="btnMapLayerText">Карта: OpenStreetMap</span>
+        <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
       </button>
 
       <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
@@ -714,6 +593,7 @@
       <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
     </div>
 
+    <!-- 1. ФИЛЬТР РАЙОНОВ -->
     <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🏙️ Фільтр районів міста:</div>
     <div class="sector-quick-btns">
       <button id="btnQuickRoute" class="btn-sector-quick active" onclick="setSectorPreset('route')">🎯 Тільки мій</button>
@@ -729,10 +609,12 @@
       <label class="sector-item"><input type="checkbox" id="sec_s6" onchange="onSectorChange()"> 🏢 Лівий берег (Слобожанський, Сонячний)</label>
     </div>
 
+    <!-- 2. РЕЖИМ ТРЕНЕРА ИИ -->
     <div class="neon-section-title">🎯 Навчання системи (Корекція)</div>
     <button id="btnTrainer" class="btn-trainer" onclick="toggleTrainerMode()">🎯 Режим тренера: ВИМКНЕНО</button>
     <div style="font-size:10px; color:#94a3b8; margin:4px 0 8px;">Коли увімкнено: над кожним шариком є напис. Перетягуйте шарики на точні перехрестя.</div>
 
+    <!-- 3. НЕОНОВЫЕ ЛИНИИ -->
     <div class="neon-section-title">⚡ Неон вулиць</div>
     <button id="btnToggleNeonVisible" class="btn-neon-action btn-neon-toggle" onclick="toggleNeonLinesVisibility()">👁️ Сховати неон</button>
     <button id="btnNeonRecolor" class="btn-neon-action btn-neon-recolor" onclick="toggleNeonRecolorMode()">🎨 Перефарбувати лінію</button>
@@ -749,38 +631,6 @@
     <button class="btn-neon-action btn-neon-undo" onclick="undoNeonPoint()">↩️ Скасувати точку</button>
     <button class="btn-neon-action btn-neon-undo" onclick="finishCurrentLine()">💾 Зафіксувати лінію</button>
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
-  </div>
-
-  <!-- ЭКРАН СТАТИСТИКИ -->
-  <div id="modalStats" class="modal-overlay">
-    <div class="modal-card stats-card">
-      <div class="modal-title">
-        <span>📊 Активність тривог (Червоні мітки)</span>
-        <span style="cursor:pointer; font-size:14px;" onclick="closeStatsModal()">✕</span>
-      </div>
-
-      <div class="stats-tabs">
-        <button id="tabDay" class="btn-tab active" onclick="switchStatsTab('day')">🕒 Сьогодні (по годинах)</button>
-        <button id="tabWeek" class="btn-tab" onclick="switchStatsTab('week')">📅 За 7 днів (по днях)</button>
-      </div>
-
-      <div class="stats-kpi-grid">
-        <div class="stats-kpi-box">
-          <div id="kpiTotalToday" class="kpi-num">0</div>
-          <div class="kpi-label">Сьогодні зафіксовано</div>
-        </div>
-        <div class="stats-kpi-box">
-          <div id="kpiPeakHour" class="kpi-num" style="color:#f59e0b;">--:00</div>
-          <div class="kpi-label">Найактивніша година</div>
-        </div>
-      </div>
-
-      <div id="chartContainer" class="chart-container"></div>
-      
-      <div style="font-size:10px; color:#64748b; margin-top:8px; text-align:center;">
-        Дані зберігаються 7 днів з телеграм-радару Дніпра
-      </div>
-    </div>
   </div>
 
   <!-- Модальное окно создания светофора -->
@@ -815,6 +665,7 @@
   <div id="toast" class="toast-msg">✅ Збережено!</div>
   
   <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
+  <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -822,18 +673,15 @@
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
     const FIREBASE_KB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/knowledge_base.json";
-    const FIREBASE_ARCHIVE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/stats_archive.json";
     
     const LIFETIME_MS = 40 * 60 * 1000;
     const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
 
     let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
-    let currentMapType = localStorage.getItem("radar_map_type") || "osm";
+    let currentMapType = localStorage.getItem("radar_map_type") || "google";
     let isTrainerMode = false;
     let pendingTrainerData = null;
-    let archiveStatsData = [];
-    let currentStatsTab = "day";
 
     let activeSectors = JSON.parse(localStorage.getItem("radar_active_sectors") || '["s1"]');
 
@@ -903,30 +751,15 @@
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
-    // НАДЕЖНЫЙ СЛОЙ КАРТЫ OSM С FALLBACK
+    const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=uk&gl=ua&x={x}&y={y}&z={z}', {
+      maxZoom: 20, attribution: 'Google Maps'
+    });
     const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
+      maxZoom: 19, attribution: '© OpenStreetMap contributors'
     });
 
-    const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&hl=uk&gl=ua&x={x}&y={y}&z={z}', {
-      subdomains: ['0', '1', '2', '3'],
-      maxZoom: 20,
-      attribution: 'Google Maps'
-    });
-
-    googleLayer.on('tileerror', function() {
-      if (map.hasLayer(googleLayer)) {
-        map.removeLayer(googleLayer);
-        osmLayer.addTo(map);
-        currentMapType = "osm";
-        localStorage.setItem("radar_map_type", "osm");
-        updateMapLayerBtnUI();
-      }
-    });
-
-    if (currentMapType === "google") googleLayer.addTo(map);
-    else osmLayer.addTo(map);
+    if (currentMapType === "osm") osmLayer.addTo(map);
+    else googleLayer.addTo(map);
 
     function updateMapLayerBtnUI() {
       const btnText = document.getElementById("btnMapLayerText");
@@ -936,11 +769,11 @@
 
     function toggleMapLayer() {
       if (currentMapType === "google") {
-        if (map.hasLayer(googleLayer)) map.removeLayer(googleLayer);
+        map.removeLayer(googleLayer);
         osmLayer.addTo(map);
         currentMapType = "osm";
       } else {
-        if (map.hasLayer(osmLayer)) map.removeLayer(osmLayer);
+        map.removeLayer(osmLayer);
         googleLayer.addTo(map);
         currentMapType = "google";
       }
@@ -964,122 +797,6 @@
       setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    /* ЭКРАН СТАТИСТИКИ */
-    async function openStatsModal() {
-      document.getElementById("modalStats").style.display = "flex";
-      try {
-        const res = await fetch(`${FIREBASE_ARCHIVE_URL}?t=${Date.now()}`);
-        if (res.ok) {
-          const data = await res.json();
-          archiveStatsData = data ? Object.values(data).filter(x => x && x.time) : [];
-        }
-      } catch (e) {
-        archiveStatsData = [];
-      }
-      renderStatsView();
-    }
-
-    function closeStatsModal() {
-      document.getElementById("modalStats").style.display = "none";
-    }
-
-    function switchStatsTab(tab) {
-      currentStatsTab = tab;
-      document.getElementById("tabDay").classList.toggle("active", tab === "day");
-      document.getElementById("tabWeek").classList.toggle("active", tab === "week");
-      renderStatsView();
-    }
-
-    function renderStatsView() {
-      const now = new Date();
-      const chartBox = document.getElementById("chartContainer");
-      chartBox.innerHTML = "";
-
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-      const todayPoints = archiveStatsData.filter(p => p.time >= startOfToday);
-      document.getElementById("kpiTotalToday").innerText = todayPoints.length;
-
-      if (currentStatsTab === "day") {
-        const hourCounts = new Array(24).fill(0);
-        todayPoints.forEach(p => {
-          const h = new Date(p.time).getHours();
-          if (h >= 0 && h < 24) hourCounts[h]++;
-        });
-
-        let maxCount = Math.max(...hourCounts, 1);
-        let peakHour = 0;
-        let peakVal = 0;
-        hourCounts.forEach((cnt, h) => {
-          if (cnt > peakVal) { peakVal = cnt; peakHour = h; }
-        });
-
-        document.getElementById("kpiPeakHour").innerText = peakVal > 0 ? `${peakHour}:00` : "--:00";
-
-        const startH = isMobile ? 6 : 0;
-        const endH = isMobile ? 22 : 23;
-
-        for (let h = startH; h <= endH; h++) {
-          const count = hourCounts[h];
-          const heightPercent = Math.max(6, Math.round((count / maxCount) * 100));
-          const isPeak = (count === peakVal && count > 0);
-
-          const col = document.createElement("div");
-          col.className = "chart-col";
-          col.innerHTML = `
-            <div class="chart-bar-val">${count > 0 ? count : ''}</div>
-            <div class="chart-bar ${isPeak ? 'peak-bar' : ''}" style="height:${heightPercent}%;"></div>
-            <div class="chart-label">${h}</div>
-          `;
-          chartBox.appendChild(col);
-        }
-      } else {
-        const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-        const last7Days = [];
-        for (let i = 6; i >= 0; i--) {
-          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-          last7Days.push({
-            dateStr: d.toLocaleDateString([], { day: '2-digit', month: '2-digit' }),
-            dayName: dayNames[d.getDay()],
-            startTime: d.getTime(),
-            endTime: d.getTime() + 86400000,
-            count: 0
-          });
-        }
-
-        archiveStatsData.forEach(p => {
-          last7Days.forEach(dayItem => {
-            if (p.time >= dayItem.startTime && p.time < dayItem.endTime) {
-              dayItem.count++;
-            }
-          });
-        });
-
-        let maxDayCount = Math.max(...last7Days.map(d => d.count), 1);
-        let peakDayName = "--";
-        let peakDayVal = 0;
-        last7Days.forEach(d => {
-          if (d.count > peakDayVal) { peakDayVal = d.count; peakDayName = `${d.dayName} (${d.dateStr})`; }
-        });
-
-        document.getElementById("kpiPeakHour").innerText = peakDayVal > 0 ? peakDayName : "--";
-
-        last7Days.forEach(d => {
-          const heightPercent = Math.max(6, Math.round((d.count / maxDayCount) * 100));
-          const isPeak = (d.count === peakDayVal && d.count > 0);
-
-          const col = document.createElement("div");
-          col.className = "chart-col";
-          col.innerHTML = `
-            <div class="chart-bar-val">${d.count > 0 ? d.count : ''}</div>
-            <div class="chart-bar ${isPeak ? 'peak-bar' : ''}" style="height:${heightPercent}%;"></div>
-            <div class="chart-label" style="font-weight:700;">${d.dayName}</div>
-            <div class="chart-label" style="font-size:8px;">${d.dateStr}</div>
-          `;
-          chartBox.appendChild(col);
-        }
-      }
-    }
-
     /* ФИЛЬТР СЕКТОРОВ */
     function syncSectorCheckboxesUI() {
       ["s1", "s2", "s3", "s4", "s5", "s6"].forEach(id => {
@@ -1089,17 +806,13 @@
       const isOnlyRoute = activeSectors.length === 1 && activeSectors[0] === "s1";
       const isAll = activeSectors.length === 6;
 
-      const qRoute = document.getElementById("btnQuickRoute");
-      const qAll = document.getElementById("btnQuickAll");
-      if (qRoute) qRoute.classList.toggle("active", isOnlyRoute);
-      if (qAll) qAll.classList.toggle("active", isAll);
+      document.getElementById("btnQuickRoute").classList.toggle("active", isOnlyRoute);
+      document.getElementById("btnQuickAll").classList.toggle("active", isAll);
 
       const subtitle = document.getElementById("sectorSubtitle");
-      if (subtitle) {
-        if (isOnlyRoute) subtitle.innerText = "📍 Режим: Мій маршрут";
-        else if (isAll) subtitle.innerText = "🌐 Режим: Весь Дніпро";
-        else subtitle.innerText = `🎯 Обрано секторів: ${activeSectors.length}`;
-      }
+      if (isOnlyRoute) subtitle.innerText = "📍 Режим: Мій маршрут";
+      else if (isAll) subtitle.innerText = "🌐 Режим: Весь Дніпро";
+      else subtitle.innerText = `🎯 Обрано секторів: ${activeSectors.length}`;
     }
 
     function setSectorPreset(type) {
@@ -1140,7 +853,7 @@
       });
     }
 
-    /* РЕЖИМ ТРЕНЕРА ИИ */
+    /* РЕЖИМ ТРЕНЕРА ИИ (ПЕРЕТАСКИВАНИЕ С НАДПИСЯМИ) */
     function toggleTrainerMode() {
       isTrainerMode = !isTrainerMode;
       const btn = document.getElementById("btnTrainer");
@@ -1199,6 +912,7 @@
       };
 
       try {
+        // 1. Сохраняем в Базу Знаний Firebase
         await fetch(FIREBASE_KB_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -1209,6 +923,7 @@
         const newLng = pendingTrainerData.newLng;
         const targetPoint = pendingTrainerData.point;
 
+        // 2. МГНОВЕННО ОБНОВЛЯЕМ САМУ ПЕРЕТАЩЕННУЮ ТОЧКУ В FIREBASE (ЧТОБЫ НЕ СБРАСЫВАЛАСЬ)
         if (targetPoint._fbKey) {
           const pointUrl = FIREBASE_POINTS_URL.replace(".json", `/${targetPoint._fbKey}.json`);
           await fetch(pointUrl, {
@@ -1222,6 +937,7 @@
           });
         }
 
+        // 3. МАССОВОЕ ПРИМЕНЕНИЕ: если есть другие сообщения с этой же фразой, обновляем их тоже
         allPoints.forEach(pt => {
           const txt = ((pt.raw_text || pt.text || "") + " " + (pt.address || "")).toLowerCase();
           if (txt.includes(phrase) || pt === targetPoint) {
@@ -1591,8 +1307,9 @@
       });
     }
 
-    /* ЗАГРУЗКА ТОЧЕК И РЕНДЕР */
+    /* ЗАГРУЗКА ТОЧЕК И РЕНДЕР (С ЗАЩИТОЙ ОТ СБРОСА) */
     async function loadPoints() {
+      // ЕСЛИ СЕЙЧАС ОТКРЫТО ОКНО ОБУЧЕНИЯ — НЕ СБРАСЫВАЕМ КАРТУ!
       if (pendingTrainerData) return;
 
       try {
@@ -1607,6 +1324,7 @@
         }
 
         const now = Date.now();
+        // СОХРАНЯЕМ _fbKey КАЖДОЙ ТОЧКИ ДЛЯ МГНОВЕННОЙ ФИКСАЦИИ ПРИ ОБУЧЕНИИ
         allPoints = Object.entries(data).map(([key, p]) => {
           if (!p || typeof p !== 'object' || !p.lat || !p.lng) return null;
           p._fbKey = key;
@@ -1619,9 +1337,7 @@
 
         renderMarkers();
         renderTrafficLights();
-      } catch (err) {
-        console.error("Ошибка загрузки точек:", err);
-      }
+      } catch (err) {}
     }
 
     function isCleanPoint(p) {
@@ -1786,9 +1502,10 @@
 
       allPoints.forEach(p => {
         const time = p.time || p.timestamp || 0;
-        const diff = now - time; // ИСПРАВЛЕНО: переменная diff определена корректно
+        const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
+        // Фильтр по активным секторам
         if (!isPointInActiveSectors(p)) return;
 
         const isFresh = diff <= FRESH_THRESHOLD_MS;
@@ -1837,6 +1554,7 @@
           zIndexOffset: isTrainerMode ? 500 : 0
         });
 
+        // НАДПИСИ НАД ШАРИКАМИ В РЕЖИМЕ ТРЕНЕРА
         if (isTrainerMode) {
           const rawText = (p.text || p.raw_text || p.address || "").replace(" (чисто)", "").trim();
           const cleanSnippet = rawText.length > 38 ? rawText.slice(0, 35) + "..." : rawText;
