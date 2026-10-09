@@ -21,7 +21,7 @@
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      min-width: 220px;
+      min-width: 230px;
     }
     .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .points-count { font-size: 16px; font-weight: 700; color: #fff; }
@@ -40,7 +40,7 @@
     }
     .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-    /* Легенда цветов */
+    /* Легенда формы и цвета */
     .legend {
       display: flex;
       flex-direction: column;
@@ -51,11 +51,19 @@
       padding-top: 8px;
     }
     .legend-row { display: flex; align-items: center; gap: 6px; }
-    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .shape { width: 10px; height: 10px; display: inline-block; }
+    .shape.circle { border-radius: 50%; }
+    .shape.square { border-radius: 2px; }
     .dot-green { background: #22c55e; }
     .dot-red { background: #ef4444; }
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
+
+    /* Сброс стандартного стиля divIcon для квадрата */
+    .square-marker-icon {
+      background: transparent !important;
+      border: none !important;
+    }
 
     /* Кнопка ручного обновления */
     .btn-refresh {
@@ -114,12 +122,12 @@
     </div>
     <div class="legend">
       <div class="legend-row">
-        <span class="dot dot-green"></span><span class="dot dot-red"></span>
-        <span>К1: Чисто / Опасно</span>
+        <span class="shape circle dot-green"></span><span class="shape circle dot-red"></span>
+        <span>К1 (кружки): Чисто / Опасно</span>
       </div>
       <div class="legend-row">
-        <span class="dot dot-blue"></span><span class="dot dot-purple"></span>
-        <span>К2: Чисто / Опасно</span>
+        <span class="shape square dot-blue"></span><span class="shape square dot-purple"></span>
+        <span>К2 (квадрати): Чисто / Опасно</span>
       </div>
     </div>
   </div>
@@ -174,13 +182,11 @@
     }
 
     function getMarkerColor(p) {
-      // 1. Если скрипт уже сохранил цвет явно
       if (p.color === "green") return "#22c55e";
       if (p.color === "red") return "#ef4444";
       if (p.color === "blue") return "#06b6d4";
       if (p.color === "purple") return "#a855f7";
 
-      // 2. Для старых точек: определяем по источнику
       const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
       const isClean = (p.status === "чисто") || (p.text && p.text.toLowerCase().includes("чисто"));
       
@@ -215,14 +221,36 @@
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const markerColor = getMarkerColor(p);
 
-        const marker = L.circleMarker([p.lat, p.lng], {
-          radius: 9,
-          fillColor: markerColor,
-          color: "#ffffff",
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.95
-        });
+        // Создаем маркер нужной формы
+        let marker;
+        if (isChannel2) {
+          // Квадратный маркер для Канала 2
+          const squareIcon = L.divIcon({
+            className: 'square-marker-icon',
+            html: `<div style="
+              width: 16px;
+              height: 16px;
+              background-color: ${markerColor};
+              border: 2px solid #ffffff;
+              border-radius: 3px;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+            "></div>`,
+            iconSize: [16, 16],
+            iconAnchor: [8, 8],
+            popupAnchor: [0, -10]
+          });
+          marker = L.marker([p.lat, p.lng], { icon: squareIcon });
+        } else {
+          // Круглый маркер для Канала 1
+          marker = L.circleMarker([p.lat, p.lng], {
+            radius: 9,
+            fillColor: markerColor,
+            color: "#ffffff",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.95
+          });
+        }
 
         const popupContent = `
           <div class="popup-title">${p.address || "Дніпро"}</div>
@@ -244,7 +272,7 @@
     // Первичный запуск
     loadPoints();
 
-    // Автообновление без перезагрузки страницы F5 каждые 15 секунд
+    // Автообновление каждые 15 секунд без нажатия F5
     setInterval(loadPoints, 15000);
   </script>
 </body>
