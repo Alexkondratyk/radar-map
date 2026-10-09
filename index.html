@@ -12,7 +12,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
-    /* Панель управления — компактная фикс-ширина */
+    /* Панель управления — компактная ширина */
     .dashboard {
       position: absolute;
       top: 15px;
@@ -35,7 +35,6 @@
     }
     .points-count { font-size: 14px; font-weight: 700; color: #fff; }
     
-    /* Кнопка сворачивания */
     .btn-toggle {
       background: #1e293b;
       border: 1px solid #334155;
@@ -71,14 +70,12 @@
     }
     .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-    /* Сворачиваемый блок */
     .collapsible-body {
       margin-top: 8px;
       transition: all 0.25s ease;
     }
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 6px; }
 
-    /* Кнопка режима расстановки */
     .btn-setup {
       width: 100%;
       background: #1e293b;
@@ -109,7 +106,6 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Легенда */
     .legend {
       display: flex;
       flex-direction: column;
@@ -128,7 +124,6 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
-    /* Светофор с динамическим масштабом */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -182,7 +177,6 @@
       border: none !important;
     }
 
-    /* Тост уведомление */
     .toast-msg {
       position: absolute;
       top: 20px;
@@ -203,7 +197,6 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
-    /* Кнопка обновления */
     .btn-refresh {
       position: absolute;
       bottom: 25px;
@@ -225,7 +218,6 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап */
     .leaflet-popup-content-wrapper {
       background: #1e293b !important;
       color: #f8fafc !important;
@@ -255,14 +247,12 @@
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
 
-    <!-- Кнопки выбора каналов -->
     <div class="btn-group">
       <button class="btn-filter active" onclick="setFilter('all', this)">Всі</button>
       <button class="btn-filter" onclick="setFilter('Канал 1', this)">К 1</button>
       <button class="btn-filter" onclick="setFilter('Канал 2', this)">К 2</button>
     </div>
 
-    <!-- Сворачиваемая часть -->
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle">Активні 40 хв</div>
 
@@ -287,7 +277,7 @@
     </div>
   </div>
 
-  <div id="toast" class="toast-msg">✅ Позиції збережено та зафіксовано!</div>
+  <div id="toast" class="toast-msg">✅ Позиції збережено та синхронізовано!</div>
   
   <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
   <div id="map"></div>
@@ -295,6 +285,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
+    const CONFIG_POS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/positions.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
     const DEFAULT_CHECKPOINTS = [
@@ -302,57 +293,49 @@
         id: "kaidak_rovd",
         name: "РОВД / Кайдацький з'їзд",
         lat: 48.4925,
-        lng: 34.9625,
-        keys: ["кайдак", "ровд", "з'їзд", "съезд"]
+        lng: 34.9625
       },
       {
         id: "vodolechebnitsa",
         name: "Водолікарня (пр. Свободи, 2)",
         lat: 48.4848,
-        lng: 34.9735,
-        keys: ["водолечеб", "водолікарн", "свобод"]
+        lng: 34.9735
       },
       {
         id: "kombainoviy",
         name: "Комбайновий (Белелюбського)",
         lat: 48.4795,
-        lng: 34.9845,
-        keys: ["комбайн", "ударник"]
+        lng: 34.9845
       },
       {
         id: "krasnozavodska",
         name: "Краснозаводська (Белелюбського біля ДТРЗ)",
         lat: 48.4812,
-        lng: 34.9940,
-        keys: ["краснозавод", "белелюб"]
+        lng: 34.9940
       },
       {
         id: "pavlova",
         name: "вул. Академіка Павлова",
         lat: 48.4818,
-        lng: 35.0012,
-        keys: ["павлов"]
+        lng: 35.0012
       },
       {
         id: "rechport",
         name: "Річпорт (Набережна Заводська)",
         lat: 48.4805,
-        lng: 35.0210,
-        keys: ["речпорт", "річпорт", "десантник", "річковий"]
+        lng: 35.0210
       },
       {
         id: "vodokachka",
         name: "Водокачка (Набережна Заводська)",
         lat: 48.4910,
-        lng: 34.9480,
-        keys: ["водокачк"]
+        lng: 34.9480
       },
       {
         id: "stan_550",
         name: "Стан 550 / Набережна Заводська",
         lat: 48.4865,
-        lng: 34.9850,
-        keys: ["стан 550", "стан550", "набережная заводская", "набережна заводська", "заводская набережная", "заводська набережна", "стан"]
+        lng: 34.9850
       }
     ];
 
@@ -392,7 +375,7 @@
       }
     }
 
-    function saveAllPositionsToStorage() {
+    async function saveAllPositionsToStorage() {
       const stored = getStoredPositions();
       Object.keys(trafficMarkersMap).forEach(id => {
         const m = trafficMarkersMap[id];
@@ -402,6 +385,35 @@
         }
       });
       localStorage.setItem("dnepr_radar_tl_positions", JSON.stringify(stored));
+      
+      try {
+        await fetch(CONFIG_POS_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stored)
+        });
+      } catch (e) {
+        console.error("Помилка хмарного збереження:", e);
+      }
+    }
+
+    async function fetchCloudPositions() {
+      try {
+        const res = await fetch(`${CONFIG_POS_URL}?t=${Date.now()}`);
+        if (res.ok) {
+          const cloudData = await res.json();
+          if (cloudData && typeof cloudData === 'object') {
+            localStorage.setItem("dnepr_radar_tl_positions", JSON.stringify(cloudData));
+            if (!isEditMode) {
+              Object.keys(cloudData).forEach(id => {
+                if (trafficMarkersMap[id]) {
+                  trafficMarkersMap[id].setLatLng([cloudData[id].lat, cloudData[id].lng]);
+                }
+              });
+            }
+          }
+        }
+      } catch (e) {}
     }
 
     const map = L.map('map', { zoomControl: false }).setView([48.481, 34.985], 13);
@@ -434,7 +446,7 @@
       setTimeout(() => { toast.style.display = "none"; }, 3500);
     }
 
-    function toggleEditMode() {
+    async function toggleEditMode() {
       isEditMode = !isEditMode;
       const btn = document.getElementById("btnSetup");
       const btnText = document.getElementById("btnSetupText");
@@ -446,8 +458,8 @@
       } else {
         btn.classList.remove("editing");
         btnText.innerText = "📍 Розставити світлофори";
-        saveAllPositionsToStorage();
-        showToast("✅ Всі позиції надійно збережено та зафіксовано!");
+        await saveAllPositionsToStorage();
+        showToast("✅ Позиції збережено та синхронізовано з хмарою!");
       }
 
       Object.values(trafficMarkersMap).forEach(marker => {
@@ -531,26 +543,48 @@
       return clean ? "#22c55e" : "#ef4444";
     }
 
-    function checkKeysMatch(text, cp) {
-      return cp.keys.some(k => {
-        if (k === "стан") {
-          return /\bстан\b/i.test(text) || /\bстане\b/i.test(text) || /\bстану\b/i.test(text);
-        }
-        return text.includes(k);
-      });
-    }
+    // ЖЕЛЕЗНАЯ ЭКСКЛЮЗИВНАЯ ПРИВЯЗКА СООБЩЕНИЙ К СВЕТОФОРАМ
+    function getMatchedCheckpointId(p) {
+      const text = (p.raw_text || p.text || "").toLowerCase();
+      
+      // 1. СТРОГИЕ КЛЮЧЕВЫЕ СЛОВА ИЗ ТЕКСТА СООБЩЕНИЯ
+      if (text.includes("павлов")) return "pavlova";
+      if (text.includes("краснозавод")) return "krasnozavodska";
+      if (text.includes("комбайн") || text.includes("ударник")) return "kombainoviy";
+      if (text.includes("белелюб")) return "krasnozavodska";
+      if (text.includes("водокачк")) return "vodokachka";
+      if (/\bстан\b|\bстан550\b|\bстан 550\b/i.test(text) || (text.includes("заводськ") && text.includes("набережн")) || (text.includes("заводск") && text.includes("набережн"))) return "stan_550";
+      if (text.includes("речпорт") || text.includes("річпорт") || text.includes("десантник") || text.includes("річков")) return "rechport";
+      if (text.includes("водолечеб") || text.includes("водолікарн") || text.includes("свобод")) return "vodolechebnitsa";
+      if (text.includes("кайдак") || text.includes("ровд")) return "kaidak_rovd";
 
-    function matchesCheckpoint(p) {
+      // 2. ЕСЛИ В ТЕКСТЕ НЕТ — ПРОВЕРЯЕМ АДРЕС
+      const addr = (p.address || "").toLowerCase();
+      if (addr.includes("павлов")) return "pavlova";
+      if (addr.includes("краснозавод")) return "krasnozavodska";
+      if (addr.includes("комбайн")) return "kombainoviy";
+      if (addr.includes("белелюб")) return "krasnozavodska";
+      if (addr.includes("водокачк")) return "vodokachka";
+      if (addr.includes("стан 550") || addr.includes("стан")) return "stan_550";
+      if (addr.includes("речпорт") || addr.includes("річпорт")) return "rechport";
+      if (addr.includes("водолечеб") || addr.includes("водолікарн")) return "vodolechebnitsa";
+      if (addr.includes("кайдак") || addr.includes("ровд")) return "kaidak_rovd";
+
+      // 3. ЖЕСТКИЙ УЗКИЙ РАДИУС 250 МЕТРОВ (Павлова и Краснозаводская не пересекутся)
       const stored = getStoredPositions();
-      const text = (p.text + " " + (p.address || "")).toLowerCase();
+      let closestId = null;
+      let minDistance = 250;
+
       for (const cp of DEFAULT_CHECKPOINTS) {
         const curLat = stored[cp.id] ? stored[cp.id].lat : cp.lat;
         const curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
         const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
-        const matchKey = checkKeysMatch(text, cp);
-        if (dist <= 450 || matchKey) return cp;
+        if (dist <= minDistance) {
+          minDistance = dist;
+          closestId = cp.id;
+        }
       }
-      return null;
+      return closestId;
     }
 
     function renderTrafficLights() {
@@ -568,13 +602,8 @@
           curLng = stored[cp.id] ? stored[cp.id].lng : cp.lng;
         }
 
-        const matched = allPoints.filter(p => {
-          const dist = getDistanceMeters(p.lat, p.lng, curLat, curLng);
-          const text = (p.text + " " + (p.address || "")).toLowerCase();
-          const matchKey = checkKeysMatch(text, cp);
-          return (dist <= 600) || matchKey;
-        });
-
+        // Попадают ТОЛЬКО эксклюзивно привязанные к этому светофору отчёты
+        const matched = allPoints.filter(p => getMatchedCheckpointId(p) === cp.id);
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
@@ -651,8 +680,8 @@
             draggable: isEditMode
           });
 
-          marker.on('dragend', function() {
-            saveAllPositionsToStorage();
+          marker.on('dragend', async function() {
+            await saveAllPositionsToStorage();
             renderMarkers();
           });
 
@@ -673,7 +702,7 @@
         const diff = now - time;
         if (diff > LIFETIME_MS) return;
 
-        if (matchesCheckpoint(p)) return;
+        if (getMatchedCheckpointId(p)) return;
 
         const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
         const channelTitle = isChannel2 ? "Канал 2" : "Канал 1";
@@ -733,7 +762,9 @@
       document.getElementById('countText').innerText = `Точок: ${visibleCount}`;
     }
 
-    loadPoints();
+    fetchCloudPositions().then(() => {
+      loadPoints();
+    });
     setInterval(loadPoints, 15000);
   </script>
 </body>
