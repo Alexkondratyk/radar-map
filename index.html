@@ -9,6 +9,11 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
+    /* Плавная анимация изменения прозрачности меток */
+    path.leaflet-interactive {
+      transition: fill-opacity 1s ease, stroke-opacity 1s ease;
+    }
+
     /* Панель управления */
     .dashboard {
       position: absolute;
@@ -30,7 +35,7 @@
       align-items: center; 
       margin-bottom: 6px; 
     }
-    /* Три клика по счетчику открывают скрытое меню неона */
+    /* Три клика по надписи "Точок" открывают скрытое меню неона */
     .points-count { 
       font-size: 14px; 
       font-weight: 700; 
@@ -160,7 +165,7 @@
 
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* Скрытое меню Неонового Дизайнера */
+    /* Скрытое меню Неона */
     .neon-panel {
       position: absolute;
       top: 15px;
@@ -217,7 +222,6 @@
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
-    /* Стиль неоновых линий на карте */
     .neon-svg-line {
       pointer-events: none !important;
       filter: drop-shadow(0 0 3px currentColor);
@@ -348,7 +352,7 @@
 <body>
   <div class="dashboard">
     <div class="dash-header">
-      <!-- 3 быстрых клика по этой надписи откроют секретное меню подсветки улиц -->
+      <!-- 3 быстрых клика открывают меню неона -->
       <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
@@ -405,7 +409,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Окно создания светофора -->
+  <!-- Модальное окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -590,7 +594,6 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Слой неоновых линий находится под маркерами и не мешает кликам
     const neonLayer = L.layerGroup().addTo(map);
     const markersLayer = L.layerGroup().addTo(map);
     const trafficLightLayer = L.layerGroup().addTo(map);
@@ -692,7 +695,7 @@
     }
 
     /* ----------------------------------------------------
-       ЛОГИКА ТОНКОГО НЕОНА И СКРЫТОГО МЕНЮ
+       НЕОНОВАЯ ПОДСВЕТКА
     ---------------------------------------------------- */
     let secretClickCount = 0;
     let secretClickTimer = null;
@@ -833,7 +836,7 @@
     }
 
     /* ----------------------------------------------------
-       ЗАВАНТАЖЕННЯ ТОЧОК ТА СВІТЛОФОРІВ
+       ЗАГРУЗКА ТОЧЕК И СВЕТОФОРОВ
     ---------------------------------------------------- */
     async function loadPoints() {
       try {
@@ -995,6 +998,9 @@
       });
     }
 
+    /* ----------------------------------------------------
+       ОТРИСОВКА КРУЖОЧКОВ С ДИНАМИЧЕСКИМ УГАСАНИЕМ
+    ---------------------------------------------------- */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -1009,6 +1015,11 @@
         const remMinutes = Math.floor(remainingMs / 60000);
         const remSeconds = Math.floor((remainingMs % 60000) / 1000);
 
+        // Коэффициент свежести: от 1.0 (только что создана) до 0.12 (скоро исчезнет)
+        const freshnessRatio = Math.max(0.12, 1 - (diff / LIFETIME_MS));
+        const currentFillOpacity = Number((freshnessRatio * 0.95).toFixed(2));
+        const currentStrokeOpacity = Number((Math.max(0.25, freshnessRatio)).toFixed(2));
+
         const date = new Date(time);
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const clean = isCleanPoint(p);
@@ -1019,8 +1030,8 @@
           fillColor: markerColor,
           color: "#ffffff",
           weight: 2,
-          opacity: 1,
-          fillOpacity: 0.95
+          opacity: currentStrokeOpacity,
+          fillOpacity: currentFillOpacity
         });
 
         const popupContent = `
