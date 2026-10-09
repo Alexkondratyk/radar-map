@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Статистика тривог — Дніпро</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #0f172a; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 16px; }
+    .container { max-width: 500px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    h1 { font-size: 18px; color: #38bdf8; }
+    .btn-back { background: #1e293b; color: #cbd5e1; border: 1px solid #475569; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600; }
+    .stats-tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+    .btn-tab { flex: 1; padding: 10px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .btn-tab.active { background: #2563eb; color: #fff; border-color: #38bdf8; }
+    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .kpi-box { background: #1e293b; border: 1px solid #334155; padding: 12px; border-radius: 10px; text-align: center; }
+    .kpi-num { font-size: 24px; font-weight: 800; color: #ff334b; }
+    .kpi-label { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+    .chart-box { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px 12px 10px; min-height: 220px; display: flex; align-items: flex-end; gap: 6px; }
+    .chart-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; min-width: 0; }
+    .chart-bar-val { font-size: 10px; font-weight: 700; color: #f1f5f9; margin-bottom: 2px; }
+    .chart-bar { width: 100%; background: #ff334b; border-radius: 3px 3px 0 0; min-height: 3px; box-shadow: 0 0 6px rgba(255, 51, 75, 0.4); }
+    .chart-bar.peak-bar { background: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+    .chart-label { font-size: 10px; color: #64748b; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Статистика тривог (7 днів)</h1>
+      <a href="index.html" class="btn-back">← До карти</a>
+    </div>
+
+    <div class="stats-tabs">
+      <button id="tabDay" class="btn-tab active" onclick="switchTab('day')">🕒 Сьогодні (по годинах)</button>
+      <button id="tabWeek" class="btn-tab" onclick="switchTab('week')">📅 За 7 днів (по днях)</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-box">
+        <div id="kpiToday" class="kpi-num">0</div>
+        <div class="kpi-label">Сьогодні зафіксовано</div>
+      </div>
+      <div class="kpi-box">
+        <div id="kpiPeak" class="kpi-num" style="color:#f59e0b;">--:00</div>
+        <div class="kpi-label">Піковий час / день</div>
+      </div>
+    </div>
+
+    <div id="chartContainer" class="chart-box"></div>
+  </div>
+
+  <script>
+    const FIREBASE_ARCHIVE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/stats_archive.json";
+    let archiveData = [];
+    let currentTab = "day";
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${FIREBASE_ARCHIVE_URL}?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          archiveData = data ? Object.values(data).filter(x => x && x.time) : [];
+        }
+      } catch (e) { archiveData = []; }
+      render();
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById("tabDay").classList.toggle("active", tab === "day");
+      document.getElementById("tabWeek").classList.toggle("active", tab === "week");
+      render();
+    }
+
+    function render() {
+      const now = new Date();
+      const chart = document.getElementById("chartContainer");
+      chart.innerHTML = "";
+
+      const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const todayPoints = archiveData.filter(p => p.time >= startToday);
+      document.getElementById("kpiToday").innerText = todayPoints.length;
+
+      if (currentTab === "day") {
+        const hours = new Array(24).fill(0);
+        todayPoints.forEach(p => { hours[new Date(p.time).getHours()]++; });
+        let max = Math.max(...hours, 1);
+        let peakH = 0, peakVal = 0;
+        hours.forEach((c, h) => { if (c > peakVal) { peakVal = c; peakH = h; } });
+        document.getElementById("kpiPeak").innerText = peakVal > 0 ? `${peakH}:00` : "--:00";
+
+        for (let h = 6; h <= 22; h++) {
+          const c = hours[h];
+          const pct = Math.max(5, Math.round((c / max) * 100));
+          const col = document.createElement("div");
+          col.className = "chart-col";
+          col.innerHTML = `
+            <div class="chart-bar-val">${c > 0 ? c : ''}</div>
+            <div class="chart-bar ${c === peakVal && c > 0 ? 'peak-bar' : ''}" style="height:${pct}%;"></div>
+            <div class="chart-label">${h}</div>
+          `;
+          chart.appendChild(col);
+        }
+      } else {
+        const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+          days.push({ name: dayNames[d.getDay()], date: d.toLocaleDateString([], {day:'2-digit', month:'2-digit'}), start: d.getTime(), end: d.getTime() + 86400000, count: 0 });
+        }
+        archiveData.forEach(p => { days.forEach(day => { if (p.time >= day.start && p.time < day.end) day.count++; }); });
+        let max = Math.max(...days.map(d => d.count), 1);
+        let peakDay = "--", peakVal = 0;
+        days.forEach(d => { if (d.count > peakVal) { peakVal = d.count; peakDay = d.name; } });
+        document.getElementById("kpiPeak").innerText = peakVal > 0 ? peakDay : "--";
+
+        days.forEach(d => {
+          const pct = Math.max(5, Math.round((d.count / max) * 100));
+          const col = document.createElement("div");
+          col.className = "chart-col";
+          col.innerHTML = `
+            <div class="chart-bar-val">${d.count > 0 ? d.count : ''}</div>
+            <div class="chart-bar ${d.count === peakVal && d.count > 0 ? 'peak-bar' : ''}" style="height:${pct}%;"></div>
+            <div class="chart-label" style="font-weight:700;">${d.name}</div>
+            <div class="chart-label" style="font-size:8px;">${d.date}</div>
+          `;
+          chart.appendChild(col);
+        });
+      }
+    }
+    loadStats();
+  </script>
+</body>
+</html>
