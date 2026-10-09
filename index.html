@@ -110,7 +110,7 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Лаконичная легенда */
+    /* Компактная легенда */
     .legend {
       display: flex;
       flex-direction: column;
@@ -122,26 +122,27 @@
     }
     .legend-row { display: flex; align-items: center; gap: 6px; }
     .shape { 
-      width: 9px; 
-      height: 9px; 
+      width: 10px; 
+      height: 10px; 
       border-radius: 50%; 
       display: inline-block; 
       flex-shrink: 0;
+      border: none;
     }
-    .dot-green { background: #22c55e; }
-    .dot-red { background: #ef4444; }
+    .dot-green { background: #34d399; box-shadow: 0 0 6px rgba(52, 211, 153, 0.6); }
+    .dot-red { background: #ff5252; box-shadow: 0 0 6px rgba(255, 82, 82, 0.6); }
 
-    /* СТИЛИ ТОЧЕК-МЕТОК */
+    /* СТИЛИ ТОЧЕК: ОДИНАКОВЫЕ 14px, БЕЗ ОБОДКА */
     .marker-wrap {
       position: relative;
-      width: 24px;
-      height: 24px;
+      width: 28px;
+      height: 28px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    /* Радарная волна для свежих меток */
+    /* Мягкая волна только для свежих (до 10 мин) */
     .pulse-ring {
       position: absolute;
       width: 14px;
@@ -150,66 +151,30 @@
       pointer-events: none;
       animation: radar-wave 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
     }
-    .pulse-green { border: 2px solid #22c55e; box-shadow: 0 0 6px #22c55e; }
-    .pulse-red { border: 2px solid #ef4444; box-shadow: 0 0 6px #ef4444; }
+    .pulse-green { border: 2px solid #34d399; box-shadow: 0 0 8px #34d399; }
+    .pulse-red { border: 2px solid #ff5252; box-shadow: 0 0 8px #ff5252; }
 
     @keyframes radar-wave {
-      0% { transform: scale(0.8); opacity: 1; }
-      100% { transform: scale(2.6); opacity: 0; }
+      0% { transform: scale(0.9); opacity: 0.9; }
+      100% { transform: scale(2.8); opacity: 0; }
     }
 
+    /* Основа метки: одинаковая для всех, чистый сплошной цвет без ободка */
     .radar-core {
-      border-radius: 50%;
-      box-sizing: border-box;
-      transition: all 0.3s ease;
-    }
-
-    /* 1. СВЕЖИЕ (0-10 мин): БОЛЬШЕ ВСЕХ (14px), ВООБЩЕ БЕЗ ОБОДКА + ВОЛНА */
-    .radar-core.fresh {
       width: 14px;
       height: 14px;
+      border-radius: 50%;
       border: none !important;
+      box-sizing: border-box;
       box-shadow: 0 2px 6px rgba(0,0,0,0.65);
     }
-    .radar-core.fresh.green { background: #22c55e; }
-    .radar-core.fresh.red { background: #ef4444; }
-
-    /* 2. АКТУАЛЬНЫЕ (10-25 мин): СРЕДНИЙ РАЗМЕР (11px), С ЖЁЛТЫМ ОБОДКОМ */
-    .radar-core.mid {
-      width: 11px;
-      height: 11px;
-      border: 2px solid #facc15;
-      box-shadow: 0 0 5px rgba(250, 204, 21, 0.7), 0 2px 5px rgba(0,0,0,0.7);
+    .radar-core.green { 
+      background: #34d399; 
+      box-shadow: 0 0 7px rgba(52, 211, 153, 0.7), 0 2px 6px rgba(0,0,0,0.65); 
     }
-    .radar-core.mid.green { background: #22c55e; }
-    .radar-core.mid.red { background: #ef4444; }
-
-    /* 3. ПРОПАДАЮЩИЕ (25-40 мин): САМЫЕ МАЛЕНЬКИЕ (8px), "БУБЛИК" БЕЗ ЖЕЛТОГО ОБОДКА + МИГАЕТ */
-    .radar-core.expiring {
-      width: 8px;
-      height: 8px;
-      background: transparent !important;
-      box-shadow: none !important;
-      animation: slow-blink 2.2s ease-in-out infinite;
-    }
-    .radar-core.expiring.green {
-      border: 2px solid #22c55e !important;
-      color: #22c55e;
-    }
-    .radar-core.expiring.red {
-      border: 2px solid #ef4444 !important;
-      color: #ef4444;
-    }
-
-    @keyframes slow-blink {
-      0%, 100% {
-        opacity: 1;
-        filter: drop-shadow(0 0 3px currentColor);
-      }
-      50% {
-        opacity: 0.15;
-        filter: none;
-      }
+    .radar-core.red { 
+      background: #ff5252; 
+      box-shadow: 0 0 7px rgba(255, 82, 82, 0.7), 0 2px 6px rgba(0,0,0,0.65); 
     }
 
     /* Светофор */
@@ -247,7 +212,7 @@
 
     .traffic-marker-icon, .custom-point-icon { background: transparent !important; border: none !important; }
 
-    /* Скрытое меню Неона */
+    /* Меню Неона */
     .neon-panel {
       position: absolute;
       top: 15px;
@@ -1077,7 +1042,8 @@
     }
 
     /* ----------------------------------------------------
-       ОТРИСОВКА КРУЖКОВ: 3 РАЗМЕРА И СТИЛЯ
+       ОТРИСОВКА КРУЖКОВ: 2 СОСТОЯНИЯ (СВЕЖИЕ ИЛИ СТОЯЩИЕ)
+       БЕЗ ОБОДКОВ, НЕ БУБЛИК, ОДИНАКОВЫЙ РАЗМЕР (14px)
     ---------------------------------------------------- */
     function renderMarkers() {
       markersLayer.clearLayers();
@@ -1097,34 +1063,23 @@
         const clean = isCleanPoint(p);
         const colorClass = clean ? "green" : "red";
 
-        let ageClass = "mid";
-        let pulseHtml = "";
-
-        if (ageMinutes < 10) {
-          // 0-10 мин: САМЫЕ БОЛЬШИЕ (14px), ВООБЩЕ БЕЗ ОБОДКА + ВОЛНА
-          ageClass = "fresh";
-          pulseHtml = `<div class="pulse-ring pulse-${colorClass}"></div>`;
-        } else if (ageMinutes >= 25) {
-          // 25-40 мин: САМЫЕ МАЛЕНЬКИЕ (8px), "БУБЛИК" БЕЗ ЖЕЛТОГО ОБОДКА + МИГАЕТ
-          ageClass = "expiring";
-        } else {
-          // 10-25 мин: СРЕДНИЙ РАЗМЕР (11px), С ЖЁЛТЫМ ОБОДКОМ
-          ageClass = "mid";
-        }
+        // Если младше 10 минут — свежая (с мягкой волной), если старше — стоящая
+        const isFresh = ageMinutes < 10;
+        const pulseHtml = isFresh ? `<div class="pulse-ring pulse-${colorClass}"></div>` : "";
 
         const iconHtml = `
           <div class="marker-wrap">
             ${pulseHtml}
-            <div class="radar-core ${ageClass} ${colorClass}"></div>
+            <div class="radar-core ${colorClass}"></div>
           </div>
         `;
 
         const pointIcon = L.divIcon({
           className: 'custom-point-icon',
           html: iconHtml,
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-          popupAnchor: [0, -10]
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+          popupAnchor: [0, -12]
         });
 
         const date = new Date(time);
