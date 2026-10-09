@@ -2,7 +2,6 @@ import os
 import re
 import json
 import time
-import datetime
 import requests
 
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
@@ -13,6 +12,8 @@ CHANNEL_URL = "https://t.me/s/dnepr_bez_tck"
 
 if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
+
+KNOWLEDGE_BASE_URL = FIREBASE_URL.replace("/points.json", "/knowledge_base.json")
 
 def log(msg):
     print(msg, flush=True)
@@ -31,6 +32,20 @@ def find_working_model():
     return "v1beta", "gemini-flash-lite-latest"
 
 API_VERSION, MODEL_NAME = find_working_model()
+
+def get_knowledge_base():
+    """Загрузка базы знаний, созданной пользователем вручную"""
+    try:
+        r = requests.get(f"{KNOWLEDGE_BASE_URL}?t={int(time.time())}", timeout=8)
+        if r.status_code == 200 and r.json():
+            data = r.json()
+            if isinstance(data, dict):
+                return list(data.values())
+            elif isinstance(data, list):
+                return [x for x in data if x]
+    except Exception as e:
+        log(f"Ошибка загрузки базы знаний: {e}")
+    return []
 
 def cleanup_old_points():
     try:
@@ -79,7 +94,23 @@ def fetch_tg_posts():
         log(f"Ошибка загрузки канала: {e}")
         return []
 
-def parse_batch_gemini(posts_list):
+def match_with_knowledge_base(post, kb_list):
+    """Проверка поста по выверенной пользователем базе эталонных координат"""
+    post_low = post.lower()
+    for item in kb_list:
+        phrase = (item.get("phrase") or "").lower().strip()
+        if not phrase:
+            continue
+        # Если фраза короткая (до 5 букв), ищем целое слово
+        if len(phrase) <= 5:
+            if re.search(r'\b' + re.escape(phrase) + r'\b', post_low):
+                return item
+        else:
+            if phrase in post_low:
+                return item
+    return None
+
+def parse_batch_gemini(posts_list, kb_examples):
     if not posts_list:
         return []
 
@@ -87,39 +118,43 @@ def parse_batch_gemini(posts_list):
     items = "\n".join([f"[{i}] {p}" for i, p in enumerate(cleaned_posts)])
     url = f"https://generativelanguage.googleapis.com/{API_VERSION}/models/{MODEL_NAME}:generateContent?key={GEMINI_KEY}"
     
+    # Передаем примеры из базы знаний, обученной пользователем
+    kb_hints = ""
+    if kb_examples:
+        sample_kb = kb_examples[-8:]
+        kb_hints = "ЭТАЛОННЫЕ ПРИМЕРЫ КООРДИНАТ ИЗ БАЗЫ ЗНАНИЙ (ОРИЕНТИРУЙСЯ НА НИХ):\n" + "\n".join([
+            f"- \"{k.get('phrase')}\" -> [lat: {k.get('lat')}, lng: {k.get('lng')}], адрес: {k.get('address')}"
+            for k in sample_kb if k.get('phrase') and k.get('lat')
+        ])
+
     prompt = f"""Ты эксперт по географии города Днепр (Украина).
 Определи точные географические координаты (lat, lng) в пределах Днепра и статус дорожной обстановки для каждого сообщения.
 
-ВАЖНО — ОПРЕДЕЛЯЙ ВЕСЬ ГОРОД ДНЕПР:
-Наноси любые районы, жилмассивы, улицы, мосты и въезды города:
-- Правый берег: Победа (1-6), Тополь (1-3), Сокол, 12-й Квартал, Корея, Мирный, Кротова, Гальченко, Шинная, пр. Богдана Хмельницкого, пр. Александра Поля (Кирова), ул. Рабочая, ул. Криворожская, ул. Титова, пр. Леси Украинки (Пушкина), пр. Науки (Гагарина), Подстанция, Нагорка, Центр, Мост-Сити, Европейская площадь, Вокзал, пр. Сергея Нигояна, пр. Ивана Мазепы, Западный, Диёвка, Парус, Покровский, Красный Камень, Кайдаки.
-- Левый берег: Слобожанский проспект, пр. Петра Калнышевского, ул. Калиновая, ул. Янтарная, Образцова, Клочко-6, Березинка, Левобережный (1-3), Донецкое шоссе, Караван, Солнечный, ул. Малиновского, Приднепровск, Игрень, Рыбальск, Самаровка, Подгородное, Слобожанское.
-- Мосты: Кайдакский, Амурский (Старый), Центральный (Новый), Южный, Самарский.
+{kb_hints}
 
-ПРИОРИТЕТНЫЕ ОРИЕНТИРЫ:
+ПРИОРИТЕТНЫЕ УЗЛЫ:
 1. "Краснозаводская" / "Белелюбского" -> ул. Академика Белелюбского возле ДТРЗ [lat: 48.4812, lng: 34.9940]
 2. "Павлова" / "угол Павлова" -> ул. Академика Павлова [lat: 48.4818, lng: 35.0012]
 3. "Комбайновый" -> ул. Белелюбского за 2-м поворотом от Павлова [lat: 48.4795, lng: 34.9845]
 4. "Водолечебница" -> пр. Свободы, 2 перед Кайдакским мостом [lat: 48.4848, lng: 34.9735]
-5. "Кайдакский съезд" / "РОВД" -> съезд с Кайдакского моста на ул. Кайдакский Шлях [lat: 48.4925, lng: 34.9625]
+5. "Кайдакский съезд" / "РОВД" -> съезд с Кайдакского моста [lat: 48.4925, lng: 34.9625]
 6. "Речпорт" -> Речной вокзал / Набережная Заводская [lat: 48.4805, lng: 35.0210]
 7. "Водокачка" -> Набережная Заводская, район водокачки [lat: 48.4910, lng: 34.9480]
 8. "Стан" / "Стан 550" -> Набережная Заводская, район Стана 550 [lat: 48.4865, lng: 34.9850]
 9. "Огни" -> Вечный огонь пр. Нигояна [lat: 48.4716, lng: 34.9892]
 
 ПРАВИЛО СТАТУСА:
-- danger: бп, б.п., б/п, блокпост, мобпост, пост, бус, патруль, полиция, тцк, оливки, синие, зеленые, пиксель, проверка, тормозят, пишут, раздают, готовят, дождь, тучи, гроза, хмари, капает, 🫒, 🌧️, ⚡.
+- danger: бп, б.п., б/п, блокпост, бус, патруль, полиция, тцк, оливки, синие, зеленые, пиксель, проверка, тормозят, пишут, раздают, дождь, тучи, гроза, хмари, 🫒, 🌧️.
 - clean: чисто, сухо, пусто, спокойно, ясно, ок, проехал, 👍, 🫡, ✌️, ☀️, 🟢.
 
-Если локация в Днепре — ставь valid: true.
-Если текста недостаточно или это не Днепр — ставь valid: false.
+Если локация в Днепре — valid: true. Иначе valid: false.
 
 Сообщения:
 {items}
 
 Верни строго JSON массив:
 [
-  {{"id": 0, "valid": true, "address": "Название улицы/района", "lat": 48.4600, "lng": 35.0400, "status": "clean"}},
+  {{"id": 0, "valid": true, "address": "Название улицы/ориентира", "lat": 48.4800, "lng": 34.9900, "status": "clean"}},
   {{"id": 1, "valid": false}}
 ]"""
 
@@ -157,75 +192,107 @@ def is_danger_text(text):
 def sync_cycle():
     cleanup_old_points()
     existing_records = get_existing_records()
+    kb_list = get_knowledge_base()
 
     posts = fetch_tg_posts()
     new_posts = [p for p in posts if p not in existing_records]
-    log(f"📡 В канале: {len(posts)} | Новых: {len(new_posts)}")
+    log(f"📡 В канале: {len(posts)} | Новых: {len(new_posts)} | В базе знаний: {len(kb_list)}")
 
     if not new_posts:
         return
 
-    results = parse_batch_gemini(new_posts)
-    added_count = 0
+    # Шаг 1: Проверяем посты по выверенной базе знаний (без вызова ИИ)
+    posts_needing_ai = []
+    ai_index_map = {}
 
-    for item in results:
-        idx = item.get("id")
-        if idx is not None and 0 <= idx < len(new_posts):
-            post = new_posts[idx]
-            if item.get("valid") and "lat" in item and "lng" in item:
-                now_ms = int(time.time() * 1000)
-                force_danger = is_danger_text(post)
-                has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто", "сухо"])
-                
-                if force_danger:
-                    is_clean = False
-                elif item.get("status", "").lower() == "danger":
-                    is_clean = False
-                elif item.get("status", "").lower() == "clean" or has_clean:
-                    is_clean = True
-                else:
-                    is_clean = False
+    for idx, post in enumerate(new_posts):
+        matched_kb = match_with_knowledge_base(post, kb_list)
+        now_ms = int(time.time() * 1000)
 
-                marker_color = "green" if is_clean else "red"
-                clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
-                final_text = f"{post}{clean_tag}"
+        force_danger = is_danger_text(post)
+        has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто", "сухо"])
+        is_clean = not force_danger and has_clean
+        marker_color = "green" if is_clean else "red"
+        clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
+        final_text = f"{post}{clean_tag}"
 
-                payload = {
-                    "text": final_text,
-                    "raw_text": post,
-                    "address": item.get("address", "Дніпро"),
-                    "lat": float(item["lat"]),
-                    "lng": float(item["lng"]),
-                    "status": "чисто" if is_clean else "опасно",
-                    "color": marker_color,
-                    "time": now_ms,
-                    "timestamp": now_ms
-                }
-                try:
-                    r = requests.post(FIREBASE_URL, json=payload, timeout=8)
-                    if r.status_code == 200:
-                        log(f"  ✅ + {item.get('address')} ({marker_color})")
-                        existing_records.add(post)
-                        added_count += 1
-                except Exception as e:
-                    log(f"Ошибка сохранения: {e}")
+        if matched_kb:
+            # НАЙДЕНО В БАЗЕ ЗНАНИЙ: ставим точные координаты, проверенные пользователем!
+            log(f"  🎯 [БАЗА ЗНАНИЙ]: совпадение '{matched_kb.get('phrase')}' -> {matched_kb.get('address')}")
+            payload = {
+                "text": final_text,
+                "raw_text": post,
+                "address": matched_kb.get("address", "Дніпро"),
+                "lat": float(matched_kb["lat"]),
+                "lng": float(matched_kb["lng"]),
+                "status": "чисто" if is_clean else "опасно",
+                "color": marker_color,
+                "time": now_ms,
+                "timestamp": now_ms,
+                "from_kb": True
+            }
+            try:
+                requests.post(FIREBASE_URL, json=payload, timeout=8)
+                existing_records.add(post)
+            except Exception as e:
+                log(f"Ошибка сохранения из КБ: {e}")
+        else:
+            ai_index_map[len(posts_needing_ai)] = post
+            posts_needing_ai.append(post)
 
-    log(f"  🏁 Добавлено новых меток: {added_count}")
+    # Шаг 2: Остальные посты отдаем Gemini с примерами из базы знаний
+    if posts_needing_ai:
+        results = parse_batch_gemini(posts_needing_ai, kb_list)
+        added_count = 0
+
+        for item in results:
+            idx = item.get("id")
+            if idx is not None and idx in ai_index_map:
+                post = ai_index_map[idx]
+                if item.get("valid") and "lat" in item and "lng" in item:
+                    now_ms = int(time.time() * 1000)
+                    force_danger = is_danger_text(post)
+                    has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто", "сухо"])
+                    
+                    if force_danger:
+                        is_clean = False
+                    elif item.get("status", "").lower() == "danger":
+                        is_clean = False
+                    elif item.get("status", "").lower() == "clean" or has_clean:
+                        is_clean = True
+                    else:
+                        is_clean = False
+
+                    marker_color = "green" if is_clean else "red"
+                    clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
+                    final_text = f"{post}{clean_tag}"
+
+                    payload = {
+                        "text": final_text,
+                        "raw_text": post,
+                        "address": item.get("address", "Дніпро"),
+                        "lat": float(item["lat"]),
+                        "lng": float(item["lng"]),
+                        "status": "чисто" if is_clean else "опасно",
+                        "color": marker_color,
+                        "time": now_ms,
+                        "timestamp": now_ms
+                    }
+                    try:
+                        r = requests.post(FIREBASE_URL, json=payload, timeout=8)
+                        if r.status_code == 200:
+                            log(f"  ✅ + {item.get('address')} ({marker_color})")
+                            existing_records.add(post)
+                            added_count += 1
+                    except Exception as e:
+                        log(f"Ошибка сохранения: {e}")
+
+        log(f"  🏁 Новых меток через ИИ: {added_count}")
 
 if __name__ == "__main__":
-    # Определяем длину смены:
-    # Запуск в 15:00 и 18:00 (Киев) = смена по 3 часа (185 мин до 18:00 и до 21:00)
-    # Запуск в 05:00 и 10:00 (Киев) = смена по 5 часов (305 мин до 10:00 и до 15:00)
-    utc_hour = datetime.datetime.now(datetime.timezone.utc).hour
-
-    if utc_hour in [12, 13, 14, 15, 16]:
-        shift_minutes = 185  # 3 часа с запасом 5 минут
-    else:
-        shift_minutes = 305  # 5 часов с запасом 5 минут
-
-    log(f"🚀 Запуск смены радара на {shift_minutes} минут...")
-    for step in range(shift_minutes):
+    log("🚀 Запуск непрерывной смены радара 24/7 (305 минут)...")
+    for step in range(305):
         sync_cycle()
-        if step < shift_minutes - 1:
+        if step < 304:
             time.sleep(60)
-    log("🏁 Смена завершена успешно!")
+    log("🏁 Смена успешно завершена, передача следующей смене!")
