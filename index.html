@@ -167,7 +167,6 @@
       from { transform: scale(1.35); } to { transform: scale(1.55); }
     }
 
-    /* ПОДСВЕТКА НАСТОЯЩЕЙ УЛИЦЫ */
     .street-highlight-polyline {
       stroke: #f59e0b !important;
       stroke-width: 9px !important;
@@ -285,7 +284,6 @@
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
-      <!-- КНОПКА ПОЛНОЙ АНАЛИТИКИ -->
       <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
         <span>📊</span><span>Аналітика блокпостів</span>
       </a>
@@ -379,13 +377,10 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // WAKE LOCK: экран смартфона не гаснет
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
-        if ('wakeLock' in navigator) {
-          screenWakeLock = await navigator.wakeLock.request('screen');
-        }
+        if ('wakeLock' in navigator) screenWakeLock = await navigator.wakeLock.request('screen');
       } catch (err) {}
     }
     document.addEventListener('visibilitychange', () => {
@@ -406,11 +401,13 @@
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
     let currentMapType = localStorage.getItem("radar_map_type") || "google";
     
-    // ЕДИНЫЙ КОНТРОЛЛЕР ПЕРЕНОСА МЕТОК (ЗАЩИТА ОТ ЗАВИСАНИЯ)
+    // ЕДИНЫЙ КОНТРОЛЛЕР ПЕРЕНОСА (НАДЁЖНАЯ ЗАЩИТА ОТ МУЛЬТИ-НАЖАТИЙ)
     const dragController = {
       activeMarker: null,
       activePoint: null,
       pressTimer: null,
+      startX: 0,
+      startY: 0,
       reset: function() {
         if (this.pressTimer) {
           clearTimeout(this.pressTimer);
@@ -421,6 +418,7 @@
           const el = this.activeMarker.getElement()?.querySelector('.radar-circle');
           if (el) el.classList.remove('active-dragging-target');
         }
+        map.dragging.enable();
         this.activeMarker = null;
         this.activePoint = null;
         streetHighlightGroup.clearLayers();
@@ -433,42 +431,99 @@
       if (stored) activeSectors = JSON.parse(stored);
     } catch(e) {}
 
-    // ТОЧНАЯ ГЕОМЕТРИЯ РЕАЛЬНЫХ УЛИЦ ДНЕПРА ДЛЯ ПОДСВЕТКИ
-    const STREET_GEOMETRIES = {
-      "павлов": [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048], [48.4705, 35.0065]],
-      "белелюб": [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780], [48.4828, 34.9725]],
-      "краснозавод": [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780]],
-      "комбайн": [[48.4820, 34.9750], [48.4795, 34.9845], [48.4805, 34.9890]],
-      "дтрз": [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845]],
-      "водолікарн": [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]],
-      "водолечеб": [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]],
-      "водокачк": [[48.4930, 34.9420], [48.4910, 34.9480], [48.4890, 34.9560]],
-      "речпорт": [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]],
-      "річпорт": [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]],
-      "десантник": [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280]],
-      "набережн": [[48.4975, 34.9280], [48.4940, 34.9400], [48.4910, 34.9480], [48.4885, 34.9650], [48.4865, 34.9850], [48.4830, 35.0050], [48.4805, 35.0210], [48.4770, 35.0350]],
-      "стан 550": [[48.4880, 34.9780], [48.4865, 34.9850], [48.4850, 34.9930]],
-      "стан550": [[48.4880, 34.9780], [48.4865, 34.9850], [48.4850, 34.9930]],
-      "ровд": [[48.4950, 34.9580], [48.4925, 34.9625], [48.4895, 34.9680]],
-      "кайдак": [[48.4960, 34.9600], [48.4925, 34.9625], [48.4890, 34.9680]],
-      "свобод": [[48.4915, 34.9605], [48.4880, 34.9675], [48.4848, 34.9735], [48.4800, 34.9785], [48.4740, 34.9770], [48.4700, 34.9720]],
-      "робоч": [[48.4716, 34.9930], [48.4600, 34.9985], [48.4480, 35.0035], [48.4380, 35.0070]],
-      "канатн": [[48.4680, 35.0130], [48.4650, 35.0050], [48.4610, 34.9980]],
-      "нігоян": [[48.4770, 35.0110], [48.4716, 34.9892], [48.4690, 34.9760]],
-      "мазеп": [[48.4690, 34.9760], [48.4630, 34.9600], [48.4550, 34.9450]],
-      "вокзал": [[48.4765, 35.0150], [48.4745, 35.0175], [48.4735, 35.0210]],
-      "озерк": [[48.4725, 35.0250], [48.4705, 35.0210], [48.4680, 35.0240]],
-      "шмідт": [[48.4735, 35.0210], [48.4680, 35.0240], [48.4630, 35.0270]],
-      "слобожанськ": [[48.4830, 35.0520], [48.4980, 35.0680], [48.5180, 35.0870], [48.5350, 35.1050]],
-      "калинов": [[48.5130, 35.0580], [48.5150, 35.0750], [48.5170, 35.0950]],
-      "донецьк.*шосе": [[48.4970, 34.9580], [48.5150, 34.9950], [48.5280, 35.0350]],
-      "поля": [[48.4620, 35.0280], [48.4500, 35.0230], [48.4350, 35.0180]],
-      "хмельницьк": [[48.4500, 35.0350], [48.4300, 35.0300], [48.4050, 35.0250]],
-      "титов": [[48.4360, 35.0070], [48.4350, 35.0180], [48.4340, 35.0300]],
-      "яворницьк": [[48.4745, 35.0175], [48.4680, 35.0380], [48.4570, 35.0620]],
-      "гагарін": [[48.4520, 35.0600], [48.4400, 35.0500], [48.4280, 35.0400]],
-      "науки": [[48.4520, 35.0600], [48.4400, 35.0500], [48.4280, 35.0400]]
-    };
+    // ТОЧНАЯ ГЕОМЕТРИЯ УЛИЦ: ПОЛНАЯ ПОДДЕРЖКА РУССКИХ И УКРАИНСКИХ НАЗВАНИЙ
+    const STREET_GEOMETRIES = [
+      {
+        name: "вул. Павлова",
+        regex: /(?:павлов|щепкин|щепкін|академика\s*павлова|академіка\s*павлова)/i,
+        points: [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048], [48.4705, 35.0065]]
+      },
+      {
+        name: "Краснозаводська / Белелюбського",
+        regex: /(?:белелюб|краснозавод|комбайн|дтрз|ударник|белелюбского|белелюбського)/i,
+        points: [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780], [48.4828, 34.9725]]
+      },
+      {
+        name: "Водолікарня / пр. Свободи",
+        regex: /(?:водолечеб|водолікарн|водогрязелечеб|водолечебк|водолечебниц)/i,
+        points: [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]]
+      },
+      {
+        name: "Водокачка",
+        regex: /(?:водокачк|водокачка|водокачки)/i,
+        points: [[48.4930, 34.9420], [48.4910, 34.9480], [48.4890, 34.9560]]
+      },
+      {
+        name: "Річпорт",
+        regex: /(?:речпорт|річпорт|речной\s*вокзал|річковий\s*вокзал|десантник|десантников|десантників)/i,
+        points: [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]]
+      },
+      {
+        name: "Набережна Заводська / Стан 550 / РОВД",
+        regex: /(?:набережн.*завод|набка.*завод|заводск.*набережн|стан\s*550|стан550|\bстан\b|кайдак|ровд)/i,
+        points: [[48.4975, 34.9280], [48.4940, 34.9400], [48.4910, 34.9480], [48.4885, 34.9650], [48.4865, 34.9850], [48.4830, 35.0050], [48.4805, 35.0210], [48.4770, 35.0350]]
+      },
+      {
+        name: "проспект Свободи",
+        regex: /(?:проспект\s*свобод|пр\s*свобод|пр\.\s*свобод|свободы|свободи)/i,
+        points: [[48.4915, 34.9605], [48.4880, 34.9675], [48.4848, 34.9735], [48.4800, 34.9785], [48.4740, 34.9770], [48.4700, 34.9720]]
+      },
+      {
+        name: "вул. Робоча",
+        regex: /(?:робоч|рабоч|криворож|криворізьк)/i,
+        points: [[48.4716, 34.9930], [48.4600, 34.9985], [48.4480, 35.0035], [48.4380, 35.0070]]
+      },
+      {
+        name: "вул. Канатна",
+        regex: /(?:канатн|канатная|канатна|философск|філософськ|савченко)/i,
+        points: [[48.4680, 35.0130], [48.4650, 35.0050], [48.4610, 34.9980]]
+      },
+      {
+        name: "пр. Нігояна",
+        regex: /(?:нигоян|нігоян|калинин|калінін)/i,
+        points: [[48.4770, 35.0110], [48.4716, 34.9892], [48.4690, 34.9760]]
+      },
+      {
+        name: "пр. Мазепи",
+        regex: /(?:мазеп|петровск|петровськ)/i,
+        points: [[48.4690, 34.9760], [48.4630, 34.9600], [48.4550, 34.9450]]
+      },
+      {
+        name: "Вокзали / Старомостова",
+        regex: /(?:вокзал|старомостов|островск|островськ|курчатов)/i,
+        points: [[48.4765, 35.0150], [48.4745, 35.0175], [48.4735, 35.0210]]
+      },
+      {
+        name: "Озерка / Шмідта",
+        regex: /(?:озерк|озёрк|шмидт|шмідт|бандера|бандери)/i,
+        points: [[48.4735, 35.0210], [48.4705, 35.0230], [48.4680, 35.0240], [48.4630, 35.0270]]
+      },
+      {
+        name: "пр. Слобожанський",
+        regex: /(?:слобожанск|слобожанськ|правд|правда|правды)/i,
+        points: [[48.4830, 35.0520], [48.4980, 35.0680], [48.5180, 35.0870], [48.5350, 35.1050]]
+      },
+      {
+        name: "вул. Калинова",
+        regex: /(?:калинов|калиновая|янтарн|янтарная|клочко)/i,
+        points: [[48.5130, 35.0580], [48.5150, 35.0750], [48.5170, 35.0950]]
+      },
+      {
+        name: "Донецьке шосе",
+        regex: /(?:донецк.*шоссе|донецьк.*шосе|караван|левобереж|лівобереж)/i,
+        points: [[48.4970, 34.9580], [48.5150, 34.9950], [48.5280, 35.0350]]
+      },
+      {
+        name: "пр. Поля",
+        regex: /(?:поля|киров|кіров)/i,
+        points: [[48.4620, 35.0280], [48.4500, 35.0230], [48.4350, 35.0180]]
+      },
+      {
+        name: "пр. Б. Хмельницького / 12 Квартал",
+        regex: /(?:хмельницк|хмельницьк|12.*квартал|квартал|сталинград|сталінград)/i,
+        points: [[48.4500, 35.0350], [48.4300, 35.0300], [48.4050, 35.0250]]
+      }
+    ];
 
     const SECTOR_DEFS = {
       s1: {
@@ -521,20 +576,19 @@
       btn.innerText = isHidden ? "▲" : "▼";
     }
 
-    // ИНИЦИАЛИЗАЦИЯ LEAFLET
     const isMobile = window.innerWidth < 768;
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
-    // 1. Google Maps (Надежный глобальный сервер без блокировок)
+    // 1. Google Maps
     const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       subdomains: ['0', '1', '2', '3'],
       maxZoom: 20, attribution: 'Google Maps'
     });
 
-    // 2. Esri World Street Map (Официальный бесплатный провайдер, без API Key и 403)
+    // 2. Esri World Street Map (Официальный надежный слой без 403)
     const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, attribution: 'Esri, DeLorme, NAVTEQ'
+      maxZoom: 19, attribution: 'Esri World Street Map'
     });
 
     if (currentMapType === "osm") esriLayer.addTo(map);
@@ -582,27 +636,24 @@
       streetHighlightGroup.clearLayers();
       const txt = ((point.raw_text || point.text || "") + " " + (point.address || "")).toLowerCase();
       
-      let matchedLine = null;
-      let matchedName = "";
-      for (const key in STREET_GEOMETRIES) {
-        if (new RegExp(key, "i").test(txt)) {
-          matchedLine = STREET_GEOMETRIES[key];
-          matchedName = key;
+      let matched = null;
+      for (const item of STREET_GEOMETRIES) {
+        if (item.regex.test(txt)) {
+          matched = item;
           break;
         }
       }
 
-      if (matchedLine) {
-        L.polyline(matchedLine, { className: 'street-highlight-polyline' }).addTo(streetHighlightGroup);
-        // Масштабируем так, чтобы было видно всю настоящую улицу!
-        map.fitBounds(L.latLngBounds(matchedLine), { padding: [40, 40], maxZoom: 15, animate: true });
-        showToast(`📍 Підсвічено вулицю: ${matchedName.toUpperCase()}! Перетягніть мітку туди.`);
+      if (matched) {
+        L.polyline(matched.points, { className: 'street-highlight-polyline' }).addTo(streetHighlightGroup);
+        map.fitBounds(L.latLngBounds(matched.points), { padding: [50, 50], maxZoom: 16, animate: true });
+        showToast(`📍 Підсвічено: ${matched.name.toUpperCase()}!`);
       } else {
-        showToast("🔍 Вулицю в тексті не розпізнано. Перетягніть мітку вручну.");
+        showToast("💡 Вулицю в тексті не розпізнано. Перетягніть мітку на потрібне місце вручну.");
       }
     }
 
-    // ФИКСАЦИЯ И ОБУЧЕНИЕ ИИ ПРИ ЗАВЕРШЕНИИ ПЕРЕНОСА
+    // ОБУЧЕНИЕ ИИ ПРИ ЗАВЕРШЕНИИ ПЕРЕНОСА
     async function finishDragAndTrainAI(point, newLatLng) {
       if (!point || !newLatLng) return;
       const newLat = Number(newLatLng.lat.toFixed(5));
@@ -1067,33 +1118,56 @@
             <div class="popup-text">${emoji} ${p.text || ""}</div>
             <div class="popup-meta-row"><span>⏳ До зникнення:</span><span class="popup-badge">${remMinutes} хв</span></div>
             <div class="popup-meta-row"><span>🕒 Додано:</span><span>${dateStr}</span></div>
-            <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Утримуйте палець 0.5с для перенесення</div>
+            <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Утримуйте 0.5с для підсвітки вулиці та переносу</div>
           </div>
         `;
 
         const marker = L.marker([p.lat, p.lng], { icon: dotIcon, draggable: false, zIndexOffset: 50 });
         marker.bindPopup(popupContent);
 
-        // ЖЕСТ ПЕРЕНОСА ТОЧКИ С ЗАЩИТОЙ ОТ МУЛЬТИ-НАЖАТИЙ
-        function startPress() {
+        // ЖЕСТ: 0.5с ДОЛГОЕ НАЖАТИЕ С ПОЛНОЙ ЗАЩИТОЙ
+        function handleStart(e) {
+          if (dragController.activeMarker && dragController.activeMarker !== marker) {
+            const oldPoint = dragController.activePoint;
+            const oldPos = dragController.activeMarker.getLatLng();
+            dragController.reset();
+            finishDragAndTrainAI(oldPoint, oldPos);
+          }
           dragController.reset();
 
+          const touch = e.touches ? e.touches[0] : e;
+          dragController.startX = touch.clientX;
+          dragController.startY = touch.clientY;
+
           dragController.pressTimer = setTimeout(() => {
+            dragController.pressTimer = null;
             if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
 
             dragController.activeMarker = marker;
             dragController.activePoint = p;
             marker.closePopup();
+
+            map.dragging.disable();
             marker.dragging.enable();
 
             const iconEl = marker.getElement()?.querySelector('.radar-circle');
             if (iconEl) iconEl.classList.add('active-dragging-target');
 
             highlightStreetForPoint(p);
-          }, 500);
+          }, 450);
         }
 
-        function cancelPress() {
+        function handleMove(e) {
+          if (dragController.pressTimer) {
+            const touch = e.touches ? e.touches[0] : e;
+            if (Math.hypot(touch.clientX - dragController.startX, touch.clientY - dragController.startY) > 12) {
+              clearTimeout(dragController.pressTimer);
+              dragController.pressTimer = null;
+            }
+          }
+        }
+
+        function handleEnd() {
           if (dragController.pressTimer) {
             clearTimeout(dragController.pressTimer);
             dragController.pressTimer = null;
@@ -1103,12 +1177,12 @@
         marker.on('add', () => {
           const el = marker.getElement();
           if (!el) return;
-          el.addEventListener('touchstart', startPress, { passive: true });
-          el.addEventListener('touchend', cancelPress);
-          el.addEventListener('touchmove', cancelPress);
-          el.addEventListener('mousedown', startPress);
-          el.addEventListener('mouseup', cancelPress);
-          el.addEventListener('mouseleave', cancelPress);
+          el.addEventListener('touchstart', handleStart, { passive: true });
+          el.addEventListener('touchend', handleEnd);
+          el.addEventListener('touchmove', handleMove);
+          el.addEventListener('mousedown', handleStart);
+          el.addEventListener('mouseup', handleEnd);
+          el.addEventListener('mouseleave', handleEnd);
         });
 
         markersLayer.addLayer(marker);
