@@ -82,7 +82,7 @@
     }
     .btn-setup.editing {
       background: #15803d;
-      border: 1px solid #4dff75;
+      border: 1px solid #25d366;
       color: #ffffff;
       animation: pulse-border 1.5s infinite;
     }
@@ -107,9 +107,9 @@
     .btn-secondary:hover { background: #334155; color: #fff; }
 
     @keyframes pulse-border {
-      0% { box-shadow: 0 0 0 0 rgba(77, 255, 117, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(77, 255, 117, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(77, 255, 117, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(37, 211, 102, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); }
     }
 
     /* Легенда */
@@ -123,11 +123,11 @@
       padding-top: 6px;
     }
     .legend-row { display: flex; align-items: center; gap: 7px; }
-    .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .dot-green { background: #4dff75; box-shadow: 0 0 6px #4dff75; }
-    .dot-red { background: #ff334b; box-shadow: 0 0 6px #ff334b; }
+    .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; border: 1.5px solid #fff; }
+    .dot-green { background: #25d366; }
+    .dot-red { background: #ff334b; }
 
-    /* ТОЧКИ: СВЕРХСВЕТЛЫЙ НЕОН-САЛАТОВЫЙ И ЯРКО-АЛЫЙ */
+    /* ТОЧКИ: ЯРКИЕ, СОЧНЫЕ С БЕЛЫМ КОНТУРОМ (КАК НА ПЕРВОМ ФОТО) */
     .custom-dot-marker {
       background: transparent !important;
       border: none !important;
@@ -137,45 +137,44 @@
       width: 18px;
       height: 18px;
       border-radius: 50%;
+      border: 2.5px solid #ffffff !important; /* Белый ободок, выделяющий цвет на карте */
       cursor: pointer;
       position: relative;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
     }
     .radar-circle.color-green {
-      background-color: #4dff75 !important;
-      box-shadow: 0 0 6px rgba(77, 255, 117, 0.6);
+      background-color: #25d366 !important; /* Яркий салатовый */
     }
     .radar-circle.color-red {
-      background-color: #ff334b !important;
-      box-shadow: 0 0 6px rgba(255, 51, 75, 0.6);
+      background-color: #ff334b !important; /* Яркий алый */
     }
 
-    /* Пульсирующий ореол свежих меток */
+    /* Пульсация свежих точек: чистое тонкое расширяющееся кольцо (БЕЗ тёмных пятен) */
     .radar-circle.fresh.color-green::after {
       content: '';
       position: absolute;
-      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      top: -3px; left: -3px; right: -3px; bottom: -3px;
       border-radius: 50%;
-      background: rgba(77, 255, 117, 0.65);
-      animation: ripple-green 1.7s infinite ease-out;
-      z-index: -1;
+      border: 2px solid #25d366;
+      animation: ripple-ring-green 1.8s infinite ease-out;
+      pointer-events: none;
     }
     .radar-circle.fresh.color-red::after {
       content: '';
       position: absolute;
-      top: -2px; left: -2px; right: -2px; bottom: -2px;
+      top: -3px; left: -3px; right: -3px; bottom: -3px;
       border-radius: 50%;
-      background: rgba(255, 51, 75, 0.65);
-      animation: ripple-red 1.7s infinite ease-out;
-      z-index: -1;
+      border: 2px solid #ff334b;
+      animation: ripple-ring-red 1.8s infinite ease-out;
+      pointer-events: none;
     }
 
-    @keyframes ripple-green {
-      0% { transform: scale(1); opacity: 0.95; }
+    @keyframes ripple-ring-green {
+      0% { transform: scale(1); opacity: 1; }
       100% { transform: scale(2.4); opacity: 0; }
     }
-    @keyframes ripple-red {
-      0% { transform: scale(1); opacity: 0.95; }
+    @keyframes ripple-ring-red {
+      0% { transform: scale(1); opacity: 1; }
       100% { transform: scale(2.4); opacity: 0; }
     }
 
@@ -189,7 +188,7 @@
       flex-direction: column !important;
       align-items: center !important;
       gap: 3px !important;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.5) !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.45) !important;
       width: 20px !important;
       height: 36px !important;
       user-select: none !important;
@@ -219,8 +218,8 @@
       opacity: 0.25 !important; 
     }
     .tl-lamp.green-active { 
-      background: #4dff75 !important; 
-      box-shadow: 0 0 10px 3px #4dff75 !important; 
+      background: #25d366 !important; 
+      box-shadow: 0 0 10px 3px #25d366 !important; 
     }
     .tl-lamp.green-dim { 
       background: #092e16 !important; 
@@ -273,7 +272,7 @@
       transition: all 0.2s;
     }
     .btn-neon-draw { background: #0284c7; color: #fff; }
-    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #4dff75; }
+    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #25d366; }
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
@@ -369,7 +368,7 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Попап карточка */
+    /* Попап */
     .leaflet-popup-content-wrapper {
       background: #ffffff !important;
       color: #0f172a !important;
@@ -457,7 +456,7 @@
     <div style="font-size:10px; color:#94a3b8; margin-bottom:6px;">Колір неону:</div>
     <div class="neon-colors">
       <div class="btn-color active" style="background:#00f3ff;" onclick="selectNeonColor('#00f3ff', this)"></div>
-      <div class="btn-color" style="background:#4dff75;" onclick="selectNeonColor('#4dff75', this)"></div>
+      <div class="btn-color" style="background:#25d366;" onclick="selectNeonColor('#25d366', this)"></div>
       <div class="btn-color" style="background:#f59e0b;" onclick="selectNeonColor('#f59e0b', this)"></div>
       <div class="btn-color" style="background:#ec4899;" onclick="selectNeonColor('#ec4899', this)"></div>
       <div class="btn-color" style="background:#a855f7;" onclick="selectNeonColor('#a855f7', this)"></div>
@@ -468,7 +467,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно создания светофора -->
+  <!-- Окно добавления светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -933,7 +932,7 @@
       return null;
     }
 
-    /* СВЕТОФОРЫ: КРУПНЫЙ УДОБНЫЙ РАЗМЕР, НЕАКТИВНЫЕ СКРЫТЫ */
+    /* СВЕТОФОРЫ: НЕАКТИВНЫЕ СКРЫТЫ НА 100% */
     function renderTrafficLights() {
       if (!showTrafficLights) return;
 
@@ -944,7 +943,7 @@
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
-        // Неактивные скрыты, пока не появится отчет (или в режиме редактирования)
+        // ЕСЛИ НЕТ АКТИВНОГО ОТЧЁТА И НЕ РЕЖИМ РАССТАНОВКИ — ПОЛНОСТЬЮ СКРЫВАЕМ!
         if (!latest && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
@@ -1053,7 +1052,7 @@
       });
     }
 
-    /* ТОЧКИ: СВЕРХСВЕТЛЫЙ НЕОН-САЛАТОВЫЙ И ЯРКО-КРАСНЫЙ */
+    /* ТОЧКИ: ЯРКИЙ САЛАТОВЫЙ И АЛЫЙ С БЕЛЫМ КАНТОМ (КАК НА 1-М СКРИНШОТЕ) */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
