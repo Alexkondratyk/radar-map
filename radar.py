@@ -6,7 +6,8 @@ import requests
 
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
-LIFETIME_MS = 40 * 60 * 1000  # 40 минут
+LIFETIME_MS = 40 * 60 * 1000  # 40 минут для живой карты
+WEEK_MS = 7 * 24 * 60 * 60 * 1000  # 7 дней для архива статистики
 
 CHANNEL_URL = "https://t.me/s/dnepr_bez_tck"
 
@@ -14,6 +15,7 @@ if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
 
 KNOWLEDGE_BASE_URL = FIREBASE_URL.replace("/points.json", "/knowledge_base.json")
+STATS_ARCHIVE_URL = FIREBASE_URL.replace("/points.json", "/stats_archive.json")
 
 def log(msg):
     print(msg, flush=True)
@@ -34,7 +36,6 @@ def find_working_model():
 API_VERSION, MODEL_NAME = find_working_model()
 
 def get_knowledge_base():
-    """Загрузка базы знаний, созданной пользователем вручную"""
     try:
         r = requests.get(f"{KNOWLEDGE_BASE_URL}?t={int(time.time())}", timeout=8)
         if r.status_code == 200 and r.json():
@@ -48,18 +49,33 @@ def get_knowledge_base():
     return []
 
 def cleanup_old_points():
+    now_ms = int(time.time() * 1000)
+    
+    # 1. Очистка живой карты (старше 40 мин)
     try:
         r = requests.get(FIREBASE_URL, timeout=8)
         if r.status_code == 200 and r.json():
             data = r.json()
-            now_ms = int(time.time() * 1000)
             to_delete = {k: None for k, v in data.items() if isinstance(v, dict) and (now_ms - (v.get("time") or v.get("timestamp") or 0)) > LIFETIME_MS}
             if to_delete:
                 base_url = FIREBASE_URL.replace("/points.json", "")
                 requests.patch(f"{base_url}/points.json", json=to_delete, timeout=5)
-                log(f"🧹 Удалено меток старше 40 мин: {len(to_delete)}")
+                log(f"🧹 Удалено меток карты старше 40 мин: {len(to_delete)}")
     except Exception as e:
-        log(f"Ошибка очистки базы: {e}")
+        log(f"Ошибка очистки карты: {e}")
+
+    # 2. Очистка архива статистики (старше 7 дней)
+    try:
+        r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
+        if r_arch.status_code == 200 and r_arch.json():
+            arch_data = r_arch.json()
+            to_delete_arch = {k: None for k, v in arch_data.items() if isinstance(v, dict) and (now_ms - (v.get("time") or 0)) > WEEK_MS}
+            if to_delete_arch:
+                base_url = FIREBASE_URL.replace("/points.json", "")
+                requests.patch(f"{base_url}/stats_archive.json", json=to_delete_arch, timeout=5)
+                log(f"🧹 Удалено архивных записей старше 7 дней: {len(to_delete_arch)}")
+    except Exception as e:
+        log(f"Ошибка очистки архива: {e}")
 
 def get_existing_records():
     try:
@@ -95,13 +111,11 @@ def fetch_tg_posts():
         return []
 
 def match_with_knowledge_base(post, kb_list):
-    """Проверка поста по выверенной пользователем базе эталонных координат"""
     post_low = post.lower()
     for item in kb_list:
         phrase = (item.get("phrase") or "").lower().strip()
         if not phrase:
             continue
-        # Если фраза короткая (до 5 букв), ищем целое слово
         if len(phrase) <= 5:
             if re.search(r'\b' + re.escape(phrase) + r'\b', post_low):
                 return item
@@ -118,11 +132,10 @@ def parse_batch_gemini(posts_list, kb_examples):
     items = "\n".join([f"[{i}] {p}" for i, p in enumerate(cleaned_posts)])
     url = f"https://generativelanguage.googleapis.com/{API_VERSION}/models/{MODEL_NAME}:generateContent?key={GEMINI_KEY}"
     
-    # Передаем примеры из базы знаний, обученной пользователем
     kb_hints = ""
     if kb_examples:
         sample_kb = kb_examples[-8:]
-        kb_hints = "ЭТАЛОННЫЕ ПРИМЕРЫ КООРДИНАТ ИЗ БАЗЫ ЗНАНИЙ (ОРИЕНТИРУЙСЯ НА НИХ):\n" + "\n".join([
+        kb_hints = "ЭТАЛОННЫЕ ПРИМЕРЫ КООРДИНАТ ИЗ БАЗЫ ЗНАНИЙ:\n" + "\n".join([
             f"- \"{k.get('phrase')}\" -> [lat: {k.get('lat')}, lng: {k.get('lng')}], адрес: {k.get('address')}"
             for k in sample_kb if k.get('phrase') and k.get('lat')
         ])
@@ -189,6 +202,20 @@ def is_danger_text(text):
     ]
     return any(re.search(p, t) for p in danger_patterns)
 
+def log_to_stats_archive(now_ms, post, address, lat, lng):
+    """Сохранение красной метки в 7-дневный архив для статистики"""
+    try:
+        archive_entry = {
+            "time": now_ms,
+            "text": post[:100],
+            "address": address,
+            "lat": lat,
+            "lng": lng
+        }
+        requests.post(STATS_ARCHIVE_URL, json=archive_entry, timeout=5)
+    except Exception as e:
+        log(f"Ошибка записи в архив статистики: {e}")
+
 def sync_cycle():
     cleanup_old_points()
     existing_records = get_existing_records()
@@ -201,7 +228,6 @@ def sync_cycle():
     if not new_posts:
         return
 
-    # Шаг 1: Проверяем посты по выверенной базе знаний (без вызова ИИ)
     posts_needing_ai = []
     ai_index_map = {}
 
@@ -217,7 +243,6 @@ def sync_cycle():
         final_text = f"{post}{clean_tag}"
 
         if matched_kb:
-            # НАЙДЕНО В БАЗЕ ЗНАНИЙ: ставим точные координаты, проверенные пользователем!
             log(f"  🎯 [БАЗА ЗНАНИЙ]: совпадение '{matched_kb.get('phrase')}' -> {matched_kb.get('address')}")
             payload = {
                 "text": final_text,
@@ -234,13 +259,14 @@ def sync_cycle():
             try:
                 requests.post(FIREBASE_URL, json=payload, timeout=8)
                 existing_records.add(post)
+                if marker_color == "red":
+                    log_to_stats_archive(now_ms, post, matched_kb.get("address", "Дніпро"), float(matched_kb["lat"]), float(matched_kb["lng"]))
             except Exception as e:
                 log(f"Ошибка сохранения из КБ: {e}")
         else:
             ai_index_map[len(posts_needing_ai)] = post
             posts_needing_ai.append(post)
 
-    # Шаг 2: Остальные посты отдаем Gemini с примерами из базы знаний
     if posts_needing_ai:
         results = parse_batch_gemini(posts_needing_ai, kb_list)
         added_count = 0
@@ -267,12 +293,16 @@ def sync_cycle():
                     clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
                     final_text = f"{post}{clean_tag}"
 
+                    lat_val = float(item["lat"])
+                    lng_val = float(item["lng"])
+                    addr_val = item.get("address", "Дніпро")
+
                     payload = {
                         "text": final_text,
                         "raw_text": post,
-                        "address": item.get("address", "Дніпро"),
-                        "lat": float(item["lat"]),
-                        "lng": float(item["lng"]),
+                        "address": addr_val,
+                        "lat": lat_val,
+                        "lng": lng_val,
                         "status": "чисто" if is_clean else "опасно",
                         "color": marker_color,
                         "time": now_ms,
@@ -281,9 +311,11 @@ def sync_cycle():
                     try:
                         r = requests.post(FIREBASE_URL, json=payload, timeout=8)
                         if r.status_code == 200:
-                            log(f"  ✅ + {item.get('address')} ({marker_color})")
+                            log(f"  ✅ + {addr_val} ({marker_color})")
                             existing_records.add(post)
                             added_count += 1
+                            if marker_color == "red":
+                                log_to_stats_archive(now_ms, post, addr_val, lat_val, lng_val)
                     except Exception as e:
                         log(f"Ошибка сохранения: {e}")
 
