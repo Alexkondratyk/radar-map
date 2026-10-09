@@ -30,7 +30,7 @@
     /* ============================================================== */
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    html, body, #map { width: 100%; height: 100%; background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     /* Панель управления */
     .dashboard {
@@ -161,24 +161,21 @@
       position: relative;
     }
     
-    /* ЗЕЛЕНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ + СВЕРХСИЛЬНЫЙ КОНТРАСТ ОТ ЗАТЕМНЕНИЙ */
     .radar-circle.color-green {
       background: var(--color-green) !important;
-      background-image: linear-gradient(var(--color-green), var(--color-green)) !important; /* Обход принудительной темной темы */
+      background-image: linear-gradient(var(--color-green), var(--color-green)) !important;
       border: var(--border-green-size) solid var(--border-green-color) !important;
-      /* box-shadow с внешней темной тенью 1px: делает белый ободок четко видимым и не дает браузеру его стереть */
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0,0,0,0.4) !important;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 2px 5px rgba(0,0,0,0.3) !important;
     }
 
-    /* КРАСНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ + КОНТРАСТ */
     .radar-circle.color-red {
       background: var(--color-red) !important;
       background-image: linear-gradient(var(--color-red), var(--color-red)) !important;
       border: var(--border-red-size) solid var(--border-red-color) !important;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0,0,0,0.4) !important;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 2px 5px rgba(0,0,0,0.3) !important;
     }
 
-    /* Пульсирующее кольцо свежих меток (без затемнений) */
+    /* Пульсирующее кольцо свежих меток */
     .radar-circle.fresh.color-green::after {
       content: '';
       position: absolute;
@@ -267,12 +264,12 @@
       top: 15px;
       right: 15px;
       z-index: 1500;
-      background: rgba(15, 23, 42, 0.95);
+      background: rgba(15, 23, 42, 0.96);
       border: 1px solid #00f3ff;
       border-radius: 12px;
       padding: 12px 14px;
       color: #fff;
-      width: 230px;
+      width: 235px;
       box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);
       display: none;
       animation: fadeIn 0.25s ease;
@@ -300,6 +297,7 @@
       border: none;
       transition: all 0.2s;
     }
+    .btn-neon-toggle { background: #334155; color: #38bdf8; border: 1px solid #0284c7; }
     .btn-neon-draw { background: #0284c7; color: #fff; }
     .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px var(--color-green); }
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
@@ -310,7 +308,7 @@
       filter: drop-shadow(0 0 4px currentColor);
     }
 
-    /* Модальное окно создания светофора */
+    /* Модальное окно */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -438,9 +436,6 @@
   </style>
 </head>
 <body>
-  <div id="map"></div>
-
-  <!-- Кнопки управления, легенда и прочий интерфейс ниже остаются полностью прежними... -->
   <div class="dashboard">
     <div class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
@@ -449,6 +444,11 @@
 
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle">Свіжі пульсують (до 10 хв)</div>
+
+      <!-- Переключатель карт -->
+      <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
+        <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
+      </button>
 
       <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
         <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
@@ -479,11 +479,18 @@
     </div>
   </div>
 
+  <!-- Скрытое меню Неона -->
   <div id="neonPanel" class="neon-panel">
     <div class="neon-title">
       <span>⚡ Неон вулиць</span>
       <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
     </div>
+    
+    <!-- Кнопка ВКЛ/ВЫКЛ линий без удаления из памяти -->
+    <button id="btnToggleNeonVisible" class="btn-neon-action btn-neon-toggle" onclick="toggleNeonLinesVisibility()">
+      👁️ Сховати лінії
+    </button>
+
     <div style="font-size:10px; color:#94a3b8; margin-bottom:6px;">Колір неону:</div>
     <div class="neon-colors">
       <div class="btn-color active" style="background:#00f3ff;" onclick="selectNeonColor('#00f3ff', this)"></div>
@@ -498,6 +505,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
+  <!-- Модальное окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -513,6 +521,7 @@
   <div id="toast" class="toast-msg">✅ Збережено!</div>
   
   <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
+  <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -524,6 +533,8 @@
     const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
 
     let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
+    let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
+    let currentMapType = localStorage.getItem("radar_map_type") || "google";
 
     let checkpoints = [
       {
@@ -610,6 +621,67 @@
       document.getElementById("btnToggle").innerText = "▼";
     }
 
+    /* ПОДКЛЮЧЕНИЕ СЛОЕВ КАРТ */
+    const isMobile = window.innerWidth < 768;
+    const initialZoom = isMobile ? 12 : 13;
+    const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
+
+    // Google с украинскими четкими подписями всех улиц
+    const googleLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=m&hl=uk&gl=ua&x={x}&y={y}&z={z}', {
+      maxZoom: 20,
+      attribution: 'Google Maps'
+    });
+
+    // Альтернативный OSM
+    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    });
+
+    if (currentMapType === "osm") {
+      osmLayer.addTo(map);
+    } else {
+      googleLayer.addTo(map);
+    }
+
+    function updateMapLayerBtnUI() {
+      const btnText = document.getElementById("btnMapLayerText");
+      if (btnText) {
+        btnText.innerText = currentMapType === "google" ? "Карта: Google (з вулицями)" : "Карта: OpenStreetMap";
+      }
+    }
+    updateMapLayerBtnUI();
+
+    function toggleMapLayer() {
+      if (currentMapType === "google") {
+        map.removeLayer(googleLayer);
+        osmLayer.addTo(map);
+        currentMapType = "osm";
+      } else {
+        map.removeLayer(osmLayer);
+        googleLayer.addTo(map);
+        currentMapType = "google";
+      }
+      localStorage.setItem("radar_map_type", currentMapType);
+      updateMapLayerBtnUI();
+      showToast(currentMapType === "google" ? "🗺️ Увімкнено Google Карту з назвами!" : "🗺️ Увімкнено OpenStreetMap");
+    }
+
+    const neonLayer = L.layerGroup().addTo(map);
+    const markersLayer = L.layerGroup().addTo(map);
+    const trafficLightLayer = L.layerGroup().addTo(map);
+
+    let allPoints = [];
+    let isEditMode = false;
+    let trafficMarkersMap = {};
+
+    function showToast(text) {
+      const toast = document.getElementById("toast");
+      toast.innerText = text;
+      toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
     function toggleTrafficLights() {
       showTrafficLights = !showTrafficLights;
       localStorage.setItem("radar_tl_visible", showTrafficLights);
@@ -672,31 +744,6 @@
 
     function updateLegendCount() {
       document.getElementById("tlLegendCount").innerText = `Світлофори (активні)`;
-    }
-
-    const isMobile = window.innerWidth < 768;
-    const initialZoom = isMobile ? 12 : 13;
-    const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
-
-    // ОРИГИНАЛЬНАЯ КАРТА OPENSTREETMAP
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    const neonLayer = L.layerGroup().addTo(map);
-    const markersLayer = L.layerGroup().addTo(map);
-    const trafficLightLayer = L.layerGroup().addTo(map);
-
-    let allPoints = [];
-    let isEditMode = false;
-    let trafficMarkersMap = {};
-
-    function showToast(text) {
-      const toast = document.getElementById("toast");
-      toast.innerText = text;
-      toast.style.display = "block";
-      setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
     async function toggleEditMode() {
@@ -769,7 +816,9 @@
       showToast("🗑️ Світлофор видалено!");
     }
 
-    /* НЕОНОВАЯ РАЗМЕТКА */
+    /* ------------------------------------------------------------------
+       НЕОНОВАЯ РАЗМЕТКА: ВКЛ/ВЫКЛ БЕЗ УДАЛЕНИЯ ИЗ ПАМЯТИ
+    ------------------------------------------------------------------ */
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -786,6 +835,7 @@
       if (secretClickCount >= 3) {
         secretClickCount = 0;
         document.getElementById("neonPanel").style.display = "block";
+        updateNeonVisibleBtnUI();
         showToast("⚡ Секретне меню неону активовано!");
       }
     }
@@ -801,7 +851,39 @@
       el.classList.add("active");
     }
 
+    function updateNeonVisibleBtnUI() {
+      const btn = document.getElementById("btnToggleNeonVisible");
+      if (!btn) return;
+      if (showNeonLines) {
+        btn.innerHTML = "👁️ Сховати неон";
+        btn.style.color = "#38bdf8";
+      } else {
+        btn.innerHTML = "🙈 Показати неон";
+        btn.style.color = "#f59e0b";
+      }
+    }
+
+    function toggleNeonLinesVisibility() {
+      showNeonLines = !showNeonLines;
+      localStorage.setItem("radar_neon_visible", showNeonLines);
+      updateNeonVisibleBtnUI();
+
+      if (showNeonLines) {
+        renderAllNeonLines();
+        showToast("⚡ Неонові лінії відображено!");
+      } else {
+        neonLayer.clearLayers();
+        showToast("🙈 Неонові лінії приховано (в пам'яті збережено)!");
+      }
+    }
+
     function toggleNeonDrawMode() {
+      if (!showNeonLines) {
+        showNeonLines = true;
+        localStorage.setItem("radar_neon_visible", true);
+        updateNeonVisibleBtnUI();
+      }
+
       isDrawingNeon = !isDrawingNeon;
       const btn = document.getElementById("btnNeonDraw");
 
@@ -850,7 +932,7 @@
           points: [...tempPoints]
         });
         await saveNeonLines();
-        showToast("✅ Неонову лінію зафіксовано!");
+        showToast("✅ Неонову лінію зафіксовано в базі!");
       }
       tempPoints = [];
       activeDrawingPolyline = null;
@@ -858,7 +940,7 @@
     }
 
     async function clearAllNeonLines() {
-      if (!confirm("Видалити всі неонові лінії з карти?")) return;
+      if (!confirm("Видалити назавжди всі неонові лінії з карти?")) return;
       neonLines = [];
       tempPoints = [];
       activeDrawingPolyline = null;
@@ -897,6 +979,8 @@
 
     function renderAllNeonLines() {
       neonLayer.clearLayers();
+      if (!showNeonLines) return; // При выключенном режиме не рисуем, но держим в базе
+
       neonLines.forEach(line => {
         L.polyline(line.points, {
           color: line.color,
@@ -972,7 +1056,6 @@
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
-        // ЕСЛИ НЕТ АКТИВНОГО ОТЧЁТА И НЕ РЕЖИМ РАССТАНОВКИ — ПОЛНОСТЬЮ СКРЫВАЕМ!
         if (!latest && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
