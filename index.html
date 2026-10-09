@@ -6,6 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
+  <meta name="color-scheme" content="light only">
   <title>Радар Дніпро</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
@@ -13,6 +14,9 @@
        🎨 БЛОК НАСТРОЙКИ ЦВЕТОВ И ОБОДКОВ (МЕНЯЙТЕ ЗДЕСЬ)
        ============================================================== */
     :root {
+      color-scheme: light only;
+      supported-color-schemes: light;
+
       /* ЗЕЛЕНЫЙ (САЛАТОВЫЙ) ШАРИК */
       --color-green: #25d366;          /* Салатовый цвет заливки */
       --border-green-color: #ffffff;   /* БЕЛЫЙ цвет ободка */
@@ -155,19 +159,23 @@
       border-radius: 50%;
       cursor: pointer;
       position: relative;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.4);
     }
     
-    /* ЗЕЛЕНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ */
+    /* ЗЕЛЕНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ + СВЕРХСИЛЬНЫЙ КОНТРАСТ ОТ ЗАТЕМНЕНИЙ */
     .radar-circle.color-green {
-      background-color: var(--color-green) !important;
+      background: var(--color-green) !important;
+      background-image: linear-gradient(var(--color-green), var(--color-green)) !important; /* Обход принудительной темной темы */
       border: var(--border-green-size) solid var(--border-green-color) !important;
+      /* box-shadow с внешней темной тенью 1px: делает белый ободок четко видимым и не дает браузеру его стереть */
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0,0,0,0.4) !important;
     }
 
-    /* КРАСНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ */
+    /* КРАСНЫЙ ШАРИК С БЕЛЫМ ОБОДКОМ + КОНТРАСТ */
     .radar-circle.color-red {
-      background-color: var(--color-red) !important;
+      background: var(--color-red) !important;
+      background-image: linear-gradient(var(--color-red), var(--color-red)) !important;
       border: var(--border-red-size) solid var(--border-red-color) !important;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4), 0 2px 5px rgba(0,0,0,0.4) !important;
     }
 
     /* Пульсирующее кольцо свежих меток (без затемнений) */
@@ -430,6 +438,9 @@
   </style>
 </head>
 <body>
+  <div id="map"></div>
+
+  <!-- Кнопки управления, легенда и прочий интерфейс ниже остаются полностью прежними... -->
   <div class="dashboard">
     <div class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
@@ -468,7 +479,6 @@
     </div>
   </div>
 
-  <!-- Скрытое меню Неона -->
   <div id="neonPanel" class="neon-panel">
     <div class="neon-title">
       <span>⚡ Неон вулиць</span>
@@ -488,7 +498,6 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Модальное окно добавления светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -504,7 +513,6 @@
   <div id="toast" class="toast-msg">✅ Збережено!</div>
   
   <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
-  <div id="map"></div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -964,7 +972,7 @@
         matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
         const latest = matched[0];
 
-        // Если нет свежего отчёта и не режим расстановки — светофор не отображается
+        // ЕСЛИ НЕТ АКТИВНОГО ОТЧЁТА И НЕ РЕЖИМ РАССТАНОВКИ — ПОЛНОСТЬЮ СКРЫВАЕМ!
         if (!latest && !isEditMode) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
