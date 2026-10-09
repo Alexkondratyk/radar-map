@@ -10,12 +10,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; background: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-
-    /* ОТБЕЛИВАНИЕ КАРТЫ: убираем желтизну и серый налёт */
-    .leaflet-tile-pane {
-      filter: brightness(1.08) contrast(1.04) saturate(0.65) hue-rotate(-2deg);
-    }
+    html, body, #map { width: 100%; height: 100%; background: #0f172a; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     /* Панель управления */
     .dashboard {
@@ -28,7 +23,7 @@
       padding: 10px 12px;
       border-radius: 12px;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
       width: 215px;
       transition: all 0.25s ease;
     }
@@ -86,8 +81,8 @@
       gap: 5px;
     }
     .btn-setup.editing {
-      background: #0284c7;
-      border: 1px solid #38bdf8;
+      background: #15803d;
+      border: 1px solid #4dff75;
       color: #ffffff;
       animation: pulse-border 1.5s infinite;
     }
@@ -112,9 +107,9 @@
     .btn-secondary:hover { background: #334155; color: #fff; }
 
     @keyframes pulse-border {
-      0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
-      70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+      0% { box-shadow: 0 0 0 0 rgba(77, 255, 117, 0.7); }
+      70% { box-shadow: 0 0 0 8px rgba(77, 255, 117, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(77, 255, 117, 0); }
     }
 
     /* Легенда */
@@ -129,10 +124,10 @@
     }
     .legend-row { display: flex; align-items: center; gap: 7px; }
     .shape { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-    .dot-blue { background: #00b4d8; box-shadow: 0 0 6px #00b4d8; }
+    .dot-green { background: #4dff75; box-shadow: 0 0 6px #4dff75; }
     .dot-red { background: #ff334b; box-shadow: 0 0 6px #ff334b; }
 
-    /* ТОЧКИ: ГОЛУБЫЕ И ЯРКО-КРАСНЫЕ КРУГИ */
+    /* ТОЧКИ: СВЕРХСВЕТЛЫЙ НЕОН-САЛАТОВЫЙ И ЯРКО-АЛЫЙ */
     .custom-dot-marker {
       background: transparent !important;
       border: none !important;
@@ -144,23 +139,25 @@
       border-radius: 50%;
       cursor: pointer;
       position: relative;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
     }
-    .radar-circle.color-blue {
-      background-color: #00b4d8 !important;
+    .radar-circle.color-green {
+      background-color: #4dff75 !important;
+      box-shadow: 0 0 6px rgba(77, 255, 117, 0.6);
     }
     .radar-circle.color-red {
       background-color: #ff334b !important;
+      box-shadow: 0 0 6px rgba(255, 51, 75, 0.6);
     }
 
     /* Пульсирующий ореол свежих меток */
-    .radar-circle.fresh.color-blue::after {
+    .radar-circle.fresh.color-green::after {
       content: '';
       position: absolute;
       top: -2px; left: -2px; right: -2px; bottom: -2px;
       border-radius: 50%;
-      background: rgba(0, 180, 216, 0.6);
-      animation: ripple-blue 1.7s infinite ease-out;
+      background: rgba(77, 255, 117, 0.65);
+      animation: ripple-green 1.7s infinite ease-out;
       z-index: -1;
     }
     .radar-circle.fresh.color-red::after {
@@ -168,21 +165,21 @@
       position: absolute;
       top: -2px; left: -2px; right: -2px; bottom: -2px;
       border-radius: 50%;
-      background: rgba(255, 51, 75, 0.6);
+      background: rgba(255, 51, 75, 0.65);
       animation: ripple-red 1.7s infinite ease-out;
       z-index: -1;
     }
 
-    @keyframes ripple-blue {
-      0% { transform: scale(1); opacity: 0.9; }
+    @keyframes ripple-green {
+      0% { transform: scale(1); opacity: 0.95; }
       100% { transform: scale(2.4); opacity: 0; }
     }
     @keyframes ripple-red {
-      0% { transform: scale(1); opacity: 0.9; }
+      0% { transform: scale(1); opacity: 0.95; }
       100% { transform: scale(2.4); opacity: 0; }
     }
 
-    /* СВЕТОФОРЫ: ВОЗВРАЩЁН УДОБНЫЙ РАЗМЕР (20x36 px) */
+    /* СВЕТОФОРЫ: КРУПНЫЙ УДОБНЫЙ РАЗМЕР (20x36 px) */
     .traffic-pill {
       background: #0f172a !important;
       border: 1.5px solid #ffffff !important;
@@ -192,7 +189,7 @@
       flex-direction: column !important;
       align-items: center !important;
       gap: 3px !important;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.35) !important;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5) !important;
       width: 20px !important;
       height: 36px !important;
       user-select: none !important;
@@ -222,8 +219,8 @@
       opacity: 0.25 !important; 
     }
     .tl-lamp.green-active { 
-      background: #25d366 !important; 
-      box-shadow: 0 0 10px 3px #25d366 !important; 
+      background: #4dff75 !important; 
+      box-shadow: 0 0 10px 3px #4dff75 !important; 
     }
     .tl-lamp.green-dim { 
       background: #092e16 !important; 
@@ -276,7 +273,7 @@
       transition: all 0.2s;
     }
     .btn-neon-draw { background: #0284c7; color: #fff; }
-    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #25d366; }
+    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #4dff75; }
     .btn-neon-undo { background: #334155; color: #cbd5e1; }
     .btn-neon-clear { background: #991b1b; color: #fee2e2; }
 
@@ -367,12 +364,12 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
       transition: background 0.2s;
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Карточка информации */
+    /* Попап карточка */
     .leaflet-popup-content-wrapper {
       background: #ffffff !important;
       color: #0f172a !important;
@@ -436,7 +433,7 @@
 
       <div class="legend">
         <div class="legend-row">
-          <span class="shape dot-blue"></span>
+          <span class="shape dot-green"></span>
           <span>Вільний проїзд / Чисто</span>
         </div>
         <div class="legend-row">
@@ -460,7 +457,7 @@
     <div style="font-size:10px; color:#94a3b8; margin-bottom:6px;">Колір неону:</div>
     <div class="neon-colors">
       <div class="btn-color active" style="background:#00f3ff;" onclick="selectNeonColor('#00f3ff', this)"></div>
-      <div class="btn-color" style="background:#25d366;" onclick="selectNeonColor('#25d366', this)"></div>
+      <div class="btn-color" style="background:#4dff75;" onclick="selectNeonColor('#4dff75', this)"></div>
       <div class="btn-color" style="background:#f59e0b;" onclick="selectNeonColor('#f59e0b', this)"></div>
       <div class="btn-color" style="background:#ec4899;" onclick="selectNeonColor('#ec4899', this)"></div>
       <div class="btn-color" style="background:#a855f7;" onclick="selectNeonColor('#a855f7', this)"></div>
@@ -471,7 +468,7 @@
     <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
   </div>
 
-  <!-- Окно создания светофора -->
+  <!-- Модальное окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -653,10 +650,10 @@
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
-    // ПОДЛОЖКА КАРТЫ С АВТОМАТИЧЕСКИМ ОТБЕЛИВАНИЕМ
-    L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-      maxZoom: 20,
-      attribution: 'Google Maps'
+    // ОРИГИНАЛЬНАЯ КАРТА OPENSTREETMAP
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
     const neonLayer = L.layerGroup().addTo(map);
@@ -1056,7 +1053,7 @@
       });
     }
 
-    /* ТОЧКИ: ГОЛУБЫЕ И ЯРКО-КРАСНЫЕ */
+    /* ТОЧКИ: СВЕРХСВЕТЛЫЙ НЕОН-САЛАТОВЫЙ И ЯРКО-КРАСНЫЙ */
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -1070,9 +1067,9 @@
         const isFresh = diff <= FRESH_THRESHOLD_MS;
         const clean = isCleanPoint(p);
         
-        const colorClass = clean ? "color-blue" : "color-red";
+        const colorClass = clean ? "color-green" : "color-red";
         const freshClass = isFresh ? "fresh" : "";
-        const emoji = clean ? "🔵" : "🔴";
+        const emoji = clean ? "🟢" : "🔴";
 
         const markerHtml = `<div class="radar-circle ${colorClass} ${freshClass}"></div>`;
 
