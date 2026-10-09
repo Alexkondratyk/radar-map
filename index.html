@@ -30,7 +30,14 @@
       align-items: center; 
       margin-bottom: 6px; 
     }
-    .points-count { font-size: 14px; font-weight: 700; color: #fff; }
+    /* Три клика по счетчику открывают скрытое меню неона */
+    .points-count { 
+      font-size: 14px; 
+      font-weight: 700; 
+      color: #fff; 
+      cursor: pointer; 
+      user-select: none; 
+    }
     
     .btn-toggle {
       background: #1e293b;
@@ -54,7 +61,6 @@
     }
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
 
-    /* Кнопки панели */
     .btn-setup {
       width: 100%;
       background: #1e293b;
@@ -119,7 +125,7 @@
     .dot-green { background: #22c55e; }
     .dot-red { background: #ef4444; }
 
-    /* Светофор — стабильный размер без смещения */
+    /* Светофор */
     .traffic-light-body {
       background: #020617;
       border: 2px solid #ffffff;
@@ -154,7 +160,70 @@
 
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* Модальное окно создания светофора */
+    /* Скрытое меню Неонового Дизайнера */
+    .neon-panel {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      z-index: 1500;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #00f3ff;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #fff;
+      width: 230px;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.35);
+      display: none;
+      animation: fadeIn 0.25s ease;
+    }
+    .neon-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #00f3ff;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .neon-colors {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .btn-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #334155;
+      cursor: pointer;
+    }
+    .btn-color.active {
+      border-color: #fff;
+      box-shadow: 0 0 8px #fff;
+    }
+    .btn-neon-action {
+      width: 100%;
+      padding: 6px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 6px;
+      border: none;
+      transition: all 0.2s;
+    }
+    .btn-neon-draw { background: #0284c7; color: #fff; }
+    .btn-neon-draw.drawing { background: #16a34a; box-shadow: 0 0 10px #22c55e; }
+    .btn-neon-undo { background: #334155; color: #cbd5e1; }
+    .btn-neon-clear { background: #991b1b; color: #fee2e2; }
+
+    /* Стиль неоновых линий на карте */
+    .neon-svg-line {
+      pointer-events: none !important;
+      filter: drop-shadow(0 0 3px currentColor);
+    }
+
+    /* Модальное окно */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; width: 100%; height: 100%;
@@ -202,11 +271,12 @@
     .toast-msg {
       position: absolute;
       top: 20px;
-      right: 20px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 2000;
       background: #10b981;
       color: #fff;
-      padding: 8px 14px;
+      padding: 8px 16px;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
@@ -215,8 +285,8 @@
       animation: fadeIn 0.3s ease;
     }
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(-10px) translateX(-50%); }
+      to { opacity: 1; transform: translateY(0) translateX(-50%); }
     }
 
     .btn-refresh {
@@ -278,24 +348,22 @@
 <body>
   <div class="dashboard">
     <div class="dash-header">
-      <div class="points-count" id="countText">Точок: 0</div>
+      <!-- 3 быстрых клика по этой надписи откроют секретное меню подсветки улиц -->
+      <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()" title="Згорнути / Розгорнути">▲</button>
     </div>
 
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle">Мітки активні 40 хв</div>
 
-      <!-- Расстановка -->
       <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
         <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
       </button>
 
-      <!-- Скрыть / Показать светофоры -->
       <button id="btnToggleTl" class="btn-secondary" onclick="toggleTrafficLights()">
         <span id="btnToggleTlIcon">👁️</span><span id="btnToggleTlText">Сховати світлофори</span>
       </button>
 
-      <!-- Добавить светофор -->
       <button class="btn-secondary" onclick="openAddModal()">
         <span>➕</span><span>Додати світлофор</span>
       </button>
@@ -317,7 +385,27 @@
     </div>
   </div>
 
-  <!-- Окно добавления -->
+  <!-- СКРЫТОЕ МЕНЮ НЕОНОВОЙ ПОДСВЕТКИ -->
+  <div id="neonPanel" class="neon-panel">
+    <div class="neon-title">
+      <span>⚡ Неон вулиць</span>
+      <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
+    </div>
+    <div style="font-size:10px; color:#94a3b8; margin-bottom:6px;">Колір неону:</div>
+    <div class="neon-colors">
+      <div class="btn-color active" style="background:#00f3ff;" onclick="selectNeonColor('#00f3ff', this)"></div>
+      <div class="btn-color" style="background:#22c55e;" onclick="selectNeonColor('#22c55e', this)"></div>
+      <div class="btn-color" style="background:#f59e0b;" onclick="selectNeonColor('#f59e0b', this)"></div>
+      <div class="btn-color" style="background:#ec4899;" onclick="selectNeonColor('#ec4899', this)"></div>
+      <div class="btn-color" style="background:#a855f7;" onclick="selectNeonColor('#a855f7', this)"></div>
+    </div>
+    <button id="btnNeonDraw" class="btn-neon-action btn-neon-draw" onclick="toggleNeonDrawMode()">✏️ Почати нову лінію</button>
+    <button class="btn-neon-action btn-neon-undo" onclick="undoNeonPoint()">↩️ Скасувати точку</button>
+    <button class="btn-neon-action btn-neon-undo" onclick="finishCurrentLine()">💾 Зафіксувати лінію</button>
+    <button class="btn-neon-action btn-neon-clear" onclick="clearAllNeonLines()">🗑️ Видалити всі лінії</button>
+  </div>
+
+  <!-- Окно создания светофора -->
   <div id="modalAdd" class="modal-overlay">
     <div class="modal-card">
       <div class="modal-title">🚦 Новий світлофор</div>
@@ -330,7 +418,7 @@
     </div>
   </div>
 
-  <div id="toast" class="toast-msg">✅ Збережено та зафіксовано!</div>
+  <div id="toast" class="toast-msg">✅ Збережено!</div>
   
   <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
   <div id="map"></div>
@@ -339,11 +427,11 @@
   <script>
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
+    const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
     const LIFETIME_MS = 40 * 60 * 1000;
 
     let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
 
-    // Базовые светофоры с четкими ключевыми словами (никаких чужих улиц)
     let checkpoints = [
       {
         id: "kaidak_rovd",
@@ -502,6 +590,8 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
+    // Слой неоновых линий находится под маркерами и не мешает кликам
+    const neonLayer = L.layerGroup().addTo(map);
     const markersLayer = L.layerGroup().addTo(map);
     const trafficLightLayer = L.layerGroup().addTo(map);
 
@@ -601,6 +691,150 @@
       showToast("🗑️ Світлофор видалено!");
     }
 
+    /* ----------------------------------------------------
+       ЛОГИКА ТОНКОГО НЕОНА И СКРЫТОГО МЕНЮ
+    ---------------------------------------------------- */
+    let secretClickCount = 0;
+    let secretClickTimer = null;
+    let neonLines = [];
+    let currentNeonColor = "#00f3ff";
+    let isDrawingNeon = false;
+    let tempPoints = [];
+    let activeDrawingPolyline = null;
+
+    function handleSecretClick() {
+      secretClickCount++;
+      clearTimeout(secretClickTimer);
+      secretClickTimer = setTimeout(() => { secretClickCount = 0; }, 800);
+
+      if (secretClickCount >= 3) {
+        secretClickCount = 0;
+        document.getElementById("neonPanel").style.display = "block";
+        showToast("⚡ Секретне меню неонової розмітки активовано!");
+      }
+    }
+
+    function closeNeonPanel() {
+      if (isDrawingNeon) toggleNeonDrawMode();
+      document.getElementById("neonPanel").style.display = "none";
+    }
+
+    function selectNeonColor(color, el) {
+      currentNeonColor = color;
+      document.querySelectorAll(".btn-color").forEach(b => b.classList.remove("active"));
+      el.classList.add("active");
+    }
+
+    function toggleNeonDrawMode() {
+      isDrawingNeon = !isDrawingNeon;
+      const btn = document.getElementById("btnNeonDraw");
+
+      if (isDrawingNeon) {
+        tempPoints = [];
+        btn.classList.add("drawing");
+        btn.innerText = "🛑 Завершити креслення";
+        showToast("👆 Клікайте по дорозі для прокладання тонкої неонової лінії!");
+      } else {
+        btn.classList.remove("drawing");
+        btn.innerText = "✏️ Почати нову лінію";
+        finishCurrentLine();
+      }
+    }
+
+    map.on('click', function(e) {
+      if (!isDrawingNeon) return;
+      const pt = [Number(e.latlng.lat.toFixed(5)), Number(e.latlng.lng.toFixed(5))];
+      tempPoints.push(pt);
+
+      if (!activeDrawingPolyline) {
+        activeDrawingPolyline = L.polyline(tempPoints, {
+          color: currentNeonColor,
+          weight: 3,
+          opacity: 0.9,
+          className: 'neon-svg-line'
+        }).addTo(neonLayer);
+      } else {
+        activeDrawingPolyline.setLatLngs(tempPoints);
+      }
+    });
+
+    function undoNeonPoint() {
+      if (!isDrawingNeon || tempPoints.length === 0) return;
+      tempPoints.pop();
+      if (activeDrawingPolyline) {
+        activeDrawingPolyline.setLatLngs(tempPoints);
+      }
+    }
+
+    async function finishCurrentLine() {
+      if (tempPoints.length > 1) {
+        neonLines.push({
+          id: "neon_" + Date.now(),
+          color: currentNeonColor,
+          points: [...tempPoints]
+        });
+        await saveNeonLines();
+        showToast("✅ Неонову лінію надійно збережено!");
+      }
+      tempPoints = [];
+      activeDrawingPolyline = null;
+      renderAllNeonLines();
+    }
+
+    async function clearAllNeonLines() {
+      if (!confirm("Видалити всі неонові лінії з карти?")) return;
+      neonLines = [];
+      tempPoints = [];
+      activeDrawingPolyline = null;
+      await saveNeonLines();
+      renderAllNeonLines();
+      showToast("🗑️ Всі неонові лінії видалено!");
+    }
+
+    async function saveNeonLines() {
+      localStorage.setItem("dnepr_radar_neon_v1", JSON.stringify(neonLines));
+      try {
+        await fetch(FIREBASE_NEON_URL, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(neonLines)
+        });
+      } catch (e) {}
+    }
+
+    async function loadNeonLines() {
+      try {
+        const local = localStorage.getItem("dnepr_radar_neon_v1");
+        if (local) neonLines = JSON.parse(local) || [];
+
+        const res = await fetch(`${FIREBASE_NEON_URL}?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            neonLines = data;
+            localStorage.setItem("dnepr_radar_neon_v1", JSON.stringify(data));
+          }
+        }
+      } catch (e) {}
+      renderAllNeonLines();
+    }
+
+    function renderAllNeonLines() {
+      neonLayer.clearLayers();
+      neonLines.forEach(line => {
+        L.polyline(line.points, {
+          color: line.color,
+          weight: 3,
+          opacity: 0.85,
+          interactive: false,
+          className: 'neon-svg-line'
+        }).addTo(neonLayer);
+      });
+    }
+
+    /* ----------------------------------------------------
+       ЗАВАНТАЖЕННЯ ТОЧОК ТА СВІТЛОФОРІВ
+    ---------------------------------------------------- */
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
@@ -643,7 +877,6 @@
       });
     }
 
-    // ПОШУК СВІТЛОФОРА СТРОГО ЗА КЛЮЧОВИМИ СЛОВАМИ (РАДИУС 250м ПОЛНОСТЬЮ УДАЛЁН)
     function getMatchedCheckpointId(p) {
       const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
       for (const cp of checkpoints) {
@@ -748,7 +981,6 @@
             draggable: isEditMode
           });
 
-          // МГНОВЕННОЕ СОХРАНЕНИЕ ПРИ ПЕРЕМЕЩЕНИИ — ПОЗИЦИЯ БОЛЬШЕ НИКОГДА НЕ ПРЫГАЕТ
           marker.on('dragend', async function(e) {
             const newPos = e.target.getLatLng();
             cp.lat = Number(newPos.lat.toFixed(5));
@@ -763,7 +995,6 @@
       });
     }
 
-    // ВСЕ ТОЧКИ НАНОСЯТСЯ ВСЕГДА НЕЗАВИСИМО ОТ СВЕТОФОРОВ
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -810,7 +1041,9 @@
     }
 
     loadCheckpointsFromCloud().then(() => {
-      loadPoints();
+      loadNeonLines().then(() => {
+        loadPoints();
+      });
     });
     setInterval(loadPoints, 15000);
   </script>
