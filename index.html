@@ -15,13 +15,13 @@
       top: 15px;
       left: 15px;
       z-index: 1000;
-      background: rgba(15, 23, 42, 0.92);
+      background: rgba(15, 23, 42, 0.94);
       backdrop-filter: blur(8px);
       padding: 12px 16px;
       border-radius: 12px;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      min-width: 230px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      min-width: 240px;
     }
     .dash-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
     .points-count { font-size: 16px; font-weight: 700; color: #fff; }
@@ -40,7 +40,7 @@
     }
     .btn-filter.active { background: #2563eb; color: #fff; border-color: #2563eb; }
 
-    /* Легенда формы и цвета */
+    /* Легенда */
     .legend {
       display: flex;
       flex-direction: column;
@@ -59,13 +59,68 @@
     .dot-blue { background: #06b6d4; }
     .dot-purple { background: #a855f7; }
 
-    /* Сброс стандартного стиля divIcon для квадрата */
-    .square-marker-icon {
+    /* Стили светофоров */
+    .traffic-light-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    }
+    .traffic-light-body {
+      background: #090d16;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      padding: 3px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.7);
+    }
+    .tl-lamp {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+    .tl-lamp.red-active {
+      background: #ef4444;
+      box-shadow: 0 0 12px 3px #ef4444;
+    }
+    .tl-lamp.red-dim {
+      background: #450a0a;
+      opacity: 0.35;
+    }
+    .tl-lamp.green-active {
+      background: #22c55e;
+      box-shadow: 0 0 12px 3px #22c55e;
+    }
+    .tl-lamp.green-dim {
+      background: #052e16;
+      opacity: 0.35;
+    }
+    .tl-lamp.off {
+      background: #1e293b;
+      opacity: 0.5;
+    }
+    .tl-badge {
+      background: rgba(15, 23, 42, 0.9);
+      color: #38bdf8;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 4px;
+      border-radius: 4px;
+      margin-top: 2px;
+      white-space: nowrap;
+      border: 1px solid #334155;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+
+    .square-marker-icon, .traffic-marker-icon {
       background: transparent !important;
       border: none !important;
     }
 
-    /* Кнопка ручного обновления */
+    /* Кнопка обновления */
     .btn-refresh {
       position: absolute;
       bottom: 25px;
@@ -86,7 +141,7 @@
     }
     .btn-refresh:hover { background: #1e293b; }
 
-    /* Всплывающее окно метки */
+    /* Попап */
     .leaflet-popup-content-wrapper {
       background: #1e293b !important;
       color: #f8fafc !important;
@@ -129,6 +184,10 @@
         <span class="shape square dot-blue"></span><span class="shape square dot-purple"></span>
         <span>К2 (квадрати): Чисто / Опасно</span>
       </div>
+      <div class="legend-row" style="margin-top: 3px;">
+        <span style="font-size: 12px;">🚦</span>
+        <span>Світлофори ключових точок (🔴/🟢)</span>
+      </div>
     </div>
   </div>
 
@@ -140,13 +199,59 @@
     const FIREBASE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const LIFETIME_MS = 40 * 60 * 1000; // 40 минут
 
-    const map = L.map('map', { zoomControl: false }).setView([48.4647, 35.0462], 12);
+    // 5 фиксированных ключевых точек для светофоров
+    const CHECKPOINTS = [
+      {
+        id: "kaidak_rovd",
+        name: "РОВД / Кайдацький з'їзд",
+        shortName: "Кайдацький",
+        lat: 48.4905,
+        lng: 34.9450,
+        keys: ["кайдак", "ровд", "з'їзд", "съезд"]
+      },
+      {
+        id: "vodolechebnitsa",
+        name: "Водолікарня (пр. Свободи)",
+        shortName: "Водолікарня",
+        lat: 48.4820,
+        lng: 34.9535,
+        keys: ["водолечеб", "водолікарн", "свобод"]
+      },
+      {
+        id: "kombainoviy",
+        name: "Комбайновий (Белелюбського)",
+        shortName: "Комбайновий",
+        lat: 48.4765,
+        lng: 34.9830,
+        keys: ["комбайн", "ударник"]
+      },
+      {
+        id: "krasnozavodska",
+        name: "Краснозаводська (Белелюбського)",
+        shortName: "Краснозаводська",
+        lat: 48.4795,
+        lng: 34.9960,
+        keys: ["краснозавод", "белелюб"]
+      },
+      {
+        id: "pavlova",
+        name: "вул. Академіка Павлова",
+        shortName: "Павлова",
+        lat: 48.4780,
+        lng: 35.0005,
+        keys: ["павлов"]
+      }
+    ];
+
+    const map = L.map('map', { zoomControl: false }).setView([48.479, 34.975], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
     const markersLayer = L.layerGroup().addTo(map);
+    const trafficLightLayer = L.layerGroup().addTo(map);
+
     let allPoints = [];
     let currentFilter = 'all';
 
@@ -165,6 +270,7 @@
         if (!data) {
           allPoints = [];
           renderMarkers();
+          renderTrafficLights();
           return;
         }
 
@@ -176,9 +282,27 @@
         });
 
         renderMarkers();
+        renderTrafficLights();
       } catch (err) {
         console.error("Помилка завантаження точок:", err);
       }
+    }
+
+    function getDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const p1 = lat1 * Math.PI/180;
+      const p2 = lat2 * Math.PI/180;
+      const dp = (lat2-lat1) * Math.PI/180;
+      const dl = (lon2-lon1) * Math.PI/180;
+      const a = Math.sin(dp/2)*Math.sin(dp/2) + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    }
+
+    function isCleanPoint(p) {
+      if (p.color === "green" || p.color === "blue" || p.status === "чисто") return true;
+      if (p.color === "red" || p.color === "purple" || p.status === "опасно") return false;
+      const t = (p.text || "").toLowerCase();
+      return t.includes("чисто") || t.includes("👍") || t.includes("🫡") || t.includes("пусто");
     }
 
     function getMarkerColor(p) {
@@ -188,14 +312,100 @@
       if (p.color === "purple") return "#a855f7";
 
       const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
-      const isClean = (p.status === "чисто") || (p.text && p.text.toLowerCase().includes("чисто"));
-      
-      if (isChannel2) {
-        return isClean ? "#06b6d4" : "#a855f7";
-      }
-      return isClean ? "#22c55e" : "#ef4444";
+      const clean = isCleanPoint(p);
+      if (isChannel2) return clean ? "#06b6d4" : "#a855f7";
+      return clean ? "#22c55e" : "#ef4444";
     }
 
+    // Отрисовка светофоров для 5 выбранных улиц
+    function renderTrafficLights() {
+      trafficLightLayer.clearLayers();
+      const now = Date.now();
+
+      CHECKPOINTS.forEach(cp => {
+        // Ищем самые свежие отчеты именно для этого перекрестка
+        const matched = allPoints.filter(p => {
+          const dist = getDistanceMeters(p.lat, p.lng, cp.lat, cp.lng);
+          const text = (p.text + " " + (p.address || "")).toLowerCase();
+          const matchKey = cp.keys.some(k => text.includes(k));
+          return (dist <= 650) || matchKey;
+        });
+
+        // Сортируем от самых новых к старым
+        matched.sort((a, b) => (b.time || b.timestamp || 0) - (a.time || a.timestamp || 0));
+        const latest = matched[0];
+
+        let state = "off"; // off, clean (green), danger (red)
+        let redClass = "tl-lamp off";
+        let greenClass = "tl-lamp off";
+        let statusTitle = "⚪ Немає актуальних звітів (40 хв)";
+
+        if (latest) {
+          const clean = isCleanPoint(latest);
+          if (clean) {
+            state = "clean";
+            redClass = "tl-lamp red-dim";
+            greenClass = "tl-lamp green-active";
+            statusTitle = "🟢 ВІЛЬНО / ЧИСТО";
+          } else {
+            state = "danger";
+            redClass = "tl-lamp red-active";
+            greenClass = "tl-lamp green-dim";
+            statusTitle = "🔴 УВАГА / НЕБЕЗПЕЧНО (БП/перевірка)";
+          }
+        }
+
+        const iconHtml = `
+          <div class="traffic-light-wrap">
+            <div class="traffic-light-body">
+              <div class="${redClass}"></div>
+              <div class="${greenClass}"></div>
+            </div>
+            <div class="tl-badge">${cp.shortName}</div>
+          </div>
+        `;
+
+        const tlIcon = L.divIcon({
+          className: 'traffic-marker-icon',
+          html: iconHtml,
+          iconSize: [40, 52],
+          iconAnchor: [20, 26],
+          popupAnchor: [0, -26]
+        });
+
+        let popupContent = `
+          <div class="popup-title">🚦 Світлофор: ${cp.name}</div>
+          <div style="font-size: 13px; font-weight: 600; margin-bottom: 6px; color: ${state === 'clean' ? '#22c55e' : (state === 'danger' ? '#ef4444' : '#94a3b8')}">
+            ${statusTitle}
+          </div>
+        `;
+
+        if (latest) {
+          const time = latest.time || latest.timestamp || 0;
+          const diff = now - time;
+          const remainingMs = Math.max(0, LIFETIME_MS - diff);
+          const remMin = Math.floor(remainingMs / 60000);
+          const remSec = Math.floor((remainingMs % 60000) / 1000);
+          const timeStr = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+          popupContent += `
+            <div class="popup-text">${latest.text || ""}</div>
+            <div class="popup-meta">
+              <span>🕒 ${timeStr} | ${latest.channel_name || (latest.source === "agendaDnepr" ? "Канал 2" : "Канал 1")}</span>
+              <span class="timer-badge">⏳ До зміни: ${remMin} хв ${remSec} с</span>
+            </div>
+          `;
+        } else {
+          popupContent += `<div class="popup-text" style="color: #94a3b8;">Повідомлень про цю ділянку за останні 40 хвилин не надходило. Світлофор у черговому режимі.</div>`;
+        }
+
+        const marker = L.marker([cp.lat, cp.lng], { icon: tlIcon, zIndexOffset: 1000 });
+        marker.bindPopup(popupContent);
+        trafficLightLayer.addLayer(marker);
+      });
+    }
+
+    // Отрисовка всех остальных меток
     function renderMarkers() {
       markersLayer.clearLayers();
       const now = Date.now();
@@ -209,10 +419,8 @@
         const isChannel2 = (p.source === "agendaDnepr" || p.channel_name === "Канал 2");
         const channelTitle = isChannel2 ? "Канал 2" : "Канал 1";
 
-        // Фильтрация
         if (currentFilter !== 'all' && currentFilter !== channelTitle) return;
 
-        // Расчёт времени до удаления
         const remainingMs = Math.max(0, LIFETIME_MS - diff);
         const remMinutes = Math.floor(remainingMs / 60000);
         const remSeconds = Math.floor((remainingMs % 60000) / 1000);
@@ -221,29 +429,26 @@
         const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const markerColor = getMarkerColor(p);
 
-        // Создаем маркер нужной формы
         let marker;
         if (isChannel2) {
-          // Квадратный маркер для Канала 2
           const squareIcon = L.divIcon({
             className: 'square-marker-icon',
             html: `<div style="
-              width: 16px;
-              height: 16px;
+              width: 15px;
+              height: 15px;
               background-color: ${markerColor};
               border: 2px solid #ffffff;
               border-radius: 3px;
               box-shadow: 0 2px 6px rgba(0,0,0,0.45);
             "></div>`,
-            iconSize: [16, 16],
-            iconAnchor: [8, 8],
+            iconSize: [15, 15],
+            iconAnchor: [7.5, 7.5],
             popupAnchor: [0, -10]
           });
           marker = L.marker([p.lat, p.lng], { icon: squareIcon });
         } else {
-          // Круглый маркер для Канала 1
           marker = L.circleMarker([p.lat, p.lng], {
-            radius: 9,
+            radius: 8,
             fillColor: markerColor,
             color: "#ffffff",
             weight: 2,
@@ -269,10 +474,7 @@
       document.getElementById('countText').innerText = `Точок: ${visibleCount}`;
     }
 
-    // Первичный запуск
     loadPoints();
-
-    // Автообновление каждые 15 секунд без нажатия F5
     setInterval(loadPoints, 15000);
   </script>
 </body>
