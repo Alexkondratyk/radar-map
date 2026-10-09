@@ -46,11 +46,11 @@ def fetch_tg_posts():
         return []
 
 def parse_with_gemini(text):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_KEY}"
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_KEY}"
     prompt = f"""Ты картографический аналитик города Днепр (Украина).
 Проанализируй текст сообщения: "{text}"
 Определи точную локацию/перекресток/район в черте г. Днепр.
-Верни строго чистый JSON без markdown (без ```json):
+Верни строго чистый JSON без markdown (без кавычек json):
 {{"valid": true, "address": "краткое место", "lat": 48.46, "lng": 35.04}}
 Если точной локации в Днепре нет, спам, опрос или реклама — верни строго:
 {{"valid": false}}"""
@@ -68,7 +68,7 @@ def parse_with_gemini(text):
                 log(f"Временная заминка Google ({resp.status_code}), ждем 4 сек...")
                 time.sleep(4)
             else:
-                log(f"Ответ Gemini API: код {resp.status_code}")
+                log(f"Ответ Gemini API: код {resp.status_code} - {resp.text[:120]}")
         except Exception as e:
             log(f"Исключение при запросе к Gemini: {e}")
             time.sleep(2)
@@ -87,7 +87,6 @@ def sync_cycle():
         result = parse_with_gemini(post)
 
         if result and result.get("valid") and "lat" in result and "lng" in result:
-            # Время передаём строго в миллисекундах (13 цифр) для фронтенда карты
             now_ms = int(time.time() * 1000)
             payload = {
                 "text": post,
@@ -111,7 +110,7 @@ def sync_cycle():
         else:
             log("-> Координаты не найдены (не привязано к улице)")
 
-        time.sleep(3)
+        time.sleep(2)
 
     log(f"Итог проверки: добавлено новых точек: {added}")
 
