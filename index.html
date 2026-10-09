@@ -612,7 +612,7 @@
     <!-- 2. РЕЖИМ ТРЕНЕРА ИИ -->
     <div class="neon-section-title">🎯 Навчання системи (Корекція)</div>
     <button id="btnTrainer" class="btn-trainer" onclick="toggleTrainerMode()">🎯 Режим тренера: ВИМКНЕНО</button>
-    <div style="font-size:10px; color:#94a3b8; margin:4px 0 8px;">Коли увімкнено: над кожним шариком з'явиться напис. Перетягуйте шарики на точні перехрестя.</div>
+    <div style="font-size:10px; color:#94a3b8; margin:4px 0 8px;">Коли увімкнено: над кожним шариком є напис. Перетягуйте шарики на точні перехрестя.</div>
 
     <!-- 3. НЕОНОВЫЕ ЛИНИИ -->
     <div class="neon-section-title">⚡ Неон вулиць</div>
@@ -912,18 +912,51 @@
       };
 
       try {
+        // 1. Сохраняем в Базу Знаний Firebase
         await fetch(FIREBASE_KB_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(kbEntry)
         });
 
-        pendingTrainerData.point.lat = pendingTrainerData.newLat;
-        pendingTrainerData.point.lng = pendingTrainerData.newLng;
-        pendingTrainerData.point.address = address;
+        const newLat = pendingTrainerData.newLat;
+        const newLng = pendingTrainerData.newLng;
+        const targetPoint = pendingTrainerData.point;
+
+        // 2. МГНОВЕННО ОБНОВЛЯЕМ САМУ ПЕРЕТАЩЕННУЮ ТОЧКУ В FIREBASE (ЧТОБЫ НЕ СБРАСЫВАЛАСЬ)
+        if (targetPoint._fbKey) {
+          const pointUrl = FIREBASE_POINTS_URL.replace(".json", `/${targetPoint._fbKey}.json`);
+          await fetch(pointUrl, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              lat: newLat,
+              lng: newLng,
+              address: address || "Дніпро"
+            })
+          });
+        }
+
+        // 3. МАССОВОЕ ПРИМЕНЕНИЕ: если есть другие сообщения с этой же фразой, обновляем их тоже
+        allPoints.forEach(pt => {
+          const txt = ((pt.raw_text || pt.text || "") + " " + (pt.address || "")).toLowerCase();
+          if (txt.includes(phrase) || pt === targetPoint) {
+            pt.lat = newLat;
+            pt.lng = newLng;
+            pt.address = address || "Дніпро";
+
+            if (pt._fbKey && pt !== targetPoint) {
+              fetch(FIREBASE_POINTS_URL.replace(".json", `/${pt._fbKey}.json`), {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ lat: newLat, lng: newLng, address: address || "Дніпро" })
+              });
+            }
+          }
+        });
 
         closeTrainerModal();
-        showToast("🎯 ІІ навчено! Локацію надійно зафіксовано.");
+        showToast("🎯 Точку намертво зафіксовано на новому місці та додано до бази знань!");
         renderMarkers();
       } catch (e) {
         alert("Помилка збереження: " + e.message);
@@ -1274,8 +1307,11 @@
       });
     }
 
-    /* ЗАГРУЗКА ТОЧЕК И РЕНДЕР */
+    /* ЗАГРУЗКА ТОЧЕК И РЕНДЕР (С ЗАЩИТОЙ ОТ СБРОСА) */
     async function loadPoints() {
+      // ЕСЛИ СЕЙЧАС ОТКРЫТО ОКНО ОБУЧЕНИЯ — НЕ СБРАСЫВАЕМ КАРТУ!
+      if (pendingTrainerData) return;
+
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
         if (!res.ok) return;
@@ -1288,8 +1324,13 @@
         }
 
         const now = Date.now();
-        allPoints = Object.values(data).filter(p => {
-          if (!p || typeof p !== 'object' || !p.lat || !p.lng) return false;
+        // СОХРАНЯЕМ _fbKey КАЖДОЙ ТОЧКИ ДЛЯ МГНОВЕННОЙ ФИКСАЦИИ ПРИ ОБУЧЕНИИ
+        allPoints = Object.entries(data).map(([key, p]) => {
+          if (!p || typeof p !== 'object' || !p.lat || !p.lng) return null;
+          p._fbKey = key;
+          return p;
+        }).filter(p => {
+          if (!p) return false;
           const time = p.time || p.timestamp || 0;
           return (now - time) <= LIFETIME_MS;
         });
