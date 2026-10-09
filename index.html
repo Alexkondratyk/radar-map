@@ -21,7 +21,7 @@
       border-radius: 12px;
       color: #fff;
       box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      width: 220px;
+      width: 215px;
       transition: all 0.25s ease;
     }
     .dash-header { 
@@ -110,7 +110,7 @@
       100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
     }
 
-    /* Легенда */
+    /* Компактная чистая легенда */
     .legend {
       display: flex;
       flex-direction: column;
@@ -122,26 +122,14 @@
     }
     .legend-row { display: flex; align-items: center; gap: 6px; }
     .shape { 
-      width: 10px; 
-      height: 10px; 
+      width: 9px; 
+      height: 9px; 
       border-radius: 50%; 
       display: inline-block; 
       flex-shrink: 0;
-      border: 2px solid #facc15;
-      box-sizing: border-box;
     }
     .dot-green { background: #22c55e; }
     .dot-red { background: #ef4444; }
-
-    .legend-time {
-      margin-top: 4px;
-      padding-top: 4px;
-      border-top: 1px dashed #334155;
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      font-size: 9px;
-    }
 
     /* СТИЛИ ТОЧЕК-МЕТОК */
     .marker-wrap {
@@ -176,18 +164,27 @@
       transition: all 0.3s ease;
     }
 
-    /* 1. СВЕЖИЕ И АКТУАЛЬНЫЕ (0-25 мин): СПЛОШНЫЕ С ЖЁЛТЫМ ОБОДКОМ */
-    .radar-core.fresh, .radar-core.mid {
-      border: 2px solid #facc15;
-      box-shadow: 0 0 5px rgba(250, 204, 21, 0.6), 0 2px 5px rgba(0,0,0,0.7);
+    /* 1. СВЕЖИЕ (0-10 мин): сплошные с белым ободком + радарная волна */
+    .radar-core.fresh {
+      width: 12px;
+      height: 12px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6);
     }
-    .radar-core.fresh.green, .radar-core.mid.green { background: #22c55e; }
-    .radar-core.fresh.red, .radar-core.mid.red { background: #ef4444; }
+    .radar-core.fresh.green { background: #22c55e; }
+    .radar-core.fresh.red { background: #ef4444; }
 
-    .radar-core.fresh { width: 13px; height: 13px; }
-    .radar-core.mid { width: 11px; height: 11px; }
+    /* 2. АКТУАЛЬНЫЕ (10-25 мин): сплошные с ЖЁЛТЫМ ободком */
+    .radar-core.mid {
+      width: 11px;
+      height: 11px;
+      border: 2px solid #facc15;
+      box-shadow: 0 0 5px rgba(250, 204, 21, 0.7), 0 2px 5px rgba(0,0,0,0.7);
+    }
+    .radar-core.mid.green { background: #22c55e; }
+    .radar-core.mid.red { background: #ef4444; }
 
-    /* 2. ПРОПАДАЮЩИЕ (25-40 мин): "БУБЛИК" БЕЗ ЖЁЛТОГО ОБОДКА + МЕДЛЕННО МИГАЕТ */
+    /* 3. ПРОПАДАЮЩИЕ (25-40 мин): "БУБЛИК" БЕЗ ЖЕЛТОГО ОБОДКА + МЕДЛЕННО МИГАЕТ */
     .radar-core.expiring {
       width: 11px;
       height: 11px;
@@ -469,13 +466,6 @@
         <div class="legend-row" style="margin-top: 2px;">
           <span style="font-size: 11px;">🚦</span>
           <span id="tlLegendCount">Світлофори</span>
-        </div>
-
-        <!-- Подсказка по шкале времени -->
-        <div class="legend-time">
-          <div>💥 <b>Пульсує:</b> 0–10 хв (свіжа, жовтий ободок)</div>
-          <div>🟡 <b>Суцільна:</b> 10–25 хв (актуальна, жовтий ободок)</div>
-          <div>⭕ <b>Бублик (блимає):</b> 25–40 хв (згасає, без ободка)</div>
         </div>
       </div>
     </div>
@@ -1087,7 +1077,7 @@
     }
 
     /* ----------------------------------------------------
-       ОТРИСОВКА КРУЖКОВ: СПЛОШНЫЕ С ЖЁЛТЫМ ОБОДКОМ ИЛИ БУБЛИК БЕЗ ОБОДКА
+       ОТРИСОВКА КРУЖКОВ: 3 СОСТОЯНИЯ
     ---------------------------------------------------- */
     function renderMarkers() {
       markersLayer.clearLayers();
@@ -1111,14 +1101,14 @@
         let pulseHtml = "";
 
         if (ageMinutes < 10) {
-          // 0-10 мин: СВЕЖАЯ (Сплошная с желтым ободком + радарная волна)
+          // 0-10 мин: СВЕЖАЯ (Сплошная с белым ободком + радарная волна, БЕЗ желтого ободка)
           ageClass = "fresh";
           pulseHtml = `<div class="pulse-ring pulse-${colorClass}"></div>`;
         } else if (ageMinutes >= 25) {
           // 25-40 мин: ПРОПАДАЕТ ("БУБЛИК" БЕЗ ЖЕЛТОГО ОБОДКА, МЕДЛЕННО МИГАЕТ)
           ageClass = "expiring";
         } else {
-          // 10-25 мин: АКТУАЛЬНАЯ (Сплошная спокойная с желтым ободком)
+          // 10-25 мин: АКТУАЛЬНАЯ (Сплошная с ЖЁЛТЫМ ободком)
           ageClass = "mid";
         }
 
