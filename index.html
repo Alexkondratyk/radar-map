@@ -426,7 +426,6 @@
       }
     };
 
-    // СОХРАНЕНИЕ КООРДИНАТ В БАЗУ ЗНАНИЙ
     async function finishDragAndTrainAI(point, newLatLng) {
       if (!point || !newLatLng) return;
       const newLat = Number(newLatLng.lat.toFixed(5));
@@ -997,19 +996,18 @@
       const marker = trafficMarkersMap[cpId];
       if (!cp || !marker) return;
 
-      const controlContent = `
-        <div style="padding:4px; min-width:180px;">
-          <div style="font-weight:800; font-size:12px; color:#38bdf8; margin-bottom:4px;">⚙️ Керування: ${cp.name}</div>
-          <div style="font-size:10px; color:#94a3b8; margin-bottom:8px;">Оберіть примусовий стан:</div>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:6px;">
-            <button onclick="setTrafficLightManual('${cp.id}', 'green')" style="background:#065f46; border:1px solid #10b981; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🟢 Чисто</button>
-            <button onclick="setTrafficLightManual('${cp.id}', 'red')" style="background:#7f1d1d; border:1px solid #ef4444; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🔴 БП</button>
-            <button onclick="setTrafficLightManual('${cp.id}', 'off')" style="background:#1e293b; border:1px solid #64748b; color:#cbd5e1; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">⚪ Погасити</button>
-            <button onclick="setTrafficLightManual('${cp.id}', 'auto')" style="background:#0f172a; border:1px solid #0284c7; color:#38bdf8; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🔄 Авто</button>
-          </div>
-          <div style="font-size:9px; color:#64748b; text-align:center;">При появі нового БП режим зніметься сам</div>
-        </div>
-      `;
+      const controlContent = 
+        '<div style="padding:4px; min-width:185px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#0f172a;">' +
+          '<div style="font-weight:800; font-size:12px; color:#0284c7; margin-bottom:4px;">⚙️ Керування: ' + cp.name + '</div>' +
+          '<div style="font-size:10px; color:#64748b; margin-bottom:6px;">Оберіть примусовий стан:</div>' +
+          '<div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:6px;">' +
+            '<button onclick="setTrafficLightManual(\'' + cp.id + '\', \'green\')" style="background:#059669; border:none; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🟢 Чисто</button>' +
+            '<button onclick="setTrafficLightManual(\'' + cp.id + '\', \'red\')" style="background:#dc2626; border:none; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🔴 БП</button>' +
+            '<button onclick="setTrafficLightManual(\'' + cp.id + '\', \'off\')" style="background:#64748b; border:none; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">⚪ Погасити</button>' +
+            '<button onclick="setTrafficLightManual(\'' + cp.id + '\', \'auto\')" style="background:#0284c7; border:none; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🔄 Авто</button>' +
+          '</div>' +
+          '<div style="font-size:9px; color:#94a3b8; text-align:center;">При появі нового БП режим зніметься сам</div>' +
+        '</div>';
 
       marker.setPopupContent(controlContent);
       marker.openPopup();
@@ -1067,30 +1065,39 @@
         const iconHtml = `<div class="traffic-pill ${isEditMode ? 'draggable-mode' : ''}"><div class="${redClass}"></div><div class="${greenClass}"></div></div>`;
         const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
 
+        // ФОРМИРУЕМ ЧИСТЫЙ ТЕКСТ СООБЩЕНИЯ (ЕДИНЫЙ СВЕТЛЫЙ ФОН, ЧЕРНЫЙ ТЕКСТ И РЕАЛЬНОЕ ВРЕМЯ)
         let messageBlock = "";
-        if (latest && (!isOverrideActive || override.status !== 'off')) {
+        if (latest && (!isOverrideActive || (override && override.status !== 'off'))) {
           const rawText = latest.text || latest.raw_text || "";
-          const msgTime = (latest.time || latest.timestamp) ? new Date(latest.time || latest.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : "";
+          let timeVal = latest.time || latest.timestamp || 0;
+          let timeStr = "";
+          if (timeVal) {
+            const d = new Date(timeVal);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            timeStr = hh + ":" + mm;
+          }
           if (rawText) {
-            messageBlock = `
-              <div style="font-size:11px; color:#f1f5f9; margin-top:4px; line-height:1.35; background:#0b1120; padding:6px 8px; border-radius:6px; border:1px solid #1e293b;">
-                «${rawText}»
-                ${msgTime ? `<div style="font-size:9px; color:#64748b; margin-top:3px; text-align:right;">🕒 \${msgTime}</div>` : ''}
-              </div>
-            `;
+            messageBlock = '<div style="font-size:11px; color:#0f172a; margin:5px 0 3px; line-height:1.35; background:#f8fafc; padding:6px 8px; border-radius:7px; border:1px solid #cbd5e1; word-break:break-word;">'
+              + '«' + rawText + '»'
+              + (timeStr ? '<div style="font-size:10px; color:#475569; margin-top:3px; text-align:right; font-weight:700;">🕒 ' + timeStr + '</div>' : '')
+              + '</div>';
           }
         }
 
-        const overrideBadge = isOverrideActive ? `<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>` : "";
+        const overrideBadge = isOverrideActive ? '<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>' : "";
 
-        const standardPopupContent = `
-          <div style="padding:4px; min-width:170px;">
-            <div style="font-weight:800; font-size:12px; color:#38bdf8;">🚦 ${cp.name} ${overrideBadge}</div>
-            <div style="font-size:11px; font-weight:800; margin:4px 0;">${statusTitle}</div>
-            ${messageBlock}
-            <div style="font-size:9px; color:#64748b; margin-top:6px; border-top:1px solid #1e293b; padding-top:4px;">💡 Затисніть на 0.5с для керування</div>
-          </div>
-        `;
+        const standardPopupContent = 
+          '<div style="padding:2px; min-width:180px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#0f172a;">' +
+            '<div style="font-weight:800; font-size:12px; color:#0284c7; display:flex; align-items:center; justify-content:space-between;">' +
+              '<span>🚦 ' + cp.name + '</span>' + overrideBadge +
+            '</div>' +
+            '<div style="font-size:11px; font-weight:800; margin:4px 0; color:' + (statusTitle.includes('ЧИСТО') ? '#16a34a' : (statusTitle.includes('УВАГА') ? '#dc2626' : '#64748b')) + ';">' +
+              statusTitle +
+            '</div>' +
+            messageBlock +
+            '<div style="font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:3px; text-align:center;">💡 Затисніть на 0.5с для керування</div>' +
+          '</div>';
 
         let marker = trafficMarkersMap[cp.id];
 
@@ -1163,7 +1170,7 @@
               }
             });
 
-            el.addEventListener('mouseup', (e) => {
+            el.addEventListener('mouseup', () => {
               if (isLongPress) {
                 e.stopPropagation();
               }
@@ -1406,7 +1413,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА И ОТРИСОВКА КРУЖОЧКОВ (С ПОЛНЫМ ВОССТАНОВЛЕНИЕМ ПЕРЕМЕЩЕНИЯ И ВЫДЕЛЕНИЯ)
+    // ЗАГРУЗКА И ОТРИСОВКА КРУЖОЧКОВ
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -1465,7 +1472,6 @@
         const marker = L.marker([p.lat, p.lng], { icon: dotIcon, draggable: false });
         marker.bindPopup(popupContent);
 
-        // ЖЕСТ ДОЛГОГО НАЖАТИЯ ДЛЯ ВЫДЕЛЕНИЯ И ДВИЖЕНИЯ
         let timer = null;
         let startX = 0, startY = 0;
 
