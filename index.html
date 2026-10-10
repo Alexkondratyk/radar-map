@@ -87,7 +87,7 @@
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    /* 2. БЛОК ШІ (ДИАЛОГОВЫЙ ЧАТ) */
+    /* 2. БЛОК ШІ */
     .ai-pill-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
@@ -250,6 +250,7 @@
       padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: space-between;
     }
+    .btn-server-main:hover { border-color: #64748b; color: #cbd5e1; }
     .server-dropdown {
       background: #0b1120; border: 1px solid #334155; border-radius: 8px;
       padding: 6px; margin-top: 4px; display: none; flex-direction: column; gap: 4px;
@@ -280,12 +281,6 @@
       border-radius: 50%; border: 2px solid var(--color-red); animation: ripple-ring 1.8s infinite ease-out; pointer-events: none;
     }
     @keyframes ripple-ring { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.4); opacity: 0; } }
-
-    .radar-circle.active-dragging-target {
-      transform: scale(1.6) !important; box-shadow: 0 0 0 4px #00f3ff, 0 0 25px 8px #00f3ff !important;
-      cursor: grab !important; z-index: 9999 !important; animation: target-pulse 0.7s infinite alternate !important;
-    }
-    @keyframes target-pulse { from { transform: scale(1.4); } to { transform: scale(1.7); } }
 
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
@@ -418,20 +413,20 @@
     <div class="ai-pill-body" id="aiPillBody">
       <div id="aiChatBox" class="ai-chat-box">
         <div class="ai-msg bot">
-          👋 Вітаю! Я ваш ШІ-штурман. Бачу всю карту, світлофори та повідомлення. Якщо повідомлення не відповідає дійсності — скажіть, я видалю його або перемкну світлофор в авто!
+          👋 Вітаю! Я ваш ШІ-штурман. Керую картою, кольорами точок та районами. Наприклад: «Скрий зелені», «Відключи Лівий берег» або «Підсвіти Робочу»!
         </div>
       </div>
 
       <div class="ai-chips-compact">
+        <span class="ai-mini-chip" onclick="sendAiQuick('Скрий зелені точки')">🟢 Сховати зелені</span>
+        <span class="ai-mini-chip" onclick="sendAiQuick('Покажи всі точки')">🌐 Всі точки</span>
+        <span class="ai-mini-chip" onclick="sendAiQuick('Відключи Лівий берег від моніторингу')">🌉 Без Лівого</span>
+        <span class="ai-mini-chip" onclick="sendAiQuick('Світлофор Річпорт переключи на авто режим')">🔄 Річпорт авто</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Відкрий аналітику')">📊 Аналітика</span>
-        <span class="ai-mini-chip" onclick="sendAiQuick('Світлофор Річпорт переключи на авто режим')">🔄 Річпорт в авто</span>
-        <span class="ai-mini-chip" onclick="sendAiQuick('Підсвіти на карті вулицю Робочу')">✨ Підсвіти Робочу</span>
-        <span class="ai-mini-chip" onclick="sendAiQuick('Де зараз блокпости? На яких вулицях?')">📍 Де блокпости?</span>
-        <span class="ai-mini-chip" onclick="sendAiQuick('Сховай всі світлофори')">🙈 Сховати світлофори</span>
       </div>
 
       <div class="ai-chat-input-row">
-        <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Напишіть повідомлення чи команду... (Enter)"></textarea>
+        <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Команда або запитання... (Enter)"></textarea>
         <button class="btn-ai-send" onclick="submitAiChatMessage()" id="btnAiSend">➤</button>
       </div>
     </div>
@@ -510,6 +505,10 @@
     let isEditMode = false;
     let trafficMarkersMap = {};
     let allPoints = [];
+
+    // ФИЛЬТРЫ ВИДИМОСТИ ЦВЕТОВ МЕТОК (ЗЕЛЕНЫЕ / КРАСНЫЕ)
+    let filterShowGreen = true;
+    let filterShowRed = true;
 
     // ПАМЯТЬ ОБУЧЕННЫХ ПРАВИЛ
     let learnedRules = [];
@@ -629,7 +628,6 @@
       }
     };
 
-    // ФИКС КЛЮЧЕЙ СВЕТОФОРОВ (ИСКЛЮЧЕНО СЛОВО "СТАН", ТОЛЬКО "СТАН 550")
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -649,26 +647,32 @@
 
     const SECTOR_DEFS = {
       s1: {
+        name: "Парус, Покровський, Вокзал, Робоча",
         keys: ["парус", "покровськ", "комунар", "коммунар", "червон.*кам", "камни", "набережн.*завод", "речпорт", "річпорт", "репорт", "водокачк", "стан.*550", "водолікарн", "свобод", "кайдак", "павлов", "белелюб", "краснозавод", "дтрз", "комбайн", "ударник", "вокзал", "старомостов", "островськ", "озерк", "курчатов", "шмідт", "бандер", "робоч", "канатн", "філософськ", "савченко", "свердлов", "криворізьк"],
         bounds: { minLat: 48.435, maxLat: 48.510, minLng: 34.885, maxLng: 35.038 }
       },
       s2: {
+        name: "Центр, Нагірка, Перемога",
         keys: ["центр", "міст.*сіті", "мост.*сити", "європейськ", "яворницьк", "нагірк", "гагарін", "науки", "перемог", "побед", "соборн"],
         bounds: { minLat: 48.410, maxLat: 48.480, minLng: 35.038, maxLng: 35.120 }
       },
       s3: {
+        name: "Тополя, 12 Квартал, Поля, Титова, Сокіл",
         keys: ["12.*квартал", "квартал", "топол", "сокіл", "сокол", "мирн", "кротов", "гальченк", "шинн", "хмельницьк", "поля", "кіров", "титов"],
         bounds: { minLat: 48.380, maxLat: 48.445, minLng: 34.980, maxLng: 35.070 }
       },
       s4: {
+        name: "Мазепи, Нігояна, Західний, Діївка",
         keys: ["мазеп", "петровськ", "нігоян", "калінін", "металург", "західн", "западн", "діївк"],
         bounds: { minLat: 48.450, maxLat: 48.485, minLng: 34.910, maxLng: 34.980 }
       },
       s5: {
+        name: "Лівий берег (Шосе, Караван, Калинова)",
         keys: ["донецьк.*шосе", "караван", "лівобереж", "левобереж", "березинк", "калинов", "янтарн", "клочко"],
         bounds: { minLat: 48.500, maxLat: 48.560, minLng: 34.960, maxLng: 35.070 }
       },
       s6: {
+        name: "Лівий берег (Слобожанський, Сонячний, Придніпровськ)",
         keys: ["слобожанськ", "правд", "калнишевськ", "сонячн", "солнечн", "малиновськ", "придніпров", "ігрень"],
         bounds: { minLat: 48.460, maxLat: 48.530, minLng: 35.040, maxLng: 35.150 }
       }
@@ -787,29 +791,6 @@
     };
 
     // ПОДСВЕТКА УЛИЦ
-    const PRESET_STREETS = {
-      "робоч": [[48.4385, 35.0065], [48.4485, 35.0076], [48.4590, 35.0084], [48.4725, 35.0087]],
-      "рабоч": [[48.4385, 35.0065], [48.4485, 35.0076], [48.4590, 35.0084], [48.4725, 35.0087]],
-      "пол": [[48.4300, 35.0215], [48.4450, 35.0245], [48.4610, 35.0268], [48.4715, 35.0280]],
-      "кіров": [[48.4300, 35.0215], [48.4450, 35.0245], [48.4610, 35.0268], [48.4715, 35.0280]],
-      "киров": [[48.4300, 35.0215], [48.4450, 35.0245], [48.4610, 35.0268], [48.4715, 35.0280]],
-      "павлов": [[48.4770, 35.0010], [48.4818, 35.0012], [48.4855, 35.0018]],
-      "набережн": [[48.5020, 34.9250], [48.4910, 34.9550], [48.4850, 34.9850], [48.4805, 35.0210], [48.4730, 35.0550]],
-      "слобожанськ": [[48.4830, 35.0600], [48.5050, 35.0750], [48.5300, 35.0880]],
-      "правд": [[48.4830, 35.0600], [48.5050, 35.0750], [48.5300, 35.0880]],
-      "яворницьк": [[48.4755, 35.0150], [48.4680, 35.0350], [48.4590, 35.0530], [48.4510, 35.0680]],
-      "карла маркс": [[48.4755, 35.0150], [48.4680, 35.0350], [48.4590, 35.0530], [48.4510, 35.0680]],
-      "свобод": [[48.4760, 34.9450], [48.4820, 34.9650], [48.4848, 34.9735]],
-      "титов": [[48.4330, 35.0060], [48.4310, 35.0240], [48.4300, 35.0420]],
-      "мазеп": [[48.4620, 34.9400], [48.4720, 34.9650], [48.4760, 34.9800]],
-      "петровськ": [[48.4620, 34.9400], [48.4720, 34.9650], [48.4760, 34.9800]],
-      "калинов": [[48.5050, 35.0300], [48.5080, 35.0600], [48.5120, 35.0900]],
-      "донецьк": [[48.5200, 34.9500], [48.5350, 34.9900], [48.5500, 35.0300]],
-      "донецк": [[48.5200, 34.9500], [48.5350, 34.9900], [48.5500, 35.0300]],
-      "шкільн": [[48.4380, 35.0210], [48.4430, 35.0270]],
-      "школьн": [[48.4380, 35.0210], [48.4430, 35.0270]]
-    };
-
     let streetBlinkTimeout = null;
 
     async function highlightStreetOnMap(streetName) {
@@ -869,7 +850,7 @@
     }
 
     // ==========================================================================
-    // ДИАЛОГОВЫЙ ЧАТ ШІ + ЛОКАЛЬНЫЙ ПЕРЕХВАТ КОМАНД СВЕТОФОРОВ (АВТО/СБРОС)
+    // ДИАЛОГОВЫЙ ЧАТ ШІ
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -949,11 +930,91 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
-    // ПЕРЕХВАТ И МГНОВЕННОЕ ВЫПОЛНЕНИЕ КОМАНД СВЕТОФОРА НА КЛИЕНТЕ
-    function detectAndExecuteLocalTlCommands(text) {
-      const t = text.toLowerCase();
-      let targetId = null;
+    // ФУНКЦИЯ УПРАВЛЕНИЯ СЕКТОРАМИ ГОРОДА ЧЕРЕЗ ШІ
+    function setSectorState(sectorKey, enable) {
+      let changed = false;
+      let targetIds = [];
 
+      if (sectorKey === "left_bank" || sectorKey === "левый_берег") targetIds = ["s5", "s6"];
+      else if (sectorKey === "topol" || sectorKey === "тополь") targetIds = ["s3"];
+      else if (sectorKey === "center" || sectorKey === "центр") targetIds = ["s2"];
+      else if (sectorKey === "west" || sectorKey === "западный" || sectorKey === "мазепы") targetIds = ["s4"];
+      else if (sectorKey === "route" || sectorKey === "маршрут") targetIds = ["s1"];
+      else if (SECTOR_DEFS[sectorKey]) targetIds = [sectorKey];
+
+      targetIds.forEach(id => {
+        if (enable && !activeSectors.includes(id)) {
+          activeSectors.push(id);
+          changed = true;
+        } else if (!enable && activeSectors.includes(id)) {
+          activeSectors = activeSectors.filter(x => x !== id);
+          changed = true;
+        }
+      });
+
+      if (activeSectors.length === 0) activeSectors = ['s1'];
+
+      if (changed) {
+        localStorage.setItem("radar_active_sectors", JSON.stringify(activeSectors));
+        syncSectorCheckboxesUI();
+        renderMarkers();
+        renderTrafficLights();
+        updateRouteStatus();
+        showToast(`🏙️ Налаштування районів оновлено!`);
+      }
+    }
+
+    // МГНОВЕННЫЙ ЛОКАЛЬНЫЙ ПЕРЕХВАТ КОМАНД СВЕТОФОРОВ, ЦВЕТОВ И РАЙОНОВ
+    function detectAndExecuteLocalCommands(text) {
+      const t = text.toLowerCase();
+
+      // 1. УПРАВЛЕНИЕ ВИДИМОСТЬЮ ЦВЕТОВ (ЗЕЛЕНЫЕ / КРАСНЫЕ / ВСЕ)
+      if (/(?:сховай|скрой|удали|прибери|вимкни)\s+(?:всі\s+|все\s+)?зелен/i.test(t)) {
+        filterShowGreen = false;
+        renderMarkers();
+        showToast("🙈 Зелені точки приховано з карти!");
+        return { handled: true, reply: "🟢 Зелені мітки («Чисто») тимчасово приховано з карти. На екрані залишаються тільки червоні точки загрози." };
+      }
+      if (/(?:покажи|верни|увімкни|включи)\s+(?:всі\s+|все\s+)?зелен/i.test(t)) {
+        filterShowGreen = true;
+        renderMarkers();
+        showToast("👁️ Зелені точки повернено!");
+        return { handled: true, reply: "🟢 Зелені мітки повернено на карту." };
+      }
+      if (/(?:сховай|скрой|прибери|вимкни)\s+(?:всі\s+|все\s+)?червон/i.test(t)) {
+        filterShowRed = false;
+        renderMarkers();
+        showToast("🙈 Червоні точки приховано!");
+        return { handled: true, reply: "🔴 Червоні мітки приховано." };
+      }
+      if (/(?:покажи|верни|увімкни|включи)\s+(?:всі\s+|все\s+)?(?:червон|точки)/i.test(t)) {
+        filterShowGreen = true;
+        filterShowRed = true;
+        renderMarkers();
+        showToast("🌐 Всі точки відображено!");
+        return { handled: true, reply: "🌐 Відображаю всі активні мітки на карті (зелені та червоні)." };
+      }
+
+      // 2. УПРАВЛЕНИЕ РАЙОНАМИ (ЛЕВЫЙ БЕРЕГ / ТОПОЛЬ И Т.Д.)
+      if (/(?:відключи|отключи|вимкни|прибери|сховай)\s+(?:моніторинг\s+)?(?:лівий\s*берег|левый\s*берег)/i.test(t)) {
+        setSectorState("left_bank", false);
+        return { handled: true, reply: "🌉 Лівий берег відключено від моніторингу." };
+      }
+      if (/(?:увімкни|включи|підключи|поверни)\s+(?:моніторинг\s+)?(?:лівий\s*берег|левый\s*берег)/i.test(t)) {
+        setSectorState("left_bank", true);
+        return { handled: true, reply: "🌉 Лівий берег успішно підключено до моніторингу!" };
+      }
+      if (/(?:відключи|отключи|вимкни|прибери)\s+(?:моніторинг\s+)?(?:топол|12\s*квартал)/i.test(t)) {
+        setSectorState("topol", false);
+        return { handled: true, reply: "🚗 Сектор Тополя / 12 Квартал відключено." };
+      }
+      if (/(?:увімкни|включи|підключи)\s+(?:моніторинг\s+)?(?:топол|12\s*квартал)/i.test(t)) {
+        setSectorState("topol", true);
+        return { handled: true, reply: "🚗 Сектор Тополя / 12 Квартал увімкнено!" };
+      }
+
+      // 3. УПРАВЛЕНИЕ СВЕТОФОРАМИ
+      let targetId = null;
       if (t.includes("речпорт") || t.includes("річпорт") || t.includes("репорт")) targetId = "rechport";
       else if (t.includes("ровд") || t.includes("кайдак")) targetId = "kaidak_rovd";
       else if (t.includes("водолікарн") || t.includes("водолечеб")) targetId = "vodolechebnitsa";
@@ -968,21 +1029,24 @@
       }
 
       if (targetId) {
+        const cp = checkpoints.find(c => c.id === targetId);
+        const cpName = cp ? cp.name : targetId;
         if (/(?:авто|скинь|сбрось|верни|зніми\s+ручний|зняти\s+ручний|режимі\s+очікування)/i.test(t)) {
           setTrafficLightManual(targetId, 'auto');
-          return true;
+          return { handled: true, reply: `🚦 Світлофор «${cpName}» повернено в автоматичний режим!` };
         } else if (/(?:зелен|чисто|зніми\s+червон)/i.test(t)) {
           setTrafficLightManual(targetId, 'green');
-          return true;
+          return { handled: true, reply: `🟢 Світлофор «${cpName}» переведено на постійний ЗЕЛЕНИЙ (Чисто).` };
         } else if (/(?:червон|бп|блокпост|увага|опасно)/i.test(t)) {
           setTrafficLightManual(targetId, 'red');
-          return true;
+          return { handled: true, reply: `🔴 Світлофор «${cpName}» переведено на ЧЕРВОНИЙ (БП).` };
         } else if (/(?:погаси|вимкни)/i.test(t)) {
           setTrafficLightManual(targetId, 'off');
-          return true;
+          return { handled: true, reply: `⚪ Світлофор «${cpName}» погашено.` };
         }
       }
-      return false;
+
+      return { handled: false };
     }
 
     async function applyFixPointColor(targetQuery, newColor, learnedKeyword) {
@@ -1037,7 +1101,7 @@
     }
 
     async function executeGeminiRequest(promptPayload, apiKey) {
-      const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
+      const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash'];
       let lastErr = null;
 
       for (const m of models) {
@@ -1060,7 +1124,7 @@
           lastErr = e.message;
         }
       }
-      throw new Error(lastErr || "Усі моделі Gemini недоступні");
+      throw new Error(lastErr || "Сервери Google тимчасово перевантажені");
     }
 
     async function submitAiChatMessage() {
@@ -1088,7 +1152,18 @@
       aiChatBox.appendChild(loadingBubble);
       aiChatBox.scrollTop = aiChatBox.scrollHeight;
 
-      // 1. Мгновенная проверка команд аналитики на клиенте
+      // МГНОВЕННАЯ ОБРАБОТКА КОМАНД ЦВЕТОВ, РАЙОНОВ, АНАЛИТИКИ И СВЕТОФОРОВ
+      const localResult = detectAndExecuteLocalCommands(query);
+      if (localResult && localResult.handled) {
+        geminiChatHistory.push({ role: "user", parts: [{ text: query }] });
+        geminiChatHistory.push({ role: "model", parts: [{ text: localResult.reply }] });
+        loadingBubble.className = "ai-msg bot";
+        loadingBubble.innerText = localResult.reply;
+        aiChatBox.scrollTop = aiChatBox.scrollHeight;
+        return;
+      }
+
+      // Запрос перехода в аналитику
       if (/(?:перейди|відкрий|покажи|зайди|открой|перейти|показать)\s+(?:в\s+)?(?:аналітик|статистик)/i.test(query)) {
         window.open('stats.html', '_blank');
         loadingBubble.className = "ai-msg bot";
@@ -1096,9 +1171,6 @@
         aiChatBox.scrollTop = aiChatBox.scrollHeight;
         return;
       }
-
-      // 2. Мгновенное локальное исполнение команды светофора (включая "репорт" -> Річпорт в авто)
-      detectAndExecuteLocalTlCommands(query);
 
       const now = Date.now();
       const allLiveReportsText = allPoints.map((p, idx) => {
@@ -1117,42 +1189,35 @@
         let state = "Очікування";
         if (override) state = override.status === 'green' ? 'Зелений (ручний)' : (override.status === 'red' ? 'Червоний (ручний)' : 'Погашено (ручний)');
         else if (latest) state = isCleanPoint(latest) ? 'Зелений (чисто)' : 'Червоний (увага/БП)';
-        return `• ${cp.name} (id: "${cp.id}"): стан ${state}. Останнє повідомлення: "${latest ? (latest.text || latest.raw_text) : 'немає'}". Key: "${latest ? (latest._fbKey || '') : ''}".`;
+        return `• ${cp.name} (id: "${cp.id}"): стан ${state}.`;
       }).join('\n');
-
-      let targetedContextText = "Немає прямого кліку";
-      if (targetedPointContext) {
-        targetedContextText = `КОРИСТУВАЧ ЗАРАЗ ДИВИТЬСЯ НА: ${targetedPointContext.type} "${targetedPointContext.name}" (ID: ${targetedPointContext.id}). Повідомлення: "${targetedPointContext.latest_msg || ''}", key: "${targetedPointContext.latest_fbKey || ''}"`;
-      }
 
       const systemInstructionText = `
 Ти — високоінтелектуальний військово-дорожній ШІ-штурман у місті Дніпро для водія.
 Ти ведеш ЖИВИЙ ДІАЛОГ з водієм і МАЄШ ПОВНИЙ КОНТРОЛЬ НАД КАРТОЮ.
 
-АКТИВНИЙ КОНТЕКСТ ВІД ВОДІЯ:
-${targetedContextText}
-
-ПОТОЧНИЙ СТАН КАРТИ:
+ПОТОЧНИЙ СТАН:
+- Зелені точки: ${filterShowGreen ? "Показуються" : "Приховані"}
+- Червоні точки: ${filterShowRed ? "Показуються" : "Приховані"}
+- Активні райони: ${activeSectors.join(', ')}
 - Світлофори: ${showTrafficLights ? "Увімкнено" : "Приховано"}
 - Неон ліній: ${showNeonLines ? "Увімкнено" : "Приховано"}
-- Рядок "Мій шлях": "${routeStatusText ? routeStatusText.innerText : ''}"
+- Рядок 'Мій шлях': "${routeStatusText ? routeStatusText.innerText : ''}"
 
 СТАН 8 СВІТЛОФОРІВ:
 ${tlStatusText}
 
-УСІ ТОЧКИ НА КАРТІ (${allPoints.length} шт.):
+ТОЧКИ НА КАРТІ (${allPoints.length} шт.):
 ${allLiveReportsText || "Повідомлень немає"}
 
 КОМАНДИ КЕРУВАННЯ (обов'язково додавай тег у самий кінець повідомлення):
-1. Зняти ручний режим зі світлофора / скинути в авто: <<<ACTION:{"cmd":"set_tl","id":"id_світлофора","val":"auto"}>>>
-   (Зверни увагу на помилки/сленг: "репорт" або "річпорт" це id "rechport")!
-2. Встановити ручний колір світлофора: <<<ACTION:{"cmd":"set_tl","id":"id","val":"green"|"red"|"off"}>>>
-3. Відкрити аналітику: <<<ACTION:{"cmd":"open_stats"}>>>
-4. Видалити повідомлення / точку з карти (якщо воно не звідси чи хибне):
-<<<ACTION:{"cmd":"delete_point","key":"fbKey","target":"текст"}>>>
-5. Виправити колір мітки: <<<ACTION:{"cmd":"fix_point","target":"текст","color":"green"|"red","keyword":"слово"}>>>
+1. Сховати/показати колір точок: <<<ACTION:{"cmd":"filter_color","color":"green"|"red"|"all","show":true|false}>>>
+2. Увімкнути/відключити район: <<<ACTION:{"cmd":"toggle_sector","sector":"left_bank"|"topol"|"center"|"west"|"route","enable":true|false}>>>
+3. Світлофор в авто: <<<ACTION:{"cmd":"set_tl","id":"id_світлофора","val":"auto"}>>>
+4. Світлофор ручний: <<<ACTION:{"cmd":"set_tl","id":"id","val":"green"|"red"|"off"}>>>
+5. Видалити повідомлення / точку: <<<ACTION:{"cmd":"delete_point","key":"fbKey","target":"текст"}>>>
 6. Підсвітити вулицю: <<<ACTION:{"cmd":"highlight_street","street":"Назва"}>>>
-7. Сховати/показати світлофори: <<<ACTION:{"cmd":"toggle_tl","val":"hide"|"show"}>>>
+7. Відкрити аналітику: <<<ACTION:{"cmd":"open_stats"}>>>
 `;
 
       geminiChatHistory.push({ role: "user", parts: [{ text: query }] });
@@ -1177,34 +1242,30 @@ ${allLiveReportsText || "Повідомлень немає"}
         if (actionMatch) {
           try {
             const act = JSON.parse(actionMatch[1]);
-            if (act.cmd === 'open_stats') {
+            if (act.cmd === 'filter_color') {
+              if (act.color === 'green') filterShowGreen = act.show;
+              else if (act.color === 'red') filterShowRed = act.show;
+              else if (act.color === 'all') { filterShowGreen = act.show; filterShowRed = act.show; }
+              renderMarkers();
+            } else if (act.cmd === 'toggle_sector') {
+              setSectorState(act.sector, act.enable);
+            } else if (act.cmd === 'open_stats') {
               window.open('stats.html', '_blank');
             } else if (act.cmd === 'set_tl' && act.id && act.val) {
               setTrafficLightManual(act.id, act.val);
-            } else if (act.cmd === 'delete_point') {
-              const targetKey = act.key || (targetedPointContext ? targetedPointContext.latest_fbKey : null);
-              const targetTxt = act.target || (targetedPointContext ? targetedPointContext.latest_msg : "");
-              
-              if (targetKey || targetTxt) {
-                let foundP = allPoints.find(p => (targetKey && p._fbKey === targetKey) || (targetTxt && ((p.text||"") + (p.raw_text||"")).includes(targetTxt)));
-                if (foundP) {
-                  if (foundP._fbKey) {
-                    fetch(FIREBASE_POINTS_URL.replace(".json", `/${foundP._fbKey}.json`), { method: "DELETE" }).catch(()=>{});
-                  }
-                  allPoints = allPoints.filter(p => p !== foundP);
-                  renderMarkers();
-                  renderTrafficLights();
-                  updateRouteStatus();
-                  showToast("🗑️ Повідомлення видалено з карти!");
-                }
-              }
-            } else if (act.cmd === 'fix_point') {
-              applyFixPointColor(act.target || "", act.color || "green", act.keyword || "");
             } else if (act.cmd === 'highlight_street' && act.street) {
               highlightStreetOnMap(act.street);
-            } else if (act.cmd === 'toggle_tl') {
-              if (act.val === 'hide' && showTrafficLights) toggleTrafficLights();
-              else if (act.val === 'show' && !showTrafficLights) toggleTrafficLights();
+            } else if (act.cmd === 'delete_point') {
+              const targetKey = act.key;
+              const targetTxt = act.target;
+              let foundP = allPoints.find(p => (targetKey && p._fbKey === targetKey) || (targetTxt && ((p.text||"") + (p.raw_text||"")).includes(targetTxt)));
+              if (foundP) {
+                if (foundP._fbKey) fetch(FIREBASE_POINTS_URL.replace(".json", `/${foundP._fbKey}.json`), { method: "DELETE" }).catch(()=>{});
+                allPoints = allPoints.filter(p => p !== foundP);
+                renderMarkers();
+                renderTrafficLights();
+                updateRouteStatus();
+              }
             }
           } catch(e) {}
         }
@@ -1528,7 +1589,10 @@ ${allLiveReportsText || "Повідомлень немає"}
 
         const matched = allPoints.filter(p => {
           const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
-          return cp.keys.some(k => text.includes(k));
+          return cp.keys.some(k => {
+            if (k === "стан") return /\bстан\b/i.test(text) && !/остановил/i.test(text);
+            return text.includes(k);
+          });
         });
         matched.sort((a, b) => (b.time || 0) - (a.time || 0));
         let latest = matched[0];
@@ -1659,7 +1723,7 @@ ${allLiveReportsText || "Повідомлень немає"}
               if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
-            el.addEventListener('touchend', (e) => {
+            el.addEventListener('touchend', () => {
               if (isLongPress) {
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
@@ -1910,7 +1974,7 @@ ${allLiveReportsText || "Повідомлень немає"}
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА ТОЧЕК
+    // ЗАГРУЗКА ТОЧЕК КАРТЫ С УЧЕТОМ ЦВЕТОВОГО ФИЛЬТРА (filterShowGreen / filterShowRed)
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -1941,8 +2005,13 @@ ${allLiveReportsText || "Повідомлень немає"}
         if (diff > LIFETIME_MS) return;
         if (!isPointInActiveSectors(p)) return;
 
-        const isFresh = diff <= FRESH_THRESHOLD_MS;
         const clean = isCleanPoint(p);
+
+        // ФИЗИЧЕСКИЙ ФИЛЬТР ЦВЕТОВ: ЕСЛИ СКРЫТЫ ЗЕЛЕНЫЕ ИЛИ КРАСНЫЕ — НЕ РИСУЕМ
+        if (clean && !filterShowGreen) return;
+        if (!clean && !filterShowRed) return;
+
+        const isFresh = diff <= FRESH_THRESHOLD_MS;
         const colorClass = clean ? "color-green" : "color-red";
         const freshClass = isFresh ? "fresh" : "";
         const emoji = clean ? "🟢" : "🔴";
@@ -2015,7 +2084,7 @@ ${allLiveReportsText || "Повідомлень немає"}
           if (!el) return;
 
           el.addEventListener('touchstart', (e) => {
-            startPress(e.touches[0].clientX, e.touches[0].clientY);
+            startGesture(e.touches[0].clientX, e.touches[0].clientY);
           }, { passive: true });
 
           el.addEventListener('touchmove', (e) => {
