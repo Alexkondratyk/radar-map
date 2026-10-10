@@ -37,7 +37,7 @@
       z-index: 1; background: #0b1120;
     }
 
-    /* 4 ПЛАВАЮЩИХ ПРЯМОУГОЛЬНИКА (38px ВЫСОТА, 12px СКРУГЛЕНИЕ) */
+    /* 4 ПЛАВАЮЧИХ ЕЛЕМЕНТИ (38px ВИСОТА, 12px РАДІУС) */
     .hud-pill {
       height: 38px;
       box-sizing: border-box;
@@ -58,7 +58,7 @@
       gap: 6px;
     }
 
-    /* 1. ШАПКА КАРТЫ (СЛЕВА ВВЕРХУ) */
+    /* 1. ШАПКА КАРТИ (ЗЛІВА ВГОРІ) */
     .dashboard {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
@@ -88,7 +88,7 @@
 
     .collapsible-body { margin-top: 6px; }
 
-    /* ШАПКА В СВЁРНУТОМ ВИДЕ (38px) */
+    /* ШАПКА В ЗГОРНУТОМУ СТАНІ (38px) */
     html.dash-collapsed .dashboard {
       width: auto !important;
       height: 38px !important;
@@ -108,7 +108,7 @@
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    /* 2. БЛОК GEMINI ШІ (СПРАВА ВВЕРХУ) */
+    /* 2. БЛОК GEMINI ШІ (СПРАВА ВГОРІ) */
     .ai-pill-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
@@ -128,7 +128,7 @@
     }
     .ai-pill-panel.compact .ai-pill-body { display: none; }
     .ai-pill-panel.expanded {
-      width: 280px !important;
+      width: 285px !important;
       height: auto !important;
       padding: 10px 12px !important;
       border-radius: 14px !important;
@@ -172,7 +172,7 @@
       display: none; background: #060913; border: 1px solid #334155;
     }
 
-    /* 3. СТРОКА СТАТУСА (СЛЕВА ВНИЗУ) */
+    /* 3. СТРОКА СТАТУСУ (ЗЛІВА ЗНИЗУ) */
     .route-status-bar {
       position: absolute; bottom: 25px; left: 15px; z-index: 1000;
       height: 38px; box-sizing: border-box;
@@ -189,7 +189,7 @@
       box-shadow: 0 0 18px rgba(255, 51, 75, 0.45) !important;
     }
 
-    /* 4. КНОПКА ОБНОВИТЬ (СПРАВА ВНИЗУ) */
+    /* 4. КНОПКА ОНОВИТИ (СПРАВА ЗНИЗУ) */
     .btn-refresh {
       position: absolute; bottom: 25px; right: 15px; z-index: 1000;
       height: 38px; box-sizing: border-box;
@@ -201,7 +201,7 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
-    /* ОБЩИЕ ЭЛЕМЕНТЫ */
+    /* СТИЛІ ІНТЕРФЕЙСУ */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -314,7 +314,7 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* СЕКРЕТНОЕ МЕНЮ */
+    /* СЕКРЕТНЕ МЕНЮ */
     .neon-panel {
       position: absolute; top: 60px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
@@ -357,7 +357,7 @@
 <body>
   <div id="map"></div>
 
-  <!-- 1. ШАПКА КАРТЫ (СЛЕВА ВВЕРХУ) -->
+  <!-- 1. ШАПКА КАРТИ (ЗЛІВА ВГОРІ) -->
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">
@@ -383,7 +383,7 @@
         <span>📊</span><span>Аналітика блокпостів</span>
       </a>
 
-      <!-- СВЕТОФОРЫ -->
+      <!-- СВІТЛОФОРИ -->
       <div class="tl-menu-container">
         <button class="btn-tl-main" onclick="toggleTlDropdown()">
           <span>🚦 Мої світлофори</span>
@@ -426,7 +426,7 @@
     </div>
   </div>
 
-  <!-- 2. БЛОК ШІ GEMINI (СПРАВА ВВЕРХУ) -->
+  <!-- 2. БЛОК ШІ GEMINI (СПРАВА ВГОРІ) -->
   <div id="aiPillPanel" class="ai-pill-panel compact">
     <div id="aiPillHeader" class="ai-pill-compact-content" onclick="toggleAiPillExpand()">
       <div class="ai-titleBadge" style="display:flex; align-items:center; gap:5px;">
@@ -455,20 +455,20 @@
     </div>
   </div>
 
-  <!-- 3. СТРОКА СТАТУСА (СЛЕВА ВНИЗУ) -->
+  <!-- 3. СТРОКА СТАТУСУ МАРШРУТУ (ЗЛІВА ЗНИЗУ) -->
   <div id="routeStatusBar" class="route-status-bar">
     <span id="routeStatusIcon">🟢</span>
     <span id="routeStatusText">Мій шлях: Чисто</span>
     <span class="status-drag-hint">✥</span>
   </div>
 
-  <!-- 4. КНОПКА ОБНОВИТЬ (СПРАВА ВНИЗУ) -->
+  <!-- 4. КНОПКА ОНОВИТИ (СПРАВА ЗНИЗУ) -->
   <div id="btnRefresh" class="btn-refresh">
     <span>🔄</span><span>Оновити</span>
     <span class="status-drag-hint">✥</span>
   </div>
 
-  <!-- СЕКРЕТНОЕ МЕНЮ -->
+  <!-- СЕКРЕТНЕ МЕНЮ -->
   <div id="neonPanel" class="neon-panel">
     <div id="neonHeader" class="neon-title">
       <span>⚙️ Секретне меню ✥</span>
@@ -633,7 +633,7 @@
     window.addEventListener('touchend', () => { if (dragController.isDragging) dragController.isDragging = false; });
     window.addEventListener('mouseup', () => { if (dragController.isDragging) dragController.isDragging = false; });
 
-    // СВЕТОФОРЫ
+    // СВІТЛОФОРИ
     let manualOverrides = {};
     try {
       manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}");
@@ -658,6 +658,7 @@
       }
     };
 
+    // ВИПРАВЛЕНО КЛЮЧІ: "СТАН 550" БІЛЬШЕ НЕ РЕАГУЄ НА "ОСТАНОВИЛИ"
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -666,7 +667,7 @@
       { id: "pavlova", name: "вул. Академіка Павлова", lat: 48.4818, lng: 35.0012, keys: ["павлов"] },
       { id: "rechport", name: "Річпорт (Набережна Заводська)", lat: 48.4805, lng: 35.0210, keys: ["речпорт", "річпорт"] },
       { id: "vodokachka", name: "Водокачка (Набережна Заводська)", lat: 48.4910, lng: 34.9480, keys: ["водокачк"] },
-      { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан"] }
+      { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан550"] }
     ];
 
     let activeSectors = ['s1'];
@@ -792,7 +793,7 @@
       });
     }
 
-    // СИНХРОНИЗАЦИЯ СТРОКИ СТАТУСА
+    // СИНХРОНІЗАЦІЯ СТАТУСУ МАРШРУТУ
     const routeStatusBar = document.getElementById("routeStatusBar");
     const routeStatusIcon = document.getElementById("routeStatusIcon");
     const routeStatusText = document.getElementById("routeStatusText");
@@ -859,7 +860,7 @@
     }
 
     // ==========================================================================
-    // ИНТЕГРАЦИЯ GOOGLE GEMINI API В БЛОК ИИ
+    // ІНТЕГРАЦІЯ GOOGLE GEMINI API (З ПЕРЕБОРОМ МОДЕЛЕЙ 2.0 / 2.5 / 1.5)
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -883,7 +884,7 @@
     function configureGeminiKey(e) {
       if (e) e.stopPropagation();
       const currentKey = localStorage.getItem("gemini_api_key") || "";
-      const newKey = prompt("Введіть ваш скопійований Google Gemini API Key:", currentKey);
+      const newKey = prompt("Введіть ваш Google Gemini API Key:", currentKey);
       if (newKey !== null) {
         localStorage.setItem("gemini_api_key", newKey.trim());
         showToast("🔑 Gemini API Key збережено!");
@@ -910,14 +911,13 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
-    // ГЛАВНЫЙ ВЫЗОВ НЕЙРОСЕТИ GOOGLE GEMINI
     async function submitAiInlineCorrection() {
       const query = aiInlineInput.value.trim();
       if (!query) return;
 
       let apiKey = localStorage.getItem("gemini_api_key");
       if (!apiKey) {
-        apiKey = prompt("Введіть ваш скопійований Google Gemini API Key для роботи ШІ:");
+        apiKey = prompt("Введіть ваш Google Gemini API Key для роботи ШІ:");
         if (!apiKey) return;
         apiKey = apiKey.trim();
         localStorage.setItem("gemini_api_key", apiKey);
@@ -928,8 +928,7 @@
 
       const systemPrompt = `
 Ти — високоточний аналітик дорожнього руху у місті Дніпро для водія.
-Твоє завдання — проаналізувати текст водія/очевидця і визначити:
-1. Про який з 8 контрольних пунктів йде мова (якщо зазначено):
+Твоє завдання — проаналізувати запит/повідомлення водія і визначити дію для світлофора на карті:
 Контрольні пункти:
 - "kaidak_rovd" (РОВД / Кайдацький з'їзд)
 - "vodolechebnitsa" (Водолікарня / пр. Свободи)
@@ -940,43 +939,71 @@
 - "vodokachka" (Водокачка / Набережна Заводська)
 - "stan_550" (Стан 550 / Набережна Заводська)
 
-2. Яка дія потрібна для світлофора:
-- "green": якщо там чисто, вільно, проїзд спокійний, знялися, нема нікого, або якщо користувач просить зняти червоний бо там чисто.
+Дії:
+- "green": якщо там чисто, вільно, проїзд спокійний, знялися, або користувач просить зняти червоний бо там чисто.
 - "red": якщо там блокпост, патруль, зупиняють, перевіряють, сині, хмари, дощ, небезпека.
-- "off": якщо просять погасити/вимкнути світлофор або повідомлення застаріло/помилкове.
-- "none": якщо повідомлення не стосується жодного з 8 світлофорів.
+- "off": якщо просять погасити світлофор або повідомлення хибне.
+- "none": якщо повідомлення загальне чи відповідь на питання.
 
-Відповідай СТРОГО у форматі валідного JSON без зайвих слів:
+Відповідай СТРОГО валідним JSON без markdown-лапок:
 {
   "checkpoint_id": "id або null",
   "action": "green" | "red" | "off" | "none",
-  "explanation": "Коротке пояснення українською (1 речення)"
+  "explanation": "Коротка зрозуміла відповідь українською мовою"
 }
 `;
 
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              { role: "user", parts: [{ text: systemPrompt + "\n\nПовідомлення користувача:\n" + query }] }
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: "application/json"
-            }
-          })
-        });
+      const candidateModels = [
+        'gemini-2.0-flash',
+        'gemini-2.5-flash',
+        'gemini-1.5-flash-latest',
+        'gemini-1.5-flash'
+      ];
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error?.message || `HTTP ${response.status}`);
+      let lastError = null;
+      let successData = null;
+
+      for (const model of candidateModels) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [
+                { role: "user", parts: [{ text: systemPrompt + "\n\nПовідомлення користувача:\n" + query }] }
+              ],
+              generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
+              }
+            })
+          });
+
+          if (response.ok) {
+            successData = await response.json();
+            break;
+          } else {
+            const errJson = await response.json().catch(() => ({}));
+            lastError = errJson.error?.message || `HTTP ${response.status}`;
+          }
+        } catch (e) {
+          lastError = e.message;
         }
+      }
 
-        const data = await response.json();
-        const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!successData) {
+        aiInlineResult.innerHTML = `
+          <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
+          <div style="color:#cbd5e1; font-size:10px;">${lastError}</div>
+          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для перевірки ключа</div>
+        `;
+        return;
+      }
+
+      try {
+        let rawReply = successData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        rawReply = rawReply.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(rawReply);
 
         let actionResultText = parsed.explanation || "Оброблено";
@@ -990,15 +1017,10 @@
           }
         }
 
-        // Запись в базу знаний Firebase
         try {
           await fetch(FIREBASE_AI_URL, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              text: query,
-              ai_decision: parsed,
-              time: Date.now()
-            })
+            body: JSON.stringify({ text: query, ai_decision: parsed, time: Date.now() })
           });
         } catch(e) {}
 
@@ -1006,18 +1028,13 @@
           <div style="color:#00f3ff; font-weight:800;">🤖 Gemini AI:</div>
           <div style="color:#e2e8f0;">${actionResultText}</div>
         `;
-        showToast("🤖 Рішення Gemini застосовано!");
-
+        showToast("🤖 Відповідь Gemini отримана!");
       } catch (err) {
-        aiInlineResult.innerHTML = `
-          <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
-          <div style="color:#cbd5e1; font-size:10px;">${err.message}</div>
-          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть тут для зміни ключа</div>
-        `;
+        aiInlineResult.innerHTML = `<div style="color:#ef4444;">Помилка розбору відповіді: ${err.message}</div>`;
       }
     }
 
-    // СЕКРЕТНОЕ МЕНЮ
+    // СЕКРЕТНЕ МЕНЮ
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -1202,7 +1219,7 @@
       });
     }
 
-    // СВЕТОФОРЫ
+    // СВІТЛОФОРИ
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -1451,7 +1468,7 @@
             });
 
             el.addEventListener('mousedown', (e) => {
-              if (e.button === 0) startPress(e.clientX, e.clientY);
+              startPress(e.clientX, e.clientY);
             });
 
             el.addEventListener('mousemove', (e) => {
@@ -1534,9 +1551,7 @@
       }
     }
 
-    // ==========================================================================
-    // ПЕРЕМЕЩЕНИЕ И СОХРАНЕНИЕ ПОЗИЦИЙ ДЛЯ ВСЕХ 4 ПРЯМОУГОЛЬНИКОВ
-    // ==========================================================================
+    // ПЕРЕМІЩЕННЯ 4 ПРЯМОКУТНИКІВ
     const dashPanel = document.getElementById("dashPanel");
     const aiPillPanelEl = document.getElementById("aiPillPanel");
     const routeStatusBarEl = document.getElementById("routeStatusBar");
@@ -1647,7 +1662,7 @@
     if (btnRefreshEl) makeElementDraggable(btnRefreshEl, btnRefreshEl, "refresh_pos", () => hardReload());
     makeElementDraggable(neonPanel, document.getElementById("neonHeader"), "neon_pos");
 
-    // ПОИСК УЛИЦ
+    // ПОШУК ВУЛИЦЬ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
     let searchDebounceTimer = null;
@@ -1698,7 +1713,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА ТОЧЕК КАРТЫ
+    // ЗАВАНТАЖЕННЯ ТОЧОК
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
