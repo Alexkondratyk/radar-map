@@ -14,7 +14,7 @@
       padding: 14px;
       min-height: 100vh;
     }
-    .container { max-width: 960px; margin: 0 auto; }
+    .container { max-width: 980px; margin: 0 auto; }
     
     .hud-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -30,12 +30,13 @@
       padding: 7px 14px; border-radius: 8px; text-decoration: none;
       font-size: 11px; font-weight: 700; box-shadow: 0 0 10px rgba(2, 132, 199, 0.3);
     }
+    .btn-back:hover { background: #0284c7; color: #fff; }
 
     /* ФИЛЬТР */
     .filter-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: #0b1120; border: 1px solid #1e293b; border-radius: 10px;
-      padding: 8px 12px; margin-bottom: 14px;
+      padding: 8px 12px; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
     }
     .filter-label { font-size: 11px; font-weight: 800; color: #94a3b8; }
     .filter-btn-toggle {
@@ -88,7 +89,19 @@
     }
     .hud-card-title {
       font-size: 14px; font-weight: 900; color: #38bdf8; margin-bottom: 14px;
-      display: flex; justify-content: space-between; align-items: center;
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
+    }
+
+    /* ПЕРЕКЛЮЧАТЕЛЬ ДНЯ ШКАЛЫ (СЬОГОДНІ / ВЧОРА) */
+    .timeline-day-switch {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .timeline-day-btn {
+      background: #1e293b; border: 1px solid #334155; color: #94a3b8;
+      padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer;
+    }
+    .timeline-day-btn.active {
+      background: #0284c7; border-color: #00f3ff; color: #fff;
     }
 
     /* БЛОКИ ХРОНОЛОГИИ (ТАБ 1) */
@@ -97,8 +110,7 @@
       padding: 12px; margin-bottom: 12px; border-left: 5px solid #00f3ff;
     }
     .timeline-node.status-active {
-      border-left-color: #ff334b;
-      box-shadow: 0 0 15px rgba(255, 51, 75, 0.2);
+      border-left-color: #ff334b; box-shadow: 0 0 15px rgba(255, 51, 75, 0.2);
     }
     .timeline-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
     .node-title { font-size: 13px; font-weight: 900; color: #f8fafc; }
@@ -108,36 +120,75 @@
 
     .day-strip-wrap { margin: 8px 0; }
     .day-strip-labels { display: flex; justify-content: space-between; font-size: 9px; color: #64748b; font-weight: 700; margin-bottom: 2px; }
-    .day-strip-bar { position: relative; width: 100%; height: 10px; background: #060913; border-radius: 5px; overflow: hidden; border: 1px solid #1e293b; }
-    .strip-segment { position: absolute; top: 0; height: 100%; border-radius: 2px; }
+    .day-strip-bar { position: relative; width: 100%; height: 12px; background: #060913; border-radius: 6px; overflow: hidden; border: 1px solid #1e293b; }
+    .strip-segment {
+      position: absolute; top: 0; height: 100%; border-radius: 2px; cursor: pointer;
+      box-shadow: 0 0 6px currentColor;
+    }
+    .strip-segment.night-carryover {
+      border-right: 2px dashed #fff;
+    }
 
     .session-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
     .session-pill {
       background: #060913; border: 1px solid #1e293b; border-radius: 6px;
-      padding: 5px 8px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;
+      padding: 6px 10px; font-size: 11px; display: flex; justify-content: space-between; align-items: center;
+      cursor: pointer; transition: background 0.2s, border-color 0.2s;
     }
+    .session-pill:hover { background: #1e293b; border-color: #38bdf8; }
     .session-time { font-weight: 800; color: #38bdf8; }
     .session-duration { color: #f59e0b; font-weight: 700; }
+    .night-tag {
+      background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid #a855f7;
+      padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: 800; margin-left: 6px;
+    }
 
-    /* СТОЛБИКИ ПО УЛИЦАМ (ТАБ 2) */
+    /* СТОЛБИКИ ПО ДНЯМ (ТАБ 2) */
     .street-time-cards {
       display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 14px;
     }
     .st-time-card {
       background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 12px;
-      display: flex; flex-direction: column; gap: 4px; border-left: 4px solid #00f3ff;
+      display: flex; flex-direction: column; gap: 6px; border-left: 4px solid #00f3ff;
     }
     .st-card-head { display: flex; justify-content: space-between; font-size: 12px; font-weight: 800; color: #f1f5f9; }
     .st-time-row { display: flex; flex-wrap: wrap; gap: 6px; font-size: 10px; margin-top: 2px; }
     .st-badge {
-      padding: 3px 6px; border-radius: 4px; font-weight: 700; background: #060913; border: 1px solid #334155;
+      padding: 4px 8px; border-radius: 5px; font-weight: 800; background: #060913; border: 1px solid #334155;
+      cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
     }
+    .st-badge:hover { transform: translateY(-2px); box-shadow: 0 0 10px currentColor; }
     .st-badge.today { border-color: #00f3ff; color: #00f3ff; }
     .st-badge.yesterday { border-color: #f59e0b; color: #f59e0b; }
     .st-badge.before { border-color: #a855f7; color: #a855f7; }
     .st-badge.week { border-color: #ec4899; color: #ec4899; }
 
     .chart-canvas-wrap { position: relative; width: 100%; height: 280px; }
+
+    /* МОДАЛЬНОЕ ОКНО */
+    .detail-modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(6, 9, 19, 0.85); backdrop-filter: blur(6px);
+      z-index: 3000; display: none; align-items: center; justify-content: center; padding: 14px;
+    }
+    .detail-modal-card {
+      background: #0f172a; border: 1px solid #00f3ff; border-radius: 14px;
+      padding: 18px; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+      box-shadow: 0 0 30px rgba(0, 243, 255, 0.35); position: relative;
+    }
+    .modal-close-btn {
+      position: absolute; top: 12px; right: 14px; font-size: 18px; color: #94a3b8;
+      cursor: pointer; font-weight: 800;
+    }
+    .modal-close-btn:hover { color: #fff; }
+    .modal-head-title { font-size: 15px; font-weight: 900; color: #00f3ff; margin-bottom: 4px; }
+    .modal-head-sub { font-size: 11px; color: #94a3b8; margin-bottom: 12px; }
+    .modal-reports-list { display: flex; flex-direction: column; gap: 8px; }
+    .modal-report-item {
+      background: #060913; border: 1px solid #1e293b; border-radius: 8px;
+      padding: 8px 10px; font-size: 11px; line-height: 1.45;
+    }
+    .modal-report-time { font-size: 10px; font-weight: 800; color: #f59e0b; margin-bottom: 3px; }
 
     @media (max-width: 650px) {
       .kpi-row { grid-template-columns: 1fr 1fr; }
@@ -160,11 +211,11 @@
       </button>
     </div>
 
-    <!-- KPI КАРТОЧКИ -->
+    <!-- KPI -->
     <div class="kpi-row">
       <div class="kpi-card">
         <div id="kpiActiveNow" class="kpi-val active-pulse">0</div>
-        <div class="kpi-lbl">Активні зараз на маршруті</div>
+        <div class="kpi-lbl">Активні зараз (не зняті)</div>
       </div>
       <div class="kpi-card">
         <div id="kpiRouteToday" class="kpi-val">0</div>
@@ -188,15 +239,20 @@
       <button id="tabBtn4" class="tab-btn" onclick="setTab(4)">🌐 Інше місто</button>
     </div>
 
-    <!-- ТАБ 1: ХРОНОМЕТРАЖ (С КОТОРОЙ ПО КОТОРУЮ) -->
+    <!-- ТАБ 1: ХРОНОМЕТРАЖ -->
     <div id="tabContent1" class="hud-card">
       <div class="hud-card-title">
         <span>⏱️ Інтервали дій блокпостів на ваших 7 точках:</span>
+        <div class="timeline-day-switch">
+          <span style="font-size:11px; color:#94a3b8; font-weight:700;">Шкала доби:</span>
+          <button id="btnDayToday" class="timeline-day-btn active" onclick="setTimelineDay(0)">Сьогодні</button>
+          <button id="btnDayYesterday" class="timeline-day-btn" onclick="setTimelineDay(1)">Вчора</button>
+        </div>
       </div>
       <div id="timelineList"></div>
     </div>
 
-    <!-- ТАБ 2: СТОЛБИКИ СРАВНЕНИЯ ПО ДНЯМ + ПРИБЛИЗИТЕЛЬНОЕ ВРЕМЯ -->
+    <!-- ТАБ 2: СТОЛБИКИ ПО ДНЯМ -->
     <div id="tabContent2" class="hud-card" style="display:none;">
       <div class="hud-card-title">
         <span>📊 Блокпости: Сьогодні / Вчора / Позавчора / 7 днів:</span>
@@ -204,33 +260,43 @@
       <div class="chart-canvas-wrap">
         <canvas id="canvasStreetDays"></canvas>
       </div>
+      <div style="font-size:11px; color:#38bdf8; margin: 8px 0; font-weight:700;">
+        💡 Натискайте на будь-який стовпчик або плашку нижче, щоб побачити точний час та повідомлення!
+      </div>
       <div class="street-time-cards" id="streetTimeCards"></div>
     </div>
 
-    <!-- ТАБ 3: ЧАСЫ И ДНИ НЕДЕЛИ (СТРОГО ПРИВЯЗАНО К 7 УЛИЦАМ) -->
+    <!-- ТАБ 3: ЧАСЫ И ДНИ С ОБЩЕЙ СУММАРНОЙ ЛИНИЕЙ -->
     <div id="tabContent3" class="hud-card" style="display:none;">
       <div class="hud-card-title">
-        <span>🕒 Активність по годинах (ТІЛЬКИ ВАШІ 7 ВУЛИЦЬ):</span>
+        <span>🕒 Активність по годинах (всі 7 вулиць разом + окремо):</span>
       </div>
-      <div class="chart-canvas-wrap" style="height:220px;">
+      <div class="chart-canvas-wrap" style="height:230px;">
         <canvas id="canvasRouteHourly"></canvas>
       </div>
 
       <div class="hud-card-title" style="margin-top:20px;">
-        <span>📅 По днях тижня (ТІЛЬКИ ВАШІ 7 ВУЛИЦЬ):</span>
+        <span>📅 По днях тижня (всі 7 вулиць разом + окремо):</span>
       </div>
-      <div class="chart-canvas-wrap" style="height:220px;">
+      <div class="chart-canvas-wrap" style="height:230px;">
         <canvas id="canvasRouteWeekly"></canvas>
-      </div>
-      <div style="font-size:10px; color:#94a3b8; margin-top:8px;">
-        💡 Кожен стовпчик розфарбовано кольорами ваших конкретних вулиць, де фіксувалися блокпости.
       </div>
     </div>
 
-    <!-- ТАБ 4: ОСТАЛЬНЫЕ РАЙОНЫ ДНЕПРА -->
+    <!-- ТАБ 4: ДРУГИЕ РАЙОНЫ -->
     <div id="tabContent4" class="hud-card" style="display:none;">
-      <div class="hud-card-title">🌐 Активність в інших районах Дніпра (фоново):</div>
+      <div class="hud-card-title">🌐 Активність в інших районах Дніпра:</div>
       <div id="otherSectorsList"></div>
+    </div>
+  </div>
+
+  <!-- МОДАЛЬНОЕ ОКНО ДЕТАЛЕЙ -->
+  <div id="detailModal" class="detail-modal-overlay" onclick="closeDetailModal(event)">
+    <div class="detail-modal-card" onclick="event.stopPropagation()">
+      <span class="modal-close-btn" onclick="closeDetailModal()">✕</span>
+      <div id="modalTitle" class="modal-head-title">Локація</div>
+      <div id="modalSub" class="modal-head-sub">Деталі фіксації</div>
+      <div id="modalReports" class="modal-reports-list"></div>
     </div>
   </div>
 
@@ -238,11 +304,12 @@
     const FIREBASE_ARCHIVE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/stats_archive.json";
     let rawArchive = [];
     let onlyConfirmedMode = true;
+    let timelineDayOffset = 0; // 0 = Сьогодні, 1 = Вчора
     let streetDaysChartInstance = null;
     let routeHourlyChartInstance = null;
     let routeWeeklyChartInstance = null;
+    let targetSessionsGlobal = {};
 
-    // 7 ВАШИХ КЛЮЧЕВЫХ УЗЛОВ СО СВОИМИ ЦВЕТАМИ
     const TARGET_CHECKPOINTS = [
       {
         id: "pavlova",
@@ -331,7 +398,13 @@
       renderAll();
     }
 
-    // ВЫЧИСЛЕНИЕ СЕССИЙ БЛОКПОСТОВ
+    function setTimelineDay(offset) {
+      timelineDayOffset = offset;
+      document.getElementById("btnDayToday").classList.toggle("active", offset === 0);
+      document.getElementById("btnDayYesterday").classList.toggle("active", offset === 1);
+      renderAll();
+    }
+
     function buildSessionsForTarget(target) {
       const reports = rawArchive.filter(r => {
         const txt = ((r.text || "") + " " + (r.address || "")).toLowerCase();
@@ -392,7 +465,6 @@
       const nowDate = new Date();
       const ACTIVE_THRESHOLD_MS = 40 * 60 * 1000;
 
-      // Границы дней
       const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
       const yesterdayStart = todayStart - 86400000;
       const beforeYesterdayStart = todayStart - 86400000 * 2;
@@ -402,14 +474,14 @@
       let totalRouteToday = 0;
       let totalRouteWeek = 0;
 
-      const targetSessionsMap = {};
+      targetSessionsGlobal = {};
 
       TARGET_CHECKPOINTS.forEach(target => {
         let sessions = buildSessionsForTarget(target);
         if (onlyConfirmedMode) {
           sessions = sessions.filter(s => s.count >= 2 || (s.endTime - s.startTime >= 20 * 60 * 1000));
         }
-        targetSessionsMap[target.id] = sessions;
+        targetSessionsGlobal[target.id] = sessions;
 
         totalRouteWeek += sessions.length;
         totalRouteToday += sessions.filter(s => s.startTime >= todayStart).length;
@@ -422,23 +494,19 @@
       document.getElementById("kpiRouteToday").innerText = totalRouteToday;
       document.getElementById("kpiRouteWeek").innerText = totalRouteWeek;
 
-      // ТАБ 1: ХРОНОМЕТРАЖ
-      renderTimeline(targetSessionsMap, now, ACTIVE_THRESHOLD_MS);
-
-      // ТАБ 2: СТОЛБИКИ ПО ДНЯМ + ПРИБЛИЗИТЕЛЬНОЕ ВРЕМЯ
-      renderStreetDaysChart(targetSessionsMap, todayStart, yesterdayStart, beforeYesterdayStart, weekStart);
-
-      // ТАБ 3: ЧАСЫ И ДНИ НЕДЕЛИ ТОЛЬКО ДЛЯ 7 ТОЧЕК
-      renderRouteTimeCharts(targetSessionsMap, todayStart);
-
-      // ТАБ 4: ДРУГИЕ РАЙОНЫ
+      renderTimeline(targetSessionsGlobal, now, todayStart, yesterdayStart, ACTIVE_THRESHOLD_MS);
+      renderStreetDaysChart(targetSessionsGlobal, todayStart, yesterdayStart, beforeYesterdayStart, weekStart);
+      renderRouteTimeCharts(targetSessionsGlobal, todayStart);
       renderOtherSectors();
     }
 
-    // ТАБ 1: ХРОНОМЕТРАЖ
-    function renderTimeline(targetSessionsMap, now, ACTIVE_THRESHOLD_MS) {
+    // ТАБ 1: ХРОНОМЕТРАЖ С ПРАВИЛЬНЫМ НОЧНЫМ ПЕРЕХОДОМ
+    function renderTimeline(targetSessionsMap, now, todayStart, yesterdayStart, ACTIVE_THRESHOLD_MS) {
       const timelineListEl = document.getElementById("timelineList");
       timelineListEl.innerHTML = "";
+
+      const viewDayStart = timelineDayOffset === 0 ? todayStart : yesterdayStart;
+      const viewDayEnd = viewDayStart + 86400000;
 
       TARGET_CHECKPOINTS.forEach(target => {
         const sessions = targetSessionsMap[target.id] || [];
@@ -453,20 +521,36 @@
             const endD = new Date(s.endTime);
             const isCurrentlyAlive = (!s.closedByClean && (now - s.endTime <= ACTIVE_THRESHOLD_MS));
 
-            const startStr = startD.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-            const dateStr = startD.toLocaleDateString([], { day:'2-digit', month:'2-digit' });
+            const isStartedYesterday = s.startTime >= yesterdayStart && s.startTime < todayStart;
+            const isEndedToday = s.endTime >= todayStart;
+            const isNightCarryover = isStartedYesterday && isEndedToday;
 
+            const startStr = startD.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
             let endStr = endD.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+
             let durMin = Math.max(15, Math.round((s.endTime - s.startTime) / 60000));
             let durStr = durMin >= 60 ? `${Math.floor(durMin/60)}г ${durMin%60}хв` : `${durMin} хв`;
 
             if (isCurrentlyAlive) { endStr = "ЗАРАЗ 🔴"; durStr = "триває..."; }
 
+            let formattedLabel = "";
+            let carryoverBadge = "";
+
+            if (isNightCarryover) {
+              formattedLabel = `з ${startStr} (вчора) по ${endStr} (сьогодні)`;
+              carryoverBadge = `<span class="night-tag">🌙 Перейшов з ночі</span>`;
+            } else if (s.startTime >= todayStart) {
+              formattedLabel = `з ${startStr} по ${endStr} (сьогодні)`;
+            } else {
+              const dt = startD.toLocaleDateString([], { day:'2-digit', month:'2-digit' });
+              formattedLabel = `${dt} з ${startStr} по ${endStr}`;
+            }
+
             sessionsHtml += `
-              <div class="session-pill">
-                <div>
-                  <span style="color:#64748b; margin-right:6px;">${dateStr}</span>
-                  <span class="session-time">${startStr} ➔ ${endStr}</span>
+              <div class="session-pill" onclick="showSessionModal('${target.id}', ${s.startTime})">
+                <div style="display:flex; align-items:center;">
+                  <span class="session-time">${formattedLabel}</span>
+                  ${carryoverBadge}
                 </div>
                 <div style="display:flex; gap:10px; align-items:center;">
                   <span class="session-duration">⏳ ${durStr}</span>
@@ -477,17 +561,31 @@
           });
         }
 
+        // Отрисовка суточной полосы с обрезкой по дням
         let segmentsHtml = "";
         sessions.forEach(s => {
-          const sDate = new Date(s.startTime);
-          const startPercent = ((sDate.getHours() * 60 + sDate.getMinutes()) / 1440) * 100;
-          const eDate = new Date(s.endTime);
-          const endPercent = Math.max(startPercent + 1.8, ((eDate.getHours() * 60 + eDate.getMinutes()) / 1440) * 100);
-          const widthPercent = Math.max(1.8, endPercent - startPercent);
+          const effectiveEnd = (!s.closedByClean && (now - s.endTime <= ACTIVE_THRESHOLD_MS)) ? now : s.endTime;
 
-          segmentsHtml += `
-            <div class="strip-segment" style="left:${startPercent}%; width:${widthPercent}%; background:${target.color};" title="${sDate.toLocaleTimeString()}"></div>
-          `;
+          // Проверяем пересечение с выбранным днём (viewDayStart – viewDayEnd)
+          if (s.startTime < viewDayEnd && effectiveEnd > viewDayStart) {
+            const segStart = Math.max(s.startTime, viewDayStart);
+            const segEnd = Math.min(effectiveEnd, viewDayEnd);
+
+            const startMinutes = (segStart - viewDayStart) / 60000;
+            const endMinutes = (segEnd - viewDayStart) / 60000;
+
+            const leftPercent = (startMinutes / 1440) * 100;
+            const widthPercent = Math.max(2.0, ((endMinutes - startMinutes) / 1440) * 100);
+
+            const isCarryoverStart = (s.startTime < viewDayStart);
+
+            segmentsHtml += `
+              <div class="strip-segment ${isCarryoverStart ? 'night-carryover' : ''}" 
+                   style="left:${leftPercent}%; width:${widthPercent}%; background:${target.color}; color:${target.color};" 
+                   onclick="showSessionModal('${target.id}', ${s.startTime})" 
+                   title="${isCarryoverStart ? 'Перейшов з ночі' : 'Активність'}"></div>
+            `;
+          }
         });
 
         timelineListEl.innerHTML += `
@@ -510,7 +608,7 @@
       });
     }
 
-    // ТАБ 2: СТОЛБИКИ ЗА СЕГОДНЯ, ВЧЕРА, ПОЗАВЧЕРА И ЗА 7 ДНЕЙ
+    // ТАБ 2: СТОЛБИКИ ПО ДНЯМ С КЛИКАБЕЛЬНОСТЬЮ
     function renderStreetDaysChart(targetSessionsMap, todayStart, yesterdayStart, beforeYesterdayStart, weekStart) {
       const countsToday = [];
       const countsYesterday = [];
@@ -522,8 +620,7 @@
 
       TARGET_CHECKPOINTS.forEach(t => {
         const sessions = targetSessionsMap[t.id] || [];
-        
-        const sToday = sessions.filter(s => s.startTime >= todayStart);
+        const sToday = sessions.filter(s => s.startTime >= todayStart || (s.endTime >= todayStart && s.startTime >= yesterdayStart));
         const sYesterday = sessions.filter(s => s.startTime >= yesterdayStart && s.startTime < todayStart);
         const sBefore = sessions.filter(s => s.startTime >= beforeYesterdayStart && s.startTime < yesterdayStart);
         const sWeek = sessions;
@@ -533,7 +630,6 @@
         countsBefore.push(sBefore.length);
         countsWeek.push(sWeek.length);
 
-        // Формируем бейджи примерного времени
         function formatTimes(sessList) {
           if (sessList.length === 0) return "немає";
           return sessList.map(s => {
@@ -547,13 +643,13 @@
           <div class="st-time-card" style="border-left-color: ${t.color};">
             <div class="st-card-head">
               <span style="color:${t.color};">${t.fullName}</span>
-              <span style="color:#94a3b8;">Всього: ${sWeek.length}</span>
+              <span style="color:#94a3b8;">Всього за 7 днів: ${sWeek.length}</span>
             </div>
             <div class="st-time-row">
-              <span class="st-badge today">Сьогодні: ${formatTimes(sToday)}</span>
-              <span class="st-badge yesterday">Вчора: ${formatTimes(sYesterday)}</span>
-              <span class="st-badge before">Позавчора: ${formatTimes(sBefore)}</span>
-              <span class="st-badge week">7 днів: ${sWeek.length} блокпостів</span>
+              <span class="st-badge today" onclick="openPeriodDetailModal('${t.id}', 'today')">Сьогодні: ${formatTimes(sToday)}</span>
+              <span class="st-badge yesterday" onclick="openPeriodDetailModal('${t.id}', 'yesterday')">Вчора: ${formatTimes(sYesterday)}</span>
+              <span class="st-badge before" onclick="openPeriodDetailModal('${t.id}', 'before')">Позавчора: ${formatTimes(sBefore)}</span>
+              <span class="st-badge week" onclick="openPeriodDetailModal('${t.id}', 'week')">7 днів: ${sWeek.length} блокпостів</span>
             </div>
           </div>
         `;
@@ -567,37 +663,28 @@
         data: {
           labels: TARGET_CHECKPOINTS.map(t => t.name),
           datasets: [
-            {
-              label: 'Сьогодні',
-              data: countsToday,
-              backgroundColor: '#00f3ff',
-              borderRadius: 4
-            },
-            {
-              label: 'Вчора',
-              data: countsYesterday,
-              backgroundColor: '#f59e0b',
-              borderRadius: 4
-            },
-            {
-              label: 'Позавчора',
-              data: countsBefore,
-              backgroundColor: '#a855f7',
-              borderRadius: 4
-            },
-            {
-              label: 'За 7 днів (всього)',
-              data: countsWeek,
-              backgroundColor: '#ec4899',
-              borderRadius: 4
-            }
+            { label: 'Сьогодні', data: countsToday, backgroundColor: '#00f3ff', borderRadius: 4 },
+            { label: 'Вчора', data: countsYesterday, backgroundColor: '#f59e0b', borderRadius: 4 },
+            { label: 'Позавчора', data: countsBefore, backgroundColor: '#a855f7', borderRadius: 4 },
+            { label: 'За 7 днів (всього)', data: countsWeek, backgroundColor: '#ec4899', borderRadius: 4 }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onClick: (e, elements) => {
+            if (elements && elements.length > 0) {
+              const el = elements[0];
+              const streetIndex = el.index;
+              const datasetIndex = el.datasetIndex;
+              const periodKeys = ['today', 'yesterday', 'before', 'week'];
+              const target = TARGET_CHECKPOINTS[streetIndex];
+              openPeriodDetailModal(target.id, periodKeys[datasetIndex]);
+            }
+          },
           plugins: {
-            legend: { labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } } }
+            legend: { labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } } },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для відкриття звітів' } }
           },
           scales: {
             x: { grid: { color: '#1e293b' }, ticks: { color: '#f1f5f9', font: { size: 10, weight: 'bold' } } },
@@ -607,19 +694,22 @@
       });
     }
 
-    // ТАБ 3: ЧАСЫ И ДНИ СТРОГО ДЛЯ 7 УЛИЦ МАРШРУТА (СТЕКОВЫЕ ГРАФИКИ)
+    // ТАБ 3: ЧАСЫ И ДНИ С ЛИНИЕЙ «ВСЕ 7 УЛИЦ ВМЕСТЕ»
     function renderRouteTimeCharts(targetSessionsMap, todayStart) {
-      // 1. По часам: разбивка каждого часа по 7 улицам
       const hourLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
 
+      // 1. По часам
+      const totalByHour = new Array(24).fill(0);
       const datasetsHourly = TARGET_CHECKPOINTS.map(t => {
         const sessions = targetSessionsMap[t.id] || [];
         const hourData = new Array(24).fill(0);
         sessions.forEach(s => {
           const h = new Date(s.startTime).getHours();
           hourData[h]++;
+          totalByHour[h]++;
         });
         return {
+          type: 'bar',
           label: t.name,
           data: hourData,
           backgroundColor: t.color,
@@ -627,9 +717,18 @@
         };
       });
 
-      // Пиковый час маршрута
-      const totalByHour = new Array(24).fill(0);
-      datasetsHourly.forEach(ds => ds.data.forEach((val, h) => totalByHour[h] += val));
+      datasetsHourly.unshift({
+        type: 'line',
+        label: '📈 Всі 7 вулиць разом (Сумарно)',
+        data: totalByHour,
+        borderColor: '#ffffff',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#00f3ff',
+        pointRadius: 4,
+        tension: 0.3,
+        fill: false
+      });
+
       let peakH = 0, peakVal = 0;
       totalByHour.forEach((cnt, h) => { if (cnt > peakVal) { peakVal = cnt; peakH = h; } });
       document.getElementById("kpiPeakHour").innerText = peakVal > 0 ? `${peakH}:00` : "--:00";
@@ -639,15 +738,16 @@
 
       routeHourlyChartInstance = new Chart(ctxH, {
         type: 'bar',
-        data: {
-          labels: hourLabels,
-          datasets: datasetsHourly
-        },
+        data: { labels: hourLabels, datasets: datasetsHourly },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onClick: (e, elements) => {
+            if (elements && elements.length > 0) openHourlyDetailModal(elements[0].index);
+          },
           plugins: {
-            legend: { labels: { color: '#cbd5e1', font: { size: 10 } } }
+            legend: { labels: { color: '#cbd5e1', font: { size: 10 } } },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду години' } }
           },
           scales: {
             x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
@@ -656,7 +756,7 @@
         }
       });
 
-      // 2. По дням недели: разбивка каждого дня по 7 улицам
+      // 2. По дням недели
       const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
       const days = [];
       const nowDate = new Date();
@@ -670,12 +770,16 @@
         });
       }
 
+      const totalByDay = new Array(7).fill(0);
       const datasetsWeekly = TARGET_CHECKPOINTS.map(t => {
         const sessions = targetSessionsMap[t.id] || [];
-        const dayData = days.map(d => {
-          return sessions.filter(s => s.startTime >= d.startTime && s.startTime < d.endTime).length;
+        const dayData = days.map((d, dIdx) => {
+          const c = sessions.filter(s => s.startTime >= d.startTime && s.startTime < d.endTime).length;
+          totalByDay[dIdx] += c;
+          return c;
         });
         return {
+          type: 'bar',
           label: t.name,
           data: dayData,
           backgroundColor: t.color,
@@ -683,20 +787,33 @@
         };
       });
 
+      datasetsWeekly.unshift({
+        type: 'line',
+        label: '📈 Всі 7 вулиць разом (Сумарно)',
+        data: totalByDay,
+        borderColor: '#ffffff',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#ec4899',
+        pointRadius: 5,
+        tension: 0.3,
+        fill: false
+      });
+
       const ctxW = document.getElementById('canvasRouteWeekly').getContext('2d');
       if (routeWeeklyChartInstance) routeWeeklyChartInstance.destroy();
 
       routeWeeklyChartInstance = new Chart(ctxW, {
         type: 'bar',
-        data: {
-          labels: days.map(d => `${d.name} (${d.date})`),
-          datasets: datasetsWeekly
-        },
+        data: { labels: days.map(d => `${d.name} (${d.date})`), datasets: datasetsWeekly },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          onClick: (e, elements) => {
+            if (elements && elements.length > 0) openDayDetailModal(days[elements[0].index]);
+          },
           plugins: {
-            legend: { labels: { color: '#cbd5e1', font: { size: 10 } } }
+            legend: { labels: { color: '#cbd5e1', font: { size: 10 } } },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду дня' } }
           },
           scales: {
             x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#f1f5f9', font: { size: 10, weight: 'bold' } } },
@@ -731,6 +848,149 @@
           </div>
         `;
       });
+    }
+
+    // МОДАЛЬНЫЕ ОКНА ДЕТАЛИЗАЦИИ
+    function openPeriodDetailModal(targetId, period) {
+      const target = TARGET_CHECKPOINTS.find(t => t.id === targetId);
+      if (!target) return;
+
+      const sessions = targetSessionsGlobal[targetId] || [];
+      const nowDate = new Date();
+      const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
+      const yesterdayStart = todayStart - 86400000;
+      const beforeYesterdayStart = todayStart - 86400000 * 2;
+
+      let filtered = [];
+      let periodName = "";
+
+      if (period === 'today') {
+        filtered = sessions.filter(s => s.startTime >= todayStart || (s.endTime >= todayStart && s.startTime >= yesterdayStart));
+        periodName = "Сьогодні";
+      } else if (period === 'yesterday') {
+        filtered = sessions.filter(s => s.startTime >= yesterdayStart && s.startTime < todayStart);
+        periodName = "Вчора";
+      } else if (period === 'before') {
+        filtered = sessions.filter(s => s.startTime >= beforeYesterdayStart && s.startTime < yesterdayStart);
+        periodName = "Позавчора";
+      } else {
+        filtered = sessions;
+        periodName = "За 7 днів (всі фіксації)";
+      }
+
+      document.getElementById("modalTitle").innerText = `${target.fullName} — ${periodName}`;
+      document.getElementById("modalSub").innerText = `Зафіксовано блокпостів: ${filtered.length}`;
+
+      const reportsBox = document.getElementById("modalReports");
+      reportsBox.innerHTML = "";
+
+      if (filtered.length === 0) {
+        reportsBox.innerHTML = `<div style="color:#94a3b8; font-size:12px;">За цей період на даній локації блокпостів не зафіксовано.</div>`;
+      } else {
+        filtered.forEach(s => {
+          const st = new Date(s.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+          const et = new Date(s.endTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+          const dt = new Date(s.startTime).toLocaleDateString([], { day:'2-digit', month:'2-digit' });
+          const quoteTexts = s.reports.map(r => `• «${r.text}»`).join("<br>");
+
+          reportsBox.innerHTML += `
+            <div class="modal-report-item">
+              <div class="modal-report-time">🕒 ${dt} (${st} ➔ ${et}) | Підтверджено: ${s.count} людей</div>
+              <div style="color:#e2e8f0; margin-top:4px;">${quoteTexts}</div>
+            </div>
+          `;
+        });
+      }
+      document.getElementById("detailModal").style.display = "flex";
+    }
+
+    function showSessionModal(targetId, sessionStartTime) {
+      const target = TARGET_CHECKPOINTS.find(t => t.id === targetId);
+      const sessions = targetSessionsGlobal[targetId] || [];
+      const session = sessions.find(s => s.startTime === sessionStartTime);
+      if (!target || !session) return;
+
+      const st = new Date(session.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const et = new Date(session.endTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+      const dt = new Date(session.startTime).toLocaleDateString([], { day:'2-digit', month:'2-digit' });
+
+      document.getElementById("modalTitle").innerText = target.fullName;
+      document.getElementById("modalSub").innerText = `Блокпост: ${dt} з ${st} по ${et} (Свідків: ${session.count})`;
+
+      const reportsBox = document.getElementById("modalReports");
+      reportsBox.innerHTML = "";
+      session.reports.forEach(r => {
+        reportsBox.innerHTML += `
+          <div class="modal-report-item">
+            <div class="modal-report-time">🕒 ${new Date(r.time).toLocaleTimeString()}</div>
+            <div>«${r.text}»</div>
+          </div>
+        `;
+      });
+      document.getElementById("detailModal").style.display = "flex";
+    }
+
+    function openHourlyDetailModal(hour) {
+      document.getElementById("modalTitle").innerText = `Година: ${hour}:00 – ${hour}:59`;
+      document.getElementById("modalSub").innerText = `Активність по ваших 7 вулицях`;
+
+      const reportsBox = document.getElementById("modalReports");
+      reportsBox.innerHTML = "";
+      let foundAny = false;
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const sessions = targetSessionsGlobal[t.id] || [];
+        const inHour = sessions.filter(s => new Date(s.startTime).getHours() === hour);
+        if (inHour.length > 0) {
+          foundAny = true;
+          inHour.forEach(s => {
+            const dt = new Date(s.startTime).toLocaleDateString([], { day:'2-digit', month:'2-digit' });
+            reportsBox.innerHTML += `
+              <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
+                <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt})</div>
+                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
+              </div>
+            `;
+          });
+        }
+      });
+
+      if (!foundAny) reportsBox.innerHTML = `<div style="color:#94a3b8; font-size:12px;">У цей час блокпостів на маршруті не зафіксовано.</div>`;
+      document.getElementById("detailModal").style.display = "flex";
+    }
+
+    function openDayDetailModal(dayObj) {
+      document.getElementById("modalTitle").innerText = `День: ${dayObj.name} (${dayObj.date})`;
+      document.getElementById("modalSub").innerText = `Фіксації блокпостів по вашому маршруту`;
+
+      const reportsBox = document.getElementById("modalReports");
+      reportsBox.innerHTML = "";
+      let foundAny = false;
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const sessions = targetSessionsGlobal[t.id] || [];
+        const inDay = sessions.filter(s => s.startTime >= dayObj.startTime && s.startTime < dayObj.endTime);
+        if (inDay.length > 0) {
+          foundAny = true;
+          inDay.forEach(s => {
+            const st = new Date(s.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            const et = new Date(s.endTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            reportsBox.innerHTML += `
+              <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
+                <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${st}–${et})</div>
+                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
+              </div>
+            `;
+          });
+        }
+      });
+
+      if (!foundAny) reportsBox.innerHTML = `<div style="color:#94a3b8; font-size:12px;">У цей день блокпостів на маршруті не було.</div>`;
+      document.getElementById("detailModal").style.display = "flex";
+    }
+
+    function closeDetailModal(e) {
+      document.getElementById("detailModal").style.display = "none";
     }
 
     loadStats();
