@@ -21,44 +21,32 @@ def log(msg):
     print(msg, flush=True)
 
 def find_working_model():
-    """Динамический опрос Google API для автоматического выбора рабочей модели"""
     list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_KEY}"
     try:
         r = requests.get(list_url, timeout=10)
         if r.status_code == 200:
             models_list = r.json().get("models", [])
             valid_candidates = []
-            
             for m in models_list:
                 methods = m.get("supportedGenerationMethods", [])
-                name = m.get("name", "")  # формат: models/gemini-...
+                name = m.get("name", "")
                 if "generateContent" in methods and name:
                     valid_candidates.append(name)
 
-            log(f"📋 Отримано від Google доступних моделей: {len(valid_candidates)}")
-            
-            # Сортируем: сначала flash-модели
             flash_first = sorted(valid_candidates, key=lambda x: 0 if "flash" in x.lower() else 1)
-
             for cand in flash_first:
                 test_url = f"https://generativelanguage.googleapis.com/v1beta/{cand}:generateContent?key={GEMINI_KEY}"
                 try:
                     test_r = requests.post(test_url, json={"contents": [{"parts": [{"text": "ping"}]}]}, timeout=6)
                     if test_r.status_code == 200:
-                        log(f"🎯 Модель успішно протестована і обрана: {cand}")
+                        log(f"🎯 Обрано модель: {cand}")
                         return cand
-                    else:
-                        log(f"  [Тест {cand}]: HTTP {test_r.status_code}")
                 except Exception:
                     continue
-        else:
-            log(f"⚠️ Не вдалося отримати список моделей (HTTP {r.status_code}): {r.text[:120]}")
     except Exception as e:
-        log(f"⚠️ Помилка автовизначення моделей: {e}")
+        log(f"⚠️ Помилка автовизначення: {e}")
 
-    fallback = "models/gemini-1.5-flash-latest"
-    log(f"⚠️ Використовуємо резервну назву: {fallback}")
-    return fallback
+    return "models/gemini-1.5-flash-latest"
 
 WORKING_MODEL = find_working_model()
 
@@ -67,10 +55,8 @@ def get_knowledge_base():
         r = requests.get(f"{KNOWLEDGE_BASE_URL}?t={int(time.time())}", timeout=8)
         if r.status_code == 200 and r.json():
             data = r.json()
-            if isinstance(data, dict):
-                return list(data.values())
-            elif isinstance(data, list):
-                return [x for x in data if x]
+            if isinstance(data, dict): return list(data.values())
+            elif isinstance(data, list): return [x for x in data if x]
     except Exception as e:
         log(f"Помилка завантаження бази знань: {e}")
     return []
@@ -121,18 +107,15 @@ def fetch_tg_posts():
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     try:
         r = requests.get(CHANNEL_URL, headers=headers, timeout=10)
-        if r.status_code != 200:
-            log(f"Помилка завантаження Telegram: HTTP {r.status_code}")
-            return []
+        if r.status_code != 200: return []
         raw_posts = re.findall(r'<div class="tgme_widget_message_text[^>]*>(.*?)</div>', r.text, re.DOTALL)
         clean = []
         for p in raw_posts:
             t = re.sub(r'<[^>]+>', '', p).strip()
-            if t:
-                clean.append(t)
+            if t: clean.append(t)
         return clean[-35:]
     except Exception as e:
-        log(f"Помилка парсингу каналу: {e}")
+        log(f"Помилка парсингу: {e}")
         return []
 
 def normalize_stem(word):
@@ -145,19 +128,40 @@ def match_with_knowledge_base(post, kb_list):
     post_norm = " ".join([normalize_stem(w) for w in post.split()])
     for item in kb_list:
         phrase = (item.get("phrase") or "").strip()
-        if not phrase or len(phrase) < 3:
-            continue
+        if not phrase or len(phrase) < 3: continue
         phrase_stems = [normalize_stem(w) for w in phrase.split() if len(w) > 2]
-        if not phrase_stems:
-            continue
+        if not phrase_stems: continue
         if all(stem in post_norm for stem in phrase_stems):
             return item
     return None
 
+# ФИЛЬТР ВОПРОСОВ И ПУСТЫХ СЛУХОВ
+def is_question_or_pure_rumor(text):
+    t = text.lower()
+    if "?" in t:
+        return True
+    rumor_patterns = [
+        r'\bпідкажіть\b', r'\bподскажите\b', r'\bчи\s+є\b', r'\bчи\s+стоят\b',
+        r'\bчи\s+правда\b', r'\bхтось\s+знає\b', r'\bкто\s+знает\b',
+        r'\bяк\s+обстановка\b', r'\bкак\s+обстановка\b', r'\bщо\s+чути\b',
+        r'\bчто\s+слышно\b', r'\bможливо\s+готов\b', r'\bвозможно\s+готов\b',
+        r'\bначебто\s+готов\b', r'\bвроде\s+готов\b'
+    ]
+    return any(re.search(p, t) for p in rumor_patterns)
+
+def is_danger_text(text):
+    t = text.lower()
+    danger_patterns = [
+        r'\bбп\b', r'б\.п', r'б/п', r'блокпост', r'блок\s*пост', r'мобпост',
+        r'фишк', r'шлагбаум', r'бус', r'патрул', r'дожд', r'туч', r'хмар',
+        r'злив', r'оливк', r'баклажан', r'синие', r'зелен', r'пиш[уе]', r'разда',
+        r'обилеч', r'тормоз', r'останавл', r'провер', r'паку'
+    ]
+    return any(re.search(p, t) for p in danger_patterns)
+
 def parse_batch_gemini(posts_list, kb_examples):
     global WORKING_MODEL
-    if not posts_list:
-        return []
+    if not posts_list: return []
 
     cleaned_posts = [p.replace('"', "'").replace('\\', '/').replace('\n', ' ').strip() for p in posts_list]
     items = "\n".join([f"[{i}] {p}" for i, p in enumerate(cleaned_posts)])
@@ -205,35 +209,26 @@ def parse_batch_gemini(posts_list, kb_examples):
                     if isinstance(v, list): return v
                 return [parsed]
         else:
-            log(f"⚠️ Помилка Gemini API: HTTP {resp.status_code} | {resp.text[:140]}")
+            log(f"⚠️ Помилка Gemini API: HTTP {resp.status_code}")
             if resp.status_code in [404, 429]:
                 WORKING_MODEL = find_working_model()
     except Exception as e:
         log(f"Помилка запиту Gemini: {e}")
     return []
 
-def is_danger_text(text):
-    t = text.lower()
-    danger_patterns = [
-        r'\bбп\b', r'б\.п', r'б/п', r'блокпост', r'блок\s*пост', r'мобпост',
-        r'фишк', r'шлагбаум', r'бус', r'патрул', r'дожд', r'туч', r'хмар',
-        r'злив', r'оливк', r'баклажан', r'синие', r'зелен', r'пиш[уе]', r'разда',
-        r'обилеч', r'тормоз', r'останавл', r'провер', r'паку', r'готовят'
-    ]
-    return any(re.search(p, t) for p in danger_patterns)
-
-def log_to_stats_archive(now_ms, post, address, lat, lng):
+def log_to_stats_archive(now_ms, post, address, lat, lng, is_clean):
     try:
         archive_entry = {
             "time": now_ms,
-            "text": post[:100],
+            "text": post[:120],
             "address": address,
             "lat": lat,
-            "lng": lng
+            "lng": lng,
+            "is_clean": is_clean
         }
         requests.post(STATS_ARCHIVE_URL, json=archive_entry, timeout=5)
     except Exception as e:
-        log(f"Помилка запису в архів статистики: {e}")
+        log(f"Помилка запису в архів: {e}")
 
 def sync_cycle():
     cleanup_old_points()
@@ -244,13 +239,18 @@ def sync_cycle():
     new_posts = [p for p in posts if p not in existing_records]
     log(f"📡 В каналі: {len(posts)} | Нових: {len(new_posts)} | В базі знань: {len(kb_list)}")
 
-    if not new_posts:
-        return
+    if not new_posts: return
 
     posts_needing_ai = []
     ai_index_map = {}
 
     for idx, post in enumerate(new_posts):
+        # ОТСЕИВАЕМ ВОПРОСЫ И СЛУХИ
+        if is_question_or_pure_rumor(post):
+            log(f"  🔇 Пропущено питання/чутку: «{post[:45]}»")
+            existing_records.add(post)
+            continue
+
         matched_kb = match_with_knowledge_base(post, kb_list)
         now_ms = int(time.time() * 1000)
 
@@ -278,10 +278,9 @@ def sync_cycle():
             try:
                 requests.post(FIREBASE_URL, json=payload, timeout=8)
                 existing_records.add(post)
-                if marker_color == "red":
-                    log_to_stats_archive(now_ms, post, matched_kb.get("address", "Дніпро"), float(matched_kb["lat"]), float(matched_kb["lng"]))
+                log_to_stats_archive(now_ms, post, matched_kb.get("address", "Дніпро"), float(matched_kb["lat"]), float(matched_kb["lng"]), is_clean)
             except Exception as e:
-                log(f"Помилка збереження з бази знань: {e}")
+                log(f"Помилка збереження: {e}")
         else:
             ai_index_map[len(posts_needing_ai)] = post
             posts_needing_ai.append(post)
@@ -329,8 +328,7 @@ def sync_cycle():
                             log(f"  ✅ + {addr_val} ({marker_color})")
                             existing_records.add(post)
                             added_count += 1
-                            if marker_color == "red":
-                                log_to_stats_archive(now_ms, post, addr_val, lat_val, lng_val)
+                            log_to_stats_archive(now_ms, post, addr_val, lat_val, lng_val, is_clean)
                     except Exception as e:
                         log(f"Помилка збереження: {e}")
 
