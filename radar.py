@@ -2,25 +2,33 @@ import os
 import re
 import json
 import time
+from datetime import datetime
 import requests
 
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
-LIFETIME_MS = 40 * 60 * 1000  # 40 минут для живой карты
-ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 ДНЕЙ (БОЛЕЕ 1 ГОДА ДЛЯ ГОДОВОЙ СТАТИСТИКИ!)
+LIFETIME_MS = 40 * 60 * 1000  # 40 минут жизни метки на живой карте
+ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 дней хранения в архиве статистики
 
 CHANNEL_URL = "https://t.me/s/dnepr_bez_tck"
 
 if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
 
-KNOWLEDGE_BASE_URL = FIREBASE_URL.replace("/points.json", "/knowledge_base.json")
-STATS_ARCHIVE_URL = FIREBASE_URL.replace("/points.json", "/stats_archive.json")
+KNOWLEDGE_BASE_URL = FIREBASE_URL.replace("/points.json", "/knowledge_base.json") if FIREBASE_URL else ""
+STATS_ARCHIVE_URL = FIREBASE_URL.replace("/points.json", "/stats_archive.json") if FIREBASE_URL else ""
 
 def log(msg):
     print(msg, flush=True)
 
+# ==============================================================================
+# АВТОПОИСК АКТУАЛЬНОЙ МОДЕЛИ GOOGLE GEMINI
+# ==============================================================================
 def find_working_model():
+    if not GEMINI_KEY:
+        log("⚠️ GEMINI_KEY не знайдено!")
+        return "models/gemini-2.5-flash"
+
     list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_KEY}"
     try:
         r = requests.get(list_url, timeout=10)
@@ -33,308 +41,360 @@ def find_working_model():
                 if "generateContent" in methods and name:
                     valid_candidates.append(name)
 
-            flash_first = sorted(valid_candidates, key=lambda x: 0 if "flash" in x.lower() else 1)
-            for cand in flash_first:
+            # Приоритет актуальных быстрых моделей
+            preferred_order = [
+                "gemini-3.5-flash-lite",
+                "gemini-3.8-flash",
+                "gemini-2.5-flash",
+                "gemini-2.0-flash",
+                "gemini-1.5-flash"
+            ]
+
+            def sort_key(name):
+                clean = name.replace("models/", "")
+                for idx, pref in enumerate(preferred_order):
+                    if pref in clean:
+                        return idx
+                return 99
+
+            sorted_candidates = sorted(valid_candidates, key=sort_key)
+
+            for cand in sorted_candidates:
                 test_url = f"https://generativelanguage.googleapis.com/v1beta/{cand}:generateContent?key={GEMINI_KEY}"
                 try:
-                    test_r = requests.post(test_url, json={"contents": [{"parts": [{"text": "ping"}]}]}, timeout=6)
+                    test_r = requests.post(
+                        test_url,
+                        json={"contents": [{"role": "user", "parts": [{"text": "ping"}]}]},
+                        timeout=8
+                    )
                     if test_r.status_code == 200:
                         log(f"🎯 Обрано модель: {cand}")
                         return cand
                 except Exception:
                     continue
     except Exception as e:
-        log(f"⚠️ Помилка автовизначення: {e}")
+        log(f"⚠️ Помилка автовизначення моделі: {e}")
 
-    return "models/gemini-1.5-flash-latest"
+    fallback = "models/gemini-2.5-flash"
+    log(f"🎯 Обрано запасну модель: {fallback}")
+    return fallback
 
 WORKING_MODEL = find_working_model()
 
+# ==============================================================================
+# СЛОВАРЬ СЛЕНГА ЧИСТОТЫ (ДНЕПР)
+# ==============================================================================
+CLEAN_KEYWORDS = [
+    "чисто", "чистенько", "пусто", "вільно", "спокійно", "проїзд",
+    "без бп", "сонечко", "солнечно", "солнце", "ясно", "сухо",
+    "знялися", "пролітайте", "все чисто", "зелено", "🌞", "☀️", "🌤️"
+]
+
+def is_message_clean(text):
+    t = text.lower()
+    if "не чисто" in t or "не пусто" in t or "не вільно" in t:
+        return False
+    for kw in CLEAN_KEYWORDS:
+        if kw in t:
+            return True
+    return False
+
+# ==============================================================================
+# БАЗА ЗНАНИЙ (С БЕЗОПАСНЫМ ЧТЕНИЕМ КООРДИНАТ)
+# ==============================================================================
 def get_knowledge_base():
+    if not KNOWLEDGE_BASE_URL:
+        return []
     try:
-        r = requests.get(f"{KNOWLEDGE_BASE_URL}?t={int(time.time())}", timeout=8)
+        r = requests.get(f"{KNOWLEDGE_BASE_URL}?t={int(time.time() * 1000)}", timeout=8)
         if r.status_code == 200 and r.json():
             data = r.json()
-            if isinstance(data, dict): return list(data.values())
-            elif isinstance(data, list): return [x for x in data if x]
+            if isinstance(data, dict):
+                return [v for v in data.values() if isinstance(v, dict)]
+            elif isinstance(data, list):
+                return [x for x in data if isinstance(x, dict)]
     except Exception as e:
-        log(f"Помилка завантаження бази знань: {e}")
+        log(f"⚠️ Помилка завантаження бази знань: {e}")
     return []
 
-def cleanup_old_points():
-    now_ms = int(time.time() * 1000)
-    try:
-        r = requests.get(FIREBASE_URL, timeout=8)
-        if r.status_code == 200 and r.json():
-            data = r.json()
-            to_delete = {k: None for k, v in data.items() if isinstance(v, dict) and (now_ms - (v.get("time") or v.get("timestamp") or 0)) > LIFETIME_MS}
-            if to_delete:
-                base_url = FIREBASE_URL.replace("/points.json", "")
-                requests.patch(f"{base_url}/points.json", json=to_delete, timeout=5)
-                log(f"🧹 Видалено застарілих міток карти: {len(to_delete)}")
-    except Exception as e:
-        log(f"Помилка очистки карти: {e}")
-
-    try:
-        r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
-        if r_arch.status_code == 200 and r_arch.json():
-            arch_data = r_arch.json()
-            to_delete_arch = {k: None for k, v in arch_data.items() if isinstance(v, dict) and (now_ms - (v.get("time") or 0)) > ARCHIVE_RETENTION_MS}
-            if to_delete_arch:
-                base_url = FIREBASE_URL.replace("/points.json", "")
-                requests.patch(f"{base_url}/stats_archive.json", json=to_delete_arch, timeout=5)
-                log(f"🧹 Очищено записів архіву старше 400 днів: {len(to_delete_arch)}")
-    except Exception as e:
-        log(f"Помилка очистки архіву: {e}")
-
-def get_existing_records():
-    try:
-        r = requests.get(FIREBASE_URL, timeout=8)
-        if r.status_code == 200 and r.json():
-            data = r.json()
-            records = set()
-            for v in data.values():
-                if isinstance(v, dict):
-                    raw = v.get("raw_text") or v.get("text", "")
-                    raw = raw.replace(" (чисто)", "").strip()
-                    records.add(raw)
-            return records
-    except Exception as e:
-        log(f"Помилка бази: {e}")
-    return set()
-
-def fetch_tg_posts():
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-    try:
-        r = requests.get(CHANNEL_URL, headers=headers, timeout=10)
-        if r.status_code != 200: return []
-        raw_posts = re.findall(r'<div class="tgme_widget_message_text[^>]*>(.*?)</div>', r.text, re.DOTALL)
-        clean = []
-        for p in raw_posts:
-            t = re.sub(r'<[^>]+>', '', p).strip()
-            if t: clean.append(t)
-        return clean[-35:]
-    except Exception as e:
-        log(f"Помилка парсингу: {e}")
-        return []
-
-def normalize_stem(word):
-    w = word.lower().replace("і", "и").replace("ї", "и").replace("є", "е").replace("ё", "е")
-    w = re.sub(r'[^\w\s]', '', w)
-    w = re.sub(r'(ов[аеуы]|ськ[аеий]|ського|ської|ськом|ом|ем|а|я|у|е|и|ой|ей|ів|ий|ый)$', '', w)
-    return w.strip()
-
-def match_with_knowledge_base(post, kb_list):
-    post_norm = " ".join([normalize_stem(w) for w in post.split()])
+def match_knowledge_base(text, kb_list):
+    """
+    Ищет запись в базе знаний.
+    Возвращает объект только если в нём ЕСТЬ корректные координаты.
+    """
+    t = text.lower()
     for item in kb_list:
-        phrase = (item.get("phrase") or "").strip()
-        if not phrase or len(phrase) < 3: continue
-        phrase_stems = [normalize_stem(w) for w in phrase.split() if len(w) > 2]
-        if not phrase_stems: continue
-        if all(stem in post_norm for stem in phrase_stems):
-            return item
+        phrase = item.get("phrase", "").strip().lower()
+        if phrase and len(phrase) >= 3 and phrase in t:
+            lat = item.get("lat")
+            lng = item.get("lng")
+            if lat is not None and lng is not None:
+                try:
+                    float(lat)
+                    float(lng)
+                    return item
+                except (ValueError, TypeError):
+                    pass
     return None
 
-def is_question_or_pure_rumor(text):
-    t = text.lower()
-    if "?" in t: return True
-    rumor_patterns = [
-        r'\bпідкажіть\b', r'\bподскажите\b', r'\bчи\s+є\b', r'\bчи\s+стоят\b',
-        r'\bчи\s+правда\b', r'\bхтось\s+знає\b', r'\bкто\s+знает\b',
-        r'\bяк\s+обстановка\b', r'\bкак\s+обстановка\b', r'\bщо\s+чути\b',
-        r'\bчто\s+слышно\b', r'\bможливо\s+готов\b', r'\bвозможно\s+готов\b',
-        r'\bначебто\s+готов\b', r'\bвроде\s+готов\b'
-    ]
-    return any(re.search(p, t) for p in rumor_patterns)
+# ==============================================================================
+# ОЧИСТКА УСТАРЕВШИХ ТОЧЕК
+# ==============================================================================
+def cleanup_old_points():
+    now_ms = int(time.time() * 1000)
+    if not FIREBASE_URL:
+        return
+    base_url = FIREBASE_URL.replace("/points.json", "")
 
-def is_danger_text(text):
-    t = text.lower()
-    danger_patterns = [
-        r'\bбп\b', r'б\.п', r'б/п', r'блокпост', r'блок\s*пост', r'мобпост',
-        r'фишк', r'шлагбаум', r'бус', r'патрул', r'дожд', r'туч', r'хмар',
-        r'злив', r'оливк', r'баклажан', r'синие', r'зелен', r'пиш[уе]', r'разда',
-        r'обилеч', r'тормоз', r'останавл', r'провер', r'паку'
-    ]
-    return any(re.search(p, t) for p in danger_patterns)
+    try:
+        r = requests.get(FIREBASE_URL, timeout=8)
+        if r.status_code == 200 and r.json():
+            data = r.json()
+            to_delete = {
+                k: None for k, v in data.items()
+                if isinstance(v, dict) and (now_ms - (v.get("time") or v.get("timestamp") or 0)) > LIFETIME_MS
+            }
+            if to_delete:
+                requests.patch(f"{base_url}/points.json", json=to_delete, timeout=8)
+                log(f"🧹 Видалено застарілих міток карти: {len(to_delete)}")
+    except Exception as e:
+        log(f"⚠️ Помилка очистки карти: {e}")
 
-def parse_batch_gemini(posts_list, kb_examples):
-    global WORKING_MODEL
-    if not posts_list: return []
+    try:
+        if STATS_ARCHIVE_URL:
+            r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
+            if r_arch.status_code == 200 and r_arch.json():
+                arch_data = r_arch.json()
+                to_delete_arch = {
+                    k: None for k, v in arch_data.items()
+                    if isinstance(v, dict) and (now_ms - (v.get("time") or 0)) > ARCHIVE_RETENTION_MS
+                }
+                if to_delete_arch:
+                    requests.patch(f"{base_url}/stats_archive.json", json=to_delete_arch, timeout=8)
+                    log(f"🧹 Очищено записів архіву старше 400 днів: {len(to_delete_arch)}")
+    except Exception as e:
+        log(f"⚠️ Помилка очистки архіву: {e}")
 
-    cleaned_posts = [p.replace('"', "'").replace('\\', '/').replace('\n', ' ').strip() for p in posts_list]
-    items = "\n".join([f"[{i}] {p}" for i, p in enumerate(cleaned_posts)])
-    
-    kb_hints = ""
-    if kb_examples:
-        sample_kb = kb_examples[-10:]
-        kb_hints = "Еталони координат із бази знань:\n" + "\n".join([
-            f"- \"{k.get('phrase')}\" -> [lat: {k.get('lat')}, lng: {k.get('lng')}], адреса: {k.get('address')}"
-            for k in sample_kb if k.get('phrase') and k.get('lat')
-        ])
+# ==============================================================================
+# ПОЛУЧЕНИЕ УЖЕ ОБРАБОТАННЫХ СООБЩЕНИЙ
+# ==============================================================================
+def get_existing_records():
+    records = set()
+    if not FIREBASE_URL:
+        return records
 
-    prompt = f"""Ти експерт із географії міста Дніпро. Визнач точні координати в межах Дніпра та статус дорожньої обстановки.
+    try:
+        r = requests.get(FIREBASE_URL, timeout=8)
+        if r.status_code == 200 and r.json():
+            for v in r.json().values():
+                if isinstance(v, dict):
+                    raw = (v.get("raw_text") or v.get("text") or "").replace(" (чисто)", "").strip()
+                    if raw:
+                        records.add(raw.lower())
+    except Exception:
+        pass
 
-{kb_hints}
+    try:
+        if STATS_ARCHIVE_URL:
+            now_ms = int(time.time() * 1000)
+            r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
+            if r_arch.status_code == 200 and r_arch.json():
+                for v in r_arch.json().values():
+                    if isinstance(v, dict) and (now_ms - (v.get("time") or 0) < 2 * 3600 * 1000):
+                        raw = (v.get("text") or v.get("raw_text") or "").replace(" (чисто)", "").strip()
+                        if raw:
+                            records.add(raw.lower())
+    except Exception:
+        pass
 
-ПРАВИЛО СТАТУСУ:
-- danger: бп, блокпост, бус, патруль, поліція, тцк, оливки, сині, зелені, перевірка, гальмують, пишуть, роздають, дощ, хмари, 🫒, 🌧️.
-- clean: чисто, сухо, спокійно, ясно, проїхав, 👍, 🫡, ☀️, 🟢.
+    return records
 
-Повідомлення:
-{items}
-
-Поверни суворо JSON:
-[
-  {{"id": 0, "valid": true, "address": "Назва орієнтира", "lat": 48.4800, "lng": 34.9900, "status": "danger"}},
-  {{"id": 1, "valid": false}}
-]"""
-
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"responseMimeType": "application/json"}
+# ==============================================================================
+# ПАРСИНГ СООБЩЕНИЙ ИЗ TELEGRAM
+# ==============================================================================
+def fetch_channel_messages():
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
+    try:
+        r = requests.get(CHANNEL_URL, headers=headers, timeout=12)
+        if r.status_code != 200:
+            log(f"⚠️ Не вдалося відкрити канал: HTTP {r.status_code}")
+            return []
+
+        pattern = re.compile(r'<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', re.DOTALL)
+        raw_matches = pattern.findall(r.text)
+
+        messages = []
+        for m in raw_matches:
+            clean = re.sub(r'<br\s*/?>', ' ', m)
+            clean = re.sub(r'<[^>]+>', '', clean)
+            clean = clean.replace('&quot;', '"').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+            clean = ' '.join(clean.split()).strip()
+            if clean and len(clean) >= 4:
+                messages.append(clean)
+
+        return messages
+    except Exception as e:
+        log(f"⚠️ Помилка зчитування каналу: {e}")
+        return []
+
+# ==============================================================================
+# ГЕОКОДИНГ ЧЕРЕЗ GEMINI
+# ==============================================================================
+def parse_with_gemini(text):
+    if not GEMINI_KEY:
+        return None
+
+    prompt = f"""
+Ти — високоточний аналітик геолокації у місті Дніпро (Україна).
+Проаналізуй дорожнє повідомлення з Telegram-каналу:
+"{text}"
+
+Твоє завдання:
+1. Визначити, чи стосується повідомлення конкретного місця / вулиці / перехрестя / орієнтиру в місті Дніпро (або передмісті: Підгородне, Слобожанське, Новоолександрівка).
+2. Якщо місце знайдено: визнач точну назву адреси та координати (lat, lng) у Дніпрі (lat близько 48.35 - 48.60, lng близько 34.80 - 35.25).
+3. Визнач статус:
+   - "чисто": якщо вільно, проїзд спокійний, сонце, 🌞, чисто, знялися, нема нікого.
+   - "опасно": якщо блокпост, патруль, зупиняють, сині, хмари, роздають, перевірка.
+
+Відповідай СТРОГО валідним JSON без будь-яких коментарів та без лапок:
+{{"found": true, "address": "вул. Робоча", "lat": 48.4501, "lng": 35.0082, "status": "чисто"}}
+Якщо локація у Дніпрі відсутня:
+{{"found": false}}
+"""
 
     url = f"https://generativelanguage.googleapis.com/v1beta/{WORKING_MODEL}:generateContent?key={GEMINI_KEY}"
-
     try:
-        resp = requests.post(url, json=payload, timeout=22)
-        if resp.status_code == 200:
-            raw_text = resp.json()['candidates'][0]['content']['parts'][0]['text'].strip()
-            parsed = json.loads(raw_text)
-            if isinstance(parsed, list): return parsed
-            if isinstance(parsed, dict):
-                for v in parsed.values():
-                    if isinstance(v, list): return v
-                return [parsed]
-        else:
-            log(f"⚠️ Помилка Gemini API: HTTP {resp.status_code}")
-            if resp.status_code in [404, 429]:
-                WORKING_MODEL = find_working_model()
+        r = requests.post(
+            url,
+            json={
+                "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}
+            },
+            timeout=12
+        )
+        if r.status_code == 200:
+            raw_json = r.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            raw_json = raw_json.replace("```json", "").replace("```", "").strip()
+            data = json.loads(raw_json)
+            if data.get("found") and data.get("lat") and data.get("lng"):
+                lat = float(data["lat"])
+                lng = float(data["lng"])
+                if 48.25 <= lat <= 48.70 and 34.70 <= lng <= 35.40:
+                    return {
+                        "address": data.get("address", "Дніпро"),
+                        "lat": round(lat, 5),
+                        "lng": round(lng, 5),
+                        "status": data.get("status", "опасно")
+                    }
     except Exception as e:
-        log(f"Помилка запиту Gemini: {e}")
-    return []
+        log(f"⚠️ Помилка виклику Gemini: {e}")
+    return None
 
-def log_to_stats_archive(now_ms, post, address, lat, lng, is_clean):
-    try:
-        archive_entry = {
-            "time": now_ms,
-            "text": post[:120],
-            "address": address,
-            "lat": lat,
-            "lng": lng,
-            "is_clean": is_clean
-        }
-        requests.post(STATS_ARCHIVE_URL, json=archive_entry, timeout=5)
-    except Exception as e:
-        log(f"Помилка запису в архів: {e}")
-
+# ==============================================================================
+# ОСНОВНОЙ ЦИКЛ СИНХРОНИЗАЦИИ
+# ==============================================================================
 def sync_cycle():
     cleanup_old_points()
+
     existing_records = get_existing_records()
     kb_list = get_knowledge_base()
+    messages = fetch_channel_messages()
 
-    posts = fetch_tg_posts()
-    new_posts = [p for p in posts if p not in existing_records]
-    log(f"📡 В каналі: {len(posts)} | Нових: {len(new_posts)} | В базі знань: {len(kb_list)}")
+    if not messages:
+        return
 
-    if not new_posts: return
+    recent_messages = messages[-25:]
+    new_messages = [m for m in recent_messages if m.lower() not in existing_records]
 
-    posts_needing_ai = []
-    ai_index_map = {}
+    log(f"📢 В каналі: {len(recent_messages)} | Нових: {len(new_messages)} | В базі знань: {len(kb_list)}")
 
-    for idx, post in enumerate(new_posts):
-        if is_question_or_pure_rumor(post):
-            log(f"  🔇 Пропущено питання/чутку: «{post[:45]}»")
-            existing_records.add(post)
-            continue
+    if not new_messages:
+        return
 
-        matched_kb = match_with_knowledge_base(post, kb_list)
-        now_ms = int(time.time() * 1000)
+    now_ms = int(time.time() * 1000)
 
-        force_danger = is_danger_text(post)
-        has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто", "сухо"])
-        is_clean = not force_danger and has_clean
-        marker_color = "green" if is_clean else "red"
-        clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
-        final_text = f"{post}{clean_tag}"
+    for msg in new_messages:
+        existing_records.add(msg.lower())
+        is_clean = is_message_clean(msg)
+
+        # 1. Поиск в базе знаний (безопасное получение координат)
+        matched_kb = match_knowledge_base(msg, kb_list)
+        parsed_result = None
 
         if matched_kb:
-            log(f"  🎯 [БАЗА ЗНАНЬ]: '{matched_kb.get('phrase')}' -> {matched_kb.get('address')}")
-            payload = {
-                "text": final_text,
-                "raw_text": post,
-                "address": matched_kb.get("address", "Дніпро"),
-                "lat": float(matched_kb["lat"]),
-                "lng": float(matched_kb["lng"]),
-                "status": "чисто" if is_clean else "опасно",
-                "color": marker_color,
-                "time": now_ms,
-                "timestamp": now_ms,
-                "from_kb": True
-            }
-            try:
-                requests.post(FIREBASE_URL, json=payload, timeout=8)
-                existing_records.add(post)
-                log_to_stats_archive(now_ms, post, matched_kb.get("address", "Дніпро"), float(matched_kb["lat"]), float(matched_kb["lng"]), is_clean)
-            except Exception as e:
-                log(f"Помилка збереження: {e}")
-        else:
-            ai_index_map[len(posts_needing_ai)] = post
-            posts_needing_ai.append(post)
-
-    if posts_needing_ai:
-        results = parse_batch_gemini(posts_needing_ai, kb_list)
-        added_count = 0
-
-        for item in results:
-            idx = item.get("id")
-            if idx is not None and idx in ai_index_map:
-                post = ai_index_map[idx]
-                if item.get("valid") and "lat" in item and "lng" in item:
-                    now_ms = int(time.time() * 1000)
-                    force_danger = is_danger_text(post)
-                    has_clean = any(s in post for s in ["👍", "🫡", "✌️", "👌", "☀️", "🟢", "чисто", "спокійно", "ясно", "пусто", "сухо"])
-                    
-                    if force_danger: is_clean = False
-                    elif item.get("status", "").lower() == "danger": is_clean = False
-                    elif item.get("status", "").lower() == "clean" or has_clean: is_clean = True
-                    else: is_clean = False
-
-                    marker_color = "green" if is_clean else "red"
-                    clean_tag = " (чисто)" if (is_clean and "чисто" not in post.lower()) else ""
-                    final_text = f"{post}{clean_tag}"
-
-                    lat_val = float(item["lat"])
-                    lng_val = float(item["lng"])
-                    addr_val = item.get("address", "Дніпро")
-
-                    payload = {
-                        "text": final_text,
-                        "raw_text": post,
-                        "address": addr_val,
-                        "lat": lat_val,
-                        "lng": lng_val,
-                        "status": "чисто" if is_clean else "опасно",
-                        "color": marker_color,
-                        "time": now_ms,
-                        "timestamp": now_ms
+            lat_val = matched_kb.get("lat")
+            lng_val = matched_kb.get("lng")
+            if lat_val is not None and lng_val is not None:
+                try:
+                    parsed_result = {
+                        "address": matched_kb.get("address") or matched_kb.get("phrase") or "Дніпро",
+                        "lat": float(lat_val),
+                        "lng": float(lng_val),
+                        "status": "чисто" if is_clean else "опасно"
                     }
-                    try:
-                        r = requests.post(FIREBASE_URL, json=payload, timeout=8)
-                        if r.status_code == 200:
-                            log(f"  ✅ + {addr_val} ({marker_color})")
-                            existing_records.add(post)
-                            added_count += 1
-                            log_to_stats_archive(now_ms, post, addr_val, lat_val, lng_val, is_clean)
-                    except Exception as e:
-                        log(f"Помилка збереження: {e}")
+                    log(f"🎯 [БАЗА ЗНАНЬ]: '{matched_kb.get('phrase')}' -> {parsed_result['address']}")
+                except (ValueError, TypeError):
+                    parsed_result = None
 
-        log(f"  🏁 Нових міток через ІІ: {added_count}")
+        # 2. Если в базе знаний координаты не найдены — распознаём через Gemini
+        if not parsed_result:
+            parsed_result = parse_with_gemini(msg)
+            if parsed_result:
+                log(f"🤖 [GEMINI AI]: '{msg[:40]}...' -> {parsed_result['address']} ({parsed_result['lat']}, {parsed_result['lng']})")
 
+        # 3. Сохранение точки в Firebase
+        if parsed_result:
+            status_clean = (parsed_result["status"] == "чисто" or is_clean)
+            color = "green" if status_clean else "red"
+            display_text = msg
+            if status_clean and "чисто" not in msg.lower():
+                display_text = f"{msg} (чисто)"
+
+            point_data = {
+                "text": display_text,
+                "raw_text": msg,
+                "address": parsed_result["address"],
+                "lat": parsed_result["lat"],
+                "lng": parsed_result["lng"],
+                "color": color,
+                "status": "чисто" if status_clean else "опасно",
+                "is_clean": status_clean,
+                "time": now_ms,
+                "timestamp": now_ms
+            }
+
+            try:
+                requests.post(FIREBASE_URL, json=point_data, timeout=8)
+            except Exception as e:
+                log(f"⚠️ Помилка запису точки: {e}")
+
+            if STATS_ARCHIVE_URL:
+                try:
+                    archive_entry = {
+                        "text": msg,
+                        "address": parsed_result["address"],
+                        "lat": parsed_result["lat"],
+                        "lng": parsed_result["lng"],
+                        "is_clean": status_clean,
+                        "time": now_ms
+                    }
+                    requests.post(STATS_ARCHIVE_URL, json=archive_entry, timeout=8)
+                except Exception:
+                    pass
+
+# ==============================================================================
+# ТОЧКА ВХОДА (РАБОТА В GITHUB ACTIONS)
+# ==============================================================================
 if __name__ == "__main__":
     log("🚀 Запуск безперервної зміни радара 24/7...")
-    for step in range(305):
-        sync_cycle()
-        if step < 304:
-            time.sleep(60)
-    log("🏁 Зміна успішно завершена!")
+    start_time = time.time()
+    MAX_RUNTIME_SEC = 5 * 3600 + 40 * 60  # Работает до 5 часов 40 минут
+
+    while (time.time() - start_time) < MAX_RUNTIME_SEC:
+        try:
+            sync_cycle()
+        except Exception as e:
+            log(f"⚠️ Помилка в циклі: {e}")
+        time.sleep(25)
