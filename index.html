@@ -34,32 +34,50 @@
       z-index: 1; background: #0b1120;
     }
 
-    /* ШАПКА КАРТЫ */
+    /* ШАПКА КАРТИ З ПЛАВНОЮ АНІМАЦІЄЮ ЗВУЖЕННЯ */
     .dashboard {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px);
       padding: 10px 12px; border-radius: 14px; color: #fff;
       box-shadow: 0 6px 25px rgba(0,0,0,0.45); width: 235px;
       border: 1px solid #334155; touch-action: none;
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
+      overflow: hidden;
     }
     .dash-header { 
       display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
       cursor: move; user-select: none; padding-bottom: 4px; border-bottom: 1px solid #1e293b;
+      transition: all 0.25s ease;
     }
     .points-count { 
       font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;
-      cursor: pointer;
+      cursor: pointer; white-space: nowrap;
     }
-    .drag-handle-hint { font-size: 10px; color: #64748b; margin-left: 4px; }
+    .drag-handle-hint { font-size: 10px; color: #64748b; margin-left: 2px; }
     
     .btn-toggle {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
       width: 24px; height: 24px; border-radius: 6px; cursor: pointer;
       display: flex; align-items: center; justify-content: center; font-size: 11px;
-      touch-action: auto;
+      touch-action: auto; flex-shrink: 0; margin-left: 8px;
     }
 
     .collapsible-body { margin-top: 6px; }
+
+    /* КОЛИ ШАПКА ЗГОРНУТА: ВУЗЬКА, РІВНО ДО СТРІЛКИ */
+    html.dash-collapsed .dashboard {
+      width: auto !important;
+      display: inline-flex;
+      flex-direction: column;
+      padding: 7px 10px;
+      border-radius: 12px;
+    }
+    html.dash-collapsed .dash-header {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+      gap: 6px;
+    }
     html.dash-collapsed #collapsibleBody { display: none; }
 
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
@@ -91,7 +109,7 @@
       border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
     }
 
-    /* СВЕТОФОРЫ */
+    /* СВІТЛОФОРИ */
     .tl-menu-container { position: relative; margin-bottom: 6px; }
     .btn-tl-main {
       width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
@@ -109,13 +127,12 @@
     }
     .tl-dropdown-btn:hover { background: #334155; color: #fff; }
 
-    /* СПОЙЛЕР УПРАВЛЕНИЯ СЕРВЕРОМ */
+    /* СПОЙЛЕР СЕРВЕРА */
     .server-menu-container { position: relative; margin-bottom: 8px; }
     .btn-server-main {
       width: 100%; background: #131d31; border: 1px solid #334155; color: #94a3b8;
       padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: space-between;
-      transition: all 0.2s;
     }
     .btn-server-main:hover { border-color: #64748b; color: #cbd5e1; }
     .server-dropdown {
@@ -126,10 +143,8 @@
       width: 100%; background: linear-gradient(135deg, #065f46 0%, #047857 100%);
       border: 1px solid #10b981; color: #fff; padding: 6px 8px; border-radius: 6px;
       font-size: 11px; font-weight: 800; cursor: pointer;
-      display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .btn-trigger-action:hover { background: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
-    .btn-trigger-action:active { transform: scale(0.98); }
 
     .legend { display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; }
     .legend-row { display: flex; align-items: center; gap: 7px; }
@@ -153,16 +168,7 @@
       0% { transform: scale(1); opacity: 1; }
       100% { transform: scale(2.4); opacity: 0; }
     }
-    .radar-circle.active-dragging-target {
-      transform: scale(1.5) !important; box-shadow: 0 0 0 4px #00f3ff, 0 0 25px 8px #00f3ff !important;
-      cursor: grab !important; z-index: 9999 !important;
-      animation: target-pulse 0.7s infinite alternate !important;
-    }
-    @keyframes target-pulse {
-      from { transform: scale(1.4); } to { transform: scale(1.6); }
-    }
 
-    /* СТИЛИ СВЕТОФОРОВ НА КАРТЕ */
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
       border-radius: 13px !important; padding: 3px 2px !important;
@@ -178,7 +184,23 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* СЕКРЕТНОЕ МЕНЮ */
+    /* ОДНОРЯДКОВИЙ ПЛАВАЮЧИЙ РЯДОК СТАТУСУ ДОРОГИ */
+    .route-status-bar {
+      position: absolute; bottom: 30px; left: 15px; z-index: 1000;
+      background: rgba(15, 23, 42, 0.94); border: 1.5px solid #10b981;
+      color: #f8fafc; padding: 6px 12px; border-radius: 20px;
+      font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); cursor: move; user-select: none;
+      touch-action: none; white-space: nowrap; backdrop-filter: blur(8px);
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .route-status-bar.danger {
+      border-color: #ff334b !important;
+      box-shadow: 0 0 18px rgba(255, 51, 75, 0.45) !important;
+    }
+    .status-drag-hint { font-size: 9px; color: #64748b; margin-left: 2px; }
+
+    /* СЕКРЕТНЕ МЕНЮ */
     .neon-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
@@ -228,7 +250,7 @@
 <body>
   <div id="map"></div>
 
-  <!-- ШАПКА КАРТЫ -->
+  <!-- ШАПКА КАРТИ -->
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">
@@ -254,10 +276,10 @@
         <span>📊</span><span>Аналітика блокпостів</span>
       </a>
 
-      <!-- СВЕТОФОРЫ -->
+      <!-- СВІТЛОФОРИ -->
       <div class="tl-menu-container">
         <button class="btn-tl-main" onclick="toggleTlDropdown()">
-          <span>🚦 Світлофори</span>
+          <span>🚦 Мої світлофори</span>
           <span id="tlDropdownArrow">▾</span>
         </button>
         <div id="tlDropdown" class="tl-dropdown">
@@ -270,7 +292,7 @@
         </div>
       </div>
 
-      <!-- СПОЙЛЕР-ШТОРКА КЕРУВАННЯ СЕРВЕРОМ -->
+      <!-- СПОЙЛЕР СЕРВЕРА -->
       <div class="server-menu-container">
         <button class="btn-server-main" onclick="toggleServerDropdown()">
           <span>⚙️ Керування сервером</span>
@@ -297,14 +319,28 @@
     </div>
   </div>
 
-  <!-- СЕКРЕТНОЕ МЕНЮ (ВОССТАНОВЛЕНО) -->
+  <!-- ОДНОРЯДКОВИЙ РЯДОК СТАТУСУ ДОРОГИ -->
+  <div id="routeStatusBar" class="route-status-bar">
+    <span id="routeStatusIcon">🟢</span>
+    <span id="routeStatusText">Мій шлях: Чисто</span>
+    <span class="status-drag-hint">✥</span>
+  </div>
+
+  <!-- СЕКРЕТНЕ МЕНЮ -->
   <div id="neonPanel" class="neon-panel">
     <div id="neonHeader" class="neon-title">
       <span>⚙️ Секретне меню ✥</span>
       <span style="cursor:pointer; font-size:16px; padding: 0 4px;" onclick="closeNeonPanel()">✕</span>
     </div>
 
-    <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🏙️ Фільтр районів міста:</div>
+    <!-- ТУМБЛЕР РЯДКА СТАТУСУ -->
+    <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🛣️ Інформер дороги:</div>
+    <label class="sector-item" style="margin-bottom:10px;">
+      <input type="checkbox" id="chkRouteStatusBar" onchange="toggleRouteStatusBarVisible()" checked>
+      Показувати рядок «Мій шлях» на карті
+    </label>
+
+    <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px; border-top: 1px solid #334155; padding-top:6px;">🏙️ Фільтр районів міста:</div>
     <div class="sector-quick-btns">
       <button id="btnQuickRoute" class="btn-sector-quick active" onclick="setSectorPreset('route')">🎯 Тільки мій</button>
       <button id="btnQuickAll" class="btn-sector-quick" onclick="setSectorPreset('all')">🌐 Весь Дніпро</button>
@@ -352,29 +388,25 @@
 
     let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
+    let showRouteStatusBar = localStorage.getItem("radar_show_route_status") !== "false";
     let currentMapType = localStorage.getItem("radar_map_type") || "google";
     let isEditMode = false;
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // КОНТРОЛЛЕР ПЕРЕТАСКИВАНИЯ ТОЧКИ ДЛЯ ОБУЧЕНИЯ ИИ
-    const dragController = {
-      activeMarker: null,
-      activePoint: null,
-      isDragging: false,
-      reset: function() {
-        if (this.activeMarker) {
-          const el = this.activeMarker.getElement()?.querySelector('.radar-circle');
-          if (el) el.classList.remove('active-dragging-target');
-        }
-        map.dragging.enable();
-        this.activeMarker = null;
-        this.activePoint = null;
-        this.isDragging = false;
-      }
-    };
+    // МАРШРУТНІ СВІТЛОФОРИ
+    let checkpoints = [
+      { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
+      { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
+      { id: "kombainoviy", name: "Комбайновий (Белелюбського)", lat: 48.4795, lng: 34.9845, keys: ["комбайн", "ударник"] },
+      { id: "krasnozavodska", name: "Краснозаводська (ДТРЗ)", lat: 48.4812, lng: 34.9940, keys: ["краснозавод", "белелюб", "дтрз"] },
+      { id: "pavlova", name: "вул. Академіка Павлова", lat: 48.4818, lng: 35.0012, keys: ["павлов"] },
+      { id: "rechport", name: "Річпорт (Набережна Заводська)", lat: 48.4805, lng: 35.0210, keys: ["речпорт", "річпорт"] },
+      { id: "vodokachka", name: "Водокачка (Набережна Заводська)", lat: 48.4910, lng: 34.9480, keys: ["водокачк"] },
+      { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан"] }
+    ];
 
-    // РАЙОНЫ
+    // РАЙОНИ
     let activeSectors = ['s1'];
     try {
       const stored = localStorage.getItem("radar_active_sectors");
@@ -408,21 +440,9 @@
       }
     };
 
-    let checkpoints = [
-      { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
-      { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
-      { id: "kombainoviy", name: "Комбайновий (Белелюбського)", lat: 48.4795, lng: 34.9845, keys: ["комбайн", "ударник"] },
-      { id: "krasnozavodska", name: "Краснозаводська (ДТРЗ)", lat: 48.4812, lng: 34.9940, keys: ["краснозавод", "белелюб", "дтрз"] },
-      { id: "pavlova", name: "вул. Академіка Павлова", lat: 48.4818, lng: 35.0012, keys: ["павлов"] },
-      { id: "rechport", name: "Річпорт (Набережна Заводська)", lat: 48.4805, lng: 35.0210, keys: ["речпорт", "річпорт"] },
-      { id: "vodokachka", name: "Водокачка (Набережна Заводська)", lat: 48.4910, lng: 34.9480, keys: ["водокачк"] },
-      { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан"] }
-    ];
-
     const isMobile = window.innerWidth < 768;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], isMobile ? 12 : 13);
 
-    // СЛОИ КАРТЫ
     const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       subdomains: ['0', '1', '2', '3'], maxZoom: 20, attribution: 'Google Maps'
     });
@@ -457,18 +477,15 @@
     function toggleMapLayer() {
       if (currentMapType === "google") {
         if (map.hasLayer(googleLayer)) map.removeLayer(googleLayer);
-        esriLayer.addTo(map);
-        currentMapType = "osm";
+        esriLayer.addTo(map); currentMapType = "osm";
         showToast("🏙️ Вулична Карта (Esri) увімкнена!");
       } else if (currentMapType === "osm") {
         if (map.hasLayer(esriLayer)) map.removeLayer(esriLayer);
-        satelliteLayer.addTo(map);
-        currentMapType = "satellite";
+        satelliteLayer.addTo(map); currentMapType = "satellite";
         showToast("🛰️ Google Супутник (3D/Гібрид) увімкнено!");
       } else {
         if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
-        googleLayer.addTo(map);
-        currentMapType = "google";
+        googleLayer.addTo(map); currentMapType = "google";
         showToast("🗺️ Google Карта увімкнена!");
       }
       localStorage.setItem("radar_map_type", currentMapType);
@@ -501,7 +518,6 @@
       if (activeSectors.length === 6) return true;
       const fullText = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
       const lat = p.lat, lng = p.lng;
-
       return activeSectors.some(secId => {
         const def = SECTOR_DEFS[secId];
         if (!def) return false;
@@ -511,7 +527,62 @@
       });
     }
 
-    // --- СЕКРЕТНОЕ МЕНЮ И НЕОН ---
+    // --- ОНОВЛЕННЯ РЯДКА СТАТУСУ ДОРОГИ ---
+    const routeStatusBar = document.getElementById("routeStatusBar");
+    const routeStatusIcon = document.getElementById("routeStatusIcon");
+    const routeStatusText = document.getElementById("routeStatusText");
+    const chkRouteStatusBar = document.getElementById("chkRouteStatusBar");
+
+    if (chkRouteStatusBar) chkRouteStatusBar.checked = showRouteStatusBar;
+    if (routeStatusBar) routeStatusBar.style.display = showRouteStatusBar ? "flex" : "none";
+
+    function toggleRouteStatusBarVisible() {
+      showRouteStatusBar = chkRouteStatusBar.checked;
+      localStorage.setItem("radar_show_route_status", showRouteStatusBar);
+      routeStatusBar.style.display = showRouteStatusBar ? "flex" : "none";
+      showToast(showRouteStatusBar ? "🛣️ Інформер дороги увімкнено!" : "🙈 Інформер дороги приховано!");
+    }
+
+    function updateRouteStatus() {
+      if (!routeStatusBar || !showRouteStatusBar) return;
+      const now = Date.now();
+      const routeCheckpoints = checkpoints;
+
+      // Рахуємо скільки червоних точок зафіксовано на контрольних точках маршруту
+      let dangerCount = 0;
+      let detectedStreets = [];
+
+      routeCheckpoints.forEach(cp => {
+        const matched = allPoints.filter(p => {
+          const diff = now - (p.time || p.timestamp || 0);
+          if (diff > LIFETIME_MS) return false;
+          if (isCleanPoint(p)) return false;
+          const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
+          return cp.keys.some(k => text.includes(k));
+        });
+
+        if (matched.length > 0) {
+          dangerCount++;
+          detectedStreets.push(cp.name);
+        }
+      });
+
+      if (dangerCount === 0) {
+        routeStatusBar.classList.remove("danger");
+        routeStatusIcon.innerText = "🟢";
+        routeStatusText.innerText = "Мій шлях: Чисто";
+      } else if (dangerCount === 1) {
+        routeStatusBar.classList.add("danger");
+        routeStatusIcon.innerText = "🔴";
+        routeStatusText.innerText = `Мій шлях: Є 1 блокпост (${detectedStreets[0].split(' ')[0]})`;
+      } else {
+        routeStatusBar.classList.add("danger");
+        routeStatusIcon.innerText = "🔴";
+        routeStatusText.innerText = `Мій шлях: Є ${dangerCount} блокпости!`;
+      }
+    }
+
+    // --- СЕКРЕТНЕ МЕНЮ ТА НЕОН ---
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -529,6 +600,7 @@
         secretClickCount = 0;
         document.getElementById("neonPanel").style.display = "block";
         syncSectorCheckboxesUI();
+        if (chkRouteStatusBar) chkRouteStatusBar.checked = showRouteStatusBar;
         showToast("⚡ Секретне меню відкрито!");
       }
     }
@@ -567,6 +639,7 @@
       syncSectorCheckboxesUI();
       renderMarkers();
       renderTrafficLights();
+      updateRouteStatus();
       showToast(type === 'route' ? "🎯 Фільтр: Тільки ваш маршрут!" : "🌐 Фільтр: Весь Дніпро!");
     }
 
@@ -581,6 +654,7 @@
       syncSectorCheckboxesUI();
       renderMarkers();
       renderTrafficLights();
+      updateRouteStatus();
     }
     syncSectorCheckboxesUI();
 
@@ -683,91 +757,7 @@
       });
     }
 
-    // ОБУЧЕНИЕ ИИ ПРИ ЗАВЕРШЕНИИ ПЕРЕНОСА ТОЧКИ
-    async function finishDragAndTrainAI(point, newLatLng) {
-      if (!point || !newLatLng) return;
-      const newLat = Number(newLatLng.lat.toFixed(5));
-      const newLng = Number(newLatLng.lng.toFixed(5));
-
-      let phrase = (point.address || "").toLowerCase().replace("дніпро", "").replace("вул.", "").replace("пр.", "").trim();
-      if (!phrase || phrase.length < 3) {
-        phrase = (point.raw_text || point.text || "").replace(" (чисто)", "").trim().slice(0, 30);
-      }
-
-      point.lat = newLat;
-      point.lng = newLng;
-
-      if (point._fbKey) {
-        try {
-          await fetch(FIREBASE_POINTS_URL.replace(".json", `/${point._fbKey}.json`), {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ lat: newLat, lng: newLng })
-          });
-        } catch(e) {}
-      }
-
-      try {
-        await fetch(FIREBASE_KB_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            phrase: phrase,
-            address: point.address || "Дніпро",
-            lat: newLat,
-            lng: newLng,
-            updated_at: Date.now()
-          })
-        });
-      } catch(e) {}
-
-      showToast(`🎯 Навчено! «${phrase}» зафіксовано.`);
-      renderMarkers();
-    }
-
-    function onGlobalMove(clientX, clientY) {
-      if (dragController.activeMarker && dragController.isDragging) {
-        const container = map.getContainer();
-        const rect = container.getBoundingClientRect();
-        const px = clientX - rect.left;
-        const py = clientY - rect.top;
-        const newLatLng = map.containerPointToLatLng([px, py]);
-        dragController.activeMarker.setLatLng(newLatLng);
-      }
-    }
-
-    window.addEventListener('touchmove', (e) => {
-      if (dragController.isDragging && dragController.activeMarker) {
-        const t = e.touches[0];
-        onGlobalMove(t.clientX, t.clientY);
-        if (e.cancelable) e.preventDefault();
-      }
-    }, { passive: false });
-
-    window.addEventListener('mousemove', (e) => {
-      if (dragController.isDragging && dragController.activeMarker) {
-        onGlobalMove(e.clientX, e.clientY);
-      }
-    });
-
-    window.addEventListener('touchend', () => {
-      if (dragController.isDragging) dragController.isDragging = false;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (dragController.isDragging) dragController.isDragging = false;
-    });
-
-    map.on('click', function() {
-      if (dragController.activeMarker) {
-        const p = dragController.activePoint;
-        const pos = dragController.activeMarker.getLatLng();
-        dragController.reset();
-        finishDragAndTrainAI(p, pos);
-      }
-    });
-
-    // --- СВЕТОФОРЫ ---
+    // --- СВІТЛОФОРИ ---
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -910,7 +900,7 @@
       });
     }
 
-    // --- УПРАВЛЕНИЕ СЕРВЕРОМ GITHUB ACTIONS ---
+    // --- КЕРУВАННЯ СЕРВЕРОМ GITHUB ---
     function toggleServerDropdown() {
       const drop = document.getElementById("serverDropdown");
       const arrow = document.getElementById("serverDropdownArrow");
@@ -928,7 +918,7 @@
         localStorage.setItem("gh_pat_token", token);
       }
 
-      showToast("⏳ Відправляю команду запуску в GitHub...");
+      showToast("⏳ Відправляю команду перезапуску в GitHub...");
 
       try {
         const repoOwner = "MyDnipro";
@@ -946,7 +936,7 @@
         });
 
         if (res.status === 204) {
-          showToast("🚀 Успіх! Радар запущено на сервері GitHub!");
+          showToast("🚀 Успіх! Радар перезапущено на сервері!");
           toggleServerDropdown();
         } else if (res.status === 401 || res.status === 403) {
           localStorage.removeItem("gh_pat_token");
@@ -983,10 +973,9 @@
     window.addEventListener('click', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
-    // ШАПКА И ПЕРЕМЕЩЕНИЕ
+    // ШАПКА ТА ПЕРЕМІЩЕННЯ ЕЛЕМЕНТІВ
     const dashPanel = document.getElementById("dashPanel");
     const neonPanel = document.getElementById("neonPanel");
-    const collapsibleBody = document.getElementById("collapsibleBody");
     const btnToggle = document.getElementById("btnToggle");
 
     if (localStorage.getItem("radar_dash_collapsed") === "true") {
@@ -1001,6 +990,7 @@
       localStorage.setItem("radar_dash_collapsed", isNowCollapsed ? "true" : "false");
     }
 
+    // ВІДНОВЛЕННЯ ЗБЕРЕЖЕНИХ ПОЗИЦІЙ
     const savedDashTop = localStorage.getItem("dash_pos_top");
     const savedDashLeft = localStorage.getItem("dash_pos_left");
     if (savedDashTop && savedDashLeft) {
@@ -1013,6 +1003,14 @@
     if (savedNeonTop && savedNeonLeft) {
       neonPanel.style.top = savedNeonTop;
       neonPanel.style.left = savedNeonLeft;
+    }
+
+    const savedStatusTop = localStorage.getItem("route_status_pos_top");
+    const savedStatusLeft = localStorage.getItem("route_status_pos_left");
+    if (savedStatusTop && savedStatusLeft && routeStatusBar) {
+      routeStatusBar.style.top = savedStatusTop;
+      routeStatusBar.style.left = savedStatusLeft;
+      routeStatusBar.style.bottom = "auto";
     }
 
     function makeElementDraggable(elmnt, handle, storagePrefix) {
@@ -1032,10 +1030,11 @@
         e.preventDefault();
         pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
         pos3 = e.clientX; pos4 = e.clientY;
-        const topVal = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
-        const leftVal = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+        const topVal = Math.max(10, Math.min(window.innerHeight - 50, elmnt.offsetTop - pos2)) + "px";
+        const leftVal = Math.max(10, Math.min(window.innerWidth - 60, elmnt.offsetLeft - pos1)) + "px";
         elmnt.style.top = topVal;
         elmnt.style.left = leftVal;
+        elmnt.style.bottom = "auto";
         localStorage.setItem(storagePrefix + "_top", topVal);
         localStorage.setItem(storagePrefix + "_left", leftVal);
       }
@@ -1056,10 +1055,11 @@
         const touch = e.touches[0];
         pos1 = pos3 - touch.clientX; pos2 = pos4 - touch.clientY;
         pos3 = touch.clientX; pos4 = touch.clientY;
-        const topVal = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
-        const leftVal = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+        const topVal = Math.max(10, Math.min(window.innerHeight - 50, elmnt.offsetTop - pos2)) + "px";
+        const leftVal = Math.max(10, Math.min(window.innerWidth - 60, elmnt.offsetLeft - pos1)) + "px";
         elmnt.style.top = topVal;
         elmnt.style.left = leftVal;
+        elmnt.style.bottom = "auto";
         localStorage.setItem(storagePrefix + "_top", topVal);
         localStorage.setItem(storagePrefix + "_left", leftVal);
       }
@@ -1068,10 +1068,12 @@
         document.ontouchend = null; document.ontouchmove = null;
       }
     }
+
     makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
     makeElementDraggable(neonPanel, document.getElementById("neonHeader"), "neon_pos");
+    if (routeStatusBar) makeElementDraggable(routeStatusBar, routeStatusBar, "route_status_pos");
 
-    // ПОИСК УЛИЦ ПО ДНЕПРУ
+    // ПОШУК ВУЛИЦЬ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
     let searchDebounceTimer = null;
@@ -1122,14 +1124,13 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА ТОЧЕК КАРТЫ
+    // ЗАВАНТАЖЕННЯ ТОЧОК
     async function loadPoints() {
-      if (dragController.activeMarker) return;
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
         if (!res.ok) return;
         const data = await res.json();
-        if (!data) { allPoints = []; renderMarkers(); renderTrafficLights(); return; }
+        if (!data) { allPoints = []; renderMarkers(); renderTrafficLights(); updateRouteStatus(); return; }
         const now = Date.now();
         allPoints = Object.entries(data).map(([key, p]) => {
           if (!p || typeof p !== 'object' || !p.lat || !p.lng) return null;
@@ -1138,6 +1139,7 @@
 
         renderMarkers();
         renderTrafficLights();
+        updateRouteStatus();
       } catch (err) {}
     }
 
@@ -1173,84 +1175,11 @@
             <div style="font-weight:700; font-size:13px;">${emoji} ${p.text || ""}</div>
             <div style="font-size:11px; color:#64748b; margin-top:4px;">⏳ Зникне через: ${remMinutes} хв</div>
             <div style="font-size:11px; color:#64748b;">🕒 Додано: ${dateStr}</div>
-            <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Затисніть 0.4с для переміщення</div>
           </div>
         `;
 
         const marker = L.marker([p.lat, p.lng], { icon: dotIcon, draggable: false });
         marker.bindPopup(popupContent);
-
-        let timer = null;
-        let startX = 0, startY = 0;
-
-        function startGesture(clientX, clientY) {
-          if (dragController.activeMarker && dragController.activeMarker !== marker) {
-            const oldPoint = dragController.activePoint;
-            const oldPos = dragController.activeMarker.getLatLng();
-            dragController.reset();
-            finishDragAndTrainAI(oldPoint, oldPos);
-          }
-          dragController.reset();
-
-          startX = clientX;
-          startY = clientY;
-
-          timer = setTimeout(() => {
-            timer = null;
-            if (navigator.vibrate) navigator.vibrate([60, 40, 60]);
-
-            dragController.activeMarker = marker;
-            dragController.activePoint = p;
-            dragController.isDragging = true;
-
-            marker.closePopup();
-            map.dragging.disable();
-
-            const iconEl = marker.getElement()?.querySelector('.radar-circle');
-            if (iconEl) iconEl.classList.add('active-dragging-target');
-          }, 400);
-        }
-
-        function cancelGesture(clientX, clientY) {
-          if (timer) {
-            if (Math.hypot(clientX - startX, clientY - startY) > 8) {
-              clearTimeout(timer);
-              timer = null;
-            }
-          }
-        }
-
-        marker.on('add', () => {
-          const el = marker.getElement();
-          if (!el) return;
-
-          el.addEventListener('touchstart', (e) => {
-            const t = e.touches[0];
-            startGesture(t.clientX, t.clientY);
-          }, { passive: true });
-
-          el.addEventListener('touchmove', (e) => {
-            const t = e.touches[0];
-            cancelGesture(t.clientX, t.clientY);
-          }, { passive: true });
-
-          el.addEventListener('touchend', () => {
-            if (timer) { clearTimeout(timer); timer = null; }
-          });
-
-          el.addEventListener('mousedown', (e) => {
-            startGesture(e.clientX, e.clientY);
-          });
-
-          el.addEventListener('mousemove', (e) => {
-            cancelGesture(e.clientX, e.clientY);
-          });
-
-          el.addEventListener('mouseup', () => {
-            if (timer) { clearTimeout(timer); timer = null; }
-          });
-        });
-
         markersLayer.addLayer(marker);
         visibleCount++;
       });
