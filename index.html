@@ -103,7 +103,7 @@
     }
     .ai-pill-panel.compact .ai-pill-body { display: none; }
     .ai-pill-panel.expanded {
-      width: 300px !important; height: auto !important; max-height: 80vh;
+      width: 310px !important; height: auto !important; max-height: 80vh;
       padding: 10px 12px !important; border-radius: 14px !important;
       border-color: #00f3ff !important; box-shadow: 0 6px 30px rgba(0, 243, 255, 0.4) !important;
       overflow-y: auto;
@@ -172,7 +172,7 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
-    /* СТИЛИ */
+    /* ЭЛЕМЕНТЫ ШАПКИ И ИНТЕРФЕЙСА */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -393,10 +393,11 @@
       <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Запитайте що завгодно про ситуацію або дайте команду..."></textarea>
       
       <div class="ai-chips-compact">
+        <span class="ai-mini-chip" onclick="setAiInlineText('Підсвіти на карті вулицю Робочу')">✨ Підсвіти Робочу</span>
         <span class="ai-mini-chip" onclick="setAiInlineText('Де зараз блокпости? На яких вулицях?')">📍 Де блокпости?</span>
         <span class="ai-mini-chip" onclick="setAiInlineText('Сховай всі світлофори')">🙈 Сховати світлофори</span>
-        <span class="ai-mini-chip" onclick="setAiInlineText('Покажи світлофори')">🚦 Показати світлофори</span>
-        <span class="ai-mini-chip" onclick="setAiInlineText('РОВД чисто, зніми червоний')">🟢 РОВД чисто</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('Увімкни неонову підсвітку')">⚡ Увімкни неон</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('Відкрий секретне меню')">⚙️ Секретне меню</span>
       </div>
 
       <button class="btn-ai-inline-submit" onclick="submitAiInlineCorrection()">⚡ Запитати Gemini AI</button>
@@ -404,7 +405,7 @@
     </div>
   </div>
 
-  <!-- 3. СТРОКА СТАТУСУ (СЛЕВА ВНИЗУ) -->
+  <!-- 3. СТРОКА СТАТУСА (СЛЕВА ВНИЗУ) -->
   <div id="routeStatusBar" class="route-status-bar">
     <span id="routeStatusIcon">🟢</span>
     <span id="routeStatusText">Мій шлях: Чисто</span>
@@ -680,6 +681,8 @@
     const neonLayer = L.layerGroup().addTo(map);
     const markersLayer = L.layerGroup().addTo(map);
     const trafficLightLayer = L.layerGroup().addTo(map);
+    const aiHighlightLayer = L.layerGroup().addTo(map); // СЛОЙ НЕОНОВОЙ ПОДСВЕТКИ УЛИЦ ОТ ИИ
+
     if (!showTrafficLights) map.removeLayer(trafficLightLayer);
 
     function showToast(text) {
@@ -774,7 +777,53 @@
     }
 
     // ==========================================================================
-    // ПРЯМОЙ ВЫЗОВ GEMINI-3.8-FLASH / GEMINI-3.5-FLASH-LITE С ПОЛНОЙ КАРТИНОЙ КАРТЫ
+    // ФИЗИЧЕСКАЯ ПОДСВЕТКА УЛИЦЫ НЕОНОМ ПО ЗАПРОСУ ИИ
+    // ==========================================================================
+    async function highlightStreetOnMap(streetName) {
+      if (!streetName) return;
+      const cleanName = streetName.replace(/^(вулиця|вул\.|проспект|пр\.|тупик|провулок|улица|ул\.)\s*/i, '').trim();
+      showToast(`✨ Підсвічую вулицю «${cleanName}»...`);
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&polygon_geojson=1&q=${encodeURIComponent(cleanName + ", Дніпро")}&countrycodes=ua&limit=3`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!data || data.length === 0) {
+          showToast(`⚠️ Не вдалося знайти контур для «${cleanName}»`);
+          return;
+        }
+
+        let geomItem = data.find(d => d.geojson && (d.geojson.type === 'LineString' || d.geojson.type === 'MultiLineString'));
+        if (!geomItem && data[0].geojson) geomItem = data[0];
+
+        aiHighlightLayer.clearLayers();
+
+        if (geomItem && geomItem.geojson) {
+          // Внешний яркий неоновый ореол
+          const glowLayer = L.geoJSON(geomItem.geojson, {
+            style: { color: "#00f3ff", weight: 8, opacity: 0.9, lineCap: "round", lineJoin: "round" }
+          }).addTo(aiHighlightLayer);
+
+          // Внутренний белый сердечник для эффекта неоновой трубки
+          L.geoJSON(geomItem.geojson, {
+            style: { color: "#ffffff", weight: 3, opacity: 1, lineCap: "round" }
+          }).addTo(aiHighlightLayer);
+
+          map.fitBounds(glowLayer.getBounds(), { padding: [40, 40], maxZoom: 16 });
+          showToast(`⚡ Вулицю «${cleanName}» підсвічено неоном!`);
+        } else {
+          const lat = parseFloat(data[0].lat), lon = parseFloat(data[0].lon);
+          map.flyTo([lat, lon], 16);
+          L.circleMarker([lat, lon], { radius: 15, color: "#00f3ff", fillColor: "#ffffff", fillOpacity: 0.9 }).addTo(aiHighlightLayer);
+          showToast(`⚡ Точку «${cleanName}» підсвічено!`);
+        }
+      } catch(err) {
+        showToast(`Помилка підсвітки: ${err.message}`);
+      }
+    }
+
+    // ==========================================================================
+    // ВЫЗОВ GEMINI (GEMINI-3.8-FLASH / GEMINI-3.5-FLASH-LITE) С ПОЛНЫМ ВИДЕНИЕМ
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -817,13 +866,8 @@
       showToast("🤖 Введіть запитання чи зауваження для ШІ!");
     };
 
-    // ФУНКЦИЯ ЗАПРОСА В АКТУАЛЬНЫЕ МОДЕЛИ
     async function executeGeminiRequest(promptText, apiKey) {
-      const models = [
-        'gemini-3.8-flash',
-        'gemini-3.5-flash-lite',
-        'gemini-3.5-flash'
-      ];
+      const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
       let lastErr = null;
 
       for (const m of models) {
@@ -865,11 +909,11 @@
       }
 
       aiInlineResult.style.display = "block";
-      aiInlineResult.innerHTML = "🧠 ШІ аналізує дорожню ситуацію...";
+      aiInlineResult.innerHTML = "🧠 ШІ аналізує ситуацію та виконує дію...";
 
       const now = Date.now();
 
-      // ПЕРЕДАЕМ В МОДЕЛЬ ВСЕ 34+ ТОЧЕК НА КАРТЕ
+      // ПЕРЕДАЕМ В МОДЕЛЬ ВСЕ СООБЩЕНИЯ ОЧЕВИДЦЕВ
       const allLiveReportsText = allPoints.map((p, idx) => {
         const diffMin = Math.round((now - (p.time || p.timestamp || 0)) / 60000);
         const st = isCleanPoint(p) ? "ЧИСТО (зелена мітка)" : "БЛОКПОСТ/УВАГА (червона мітка)";
@@ -896,6 +940,8 @@
 РЕЖИМ КАРТИ ТА ІНТЕРФЕЙСУ:
 - Усього активних точок очевидців на карті: ${allPoints.length}
 - Стан показу світлофорів: ${showTrafficLights ? "УВІМКНЕНО" : "ПРИХОВАНО"}
+- Стан неонової підсвітки ліній: ${showNeonLines ? "УВІМКНЕНО" : "ПРИХОВАНО"}
+- Секретне меню зараз: ${document.getElementById("neonPanel").style.display === "block" ? "ВІДКРИТО" : "ЗАКРИТО"}
 - Статус рядка "Мій шлях": "${routeStatusText ? routeStatusText.innerText : ''}"
 
 СТАН 8 КОНТРОЛЬНИХ СВІТЛОФОРІВ:
@@ -911,11 +957,16 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
 1. Відповідай як живий розумний ШІ-партнер — чітко, корисно, людською мовою (мовою запиту користувача, українською або російською).
 2. Якщо водій запитує про конкретну вулицю (наприклад "Що на вулиці Шкільній?", "де блокпости?"):
    - Уважно прочитай УСІ ${allPoints.length} повідомлень вище!
-   - Якщо на запитаній вулиці є повідомлення, передай їх зміст і час. Якщо на цій вулиці в базі повідомлень немає, так прямо і скажи: "По вулиці Шкільній свіжих повідомлень про блокпости чи патрулі за останні 40 хвилин немає".
-3. Якщо водій дає команду керування картою:
-   - Сховати світлофори: додай у самий кінець повідомлення тег: <<<ACTION:{"cmd":"toggle_tl","val":"hide"}>>>
-   - Показати світлофори: додай у самий кінець повідомлення тег: <<<ACTION:{"cmd":"toggle_tl","val":"show"}>>>
-   - Змінити світлофор на чисто/бп/погасити: додай у самий кінець: <<<ACTION:{"cmd":"set_tl","id":"id_світлофора","val":"green"|"red"|"off"}>>>
+   - Якщо на запитаній вулиці є повідомлення, передай їх зміст і час. Якщо на цій вулиці в базі повідомлень немає, так прямо і скажи: "По вулиці [Назва] свіжих повідомлень про блокпости чи патрулі за останні 40 хвилин немає".
+3. КОМАНДИ КЕРУВАННЯ КАРТОЮ (якщо водій просить щось зробити, обов'язково додай відповідний тег у самий кінець повідомлення):
+   - Підсвітити/виділити вулицю на карті (наприклад "підсвіти Робочу", "выдели рабочую"): <<<ACTION:{"cmd":"highlight_street","street":"Назва вулиці"}>>>
+   - Сховати світлофори: <<<ACTION:{"cmd":"toggle_tl","val":"hide"}>>>
+   - Показати світлофори: <<<ACTION:{"cmd":"toggle_tl","val":"show"}>>>
+   - Увімкнути/показати неон: <<<ACTION:{"cmd":"toggle_neon","val":"show"}>>>
+   - Сховати/вимкнути неон: <<<ACTION:{"cmd":"toggle_neon","val":"hide"}>>>
+   - Відкрити секретне меню: <<<ACTION:{"cmd":"open_secret","val":"show"}>>>
+   - Закрити секретне меню: <<<ACTION:{"cmd":"open_secret","val":"hide"}>>>
+   - Змінити світлофор на чисто/бп/погасити: <<<ACTION:{"cmd":"set_tl","id":"id_світлофора","val":"green"|"red"|"off"}>>>
    - Перемкнути карту: <<<ACTION:{"cmd":"set_layer","val":"satellite"|"google"|"osm"}>>>
 `;
 
@@ -927,9 +978,17 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
         if (actionMatch) {
           try {
             const act = JSON.parse(actionMatch[1]);
-            if (act.cmd === 'toggle_tl') {
+            if (act.cmd === 'highlight_street' && act.street) {
+              highlightStreetOnMap(act.street);
+            } else if (act.cmd === 'toggle_tl') {
               if (act.val === 'hide' && showTrafficLights) toggleTrafficLights();
               else if (act.val === 'show' && !showTrafficLights) toggleTrafficLights();
+            } else if (act.cmd === 'toggle_neon') {
+              if (act.val === 'hide' && showNeonLines) toggleNeonLinesVisibility();
+              else if (act.val === 'show' && !showNeonLines) toggleNeonLinesVisibility();
+            } else if (act.cmd === 'open_secret') {
+              if (act.val === 'show') { document.getElementById("neonPanel").style.display = "block"; syncSectorCheckboxesUI(); }
+              else { closeNeonPanel(); }
             } else if (act.cmd === 'set_tl' && act.id && act.val) {
               setTrafficLightManual(act.id, act.val);
             } else if (act.cmd === 'set_layer' && act.val) {
@@ -944,7 +1003,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
           <div style="color:#00f3ff; font-weight:800; margin-bottom:4px;">🤖 Gemini (${resObj.model}):</div>
           <div style="line-height:1.45; white-space:pre-wrap;">${cleanDisplay}</div>
         `;
-        showToast("🤖 Відповідь отримана!");
+        showToast("🤖 Дія виконана ШІ!");
 
       } catch (err) {
         aiInlineResult.innerHTML = `
@@ -1140,7 +1199,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
       });
     }
 
-    // СВІТЛОФОРИ
+    // СВЕТОФОРЫ
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -1380,7 +1439,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
               if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
-            el.addEventListener('touchend', (e) => {
+            el.addEventListener('touchend', () => {
               if (isLongPress) {
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
@@ -1631,7 +1690,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА ТОЧЕК
+    // ЗАГРУЗКА ТОЧЕК КАРТЫ
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -1734,7 +1793,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
           if (!el) return;
 
           el.addEventListener('touchstart', (e) => {
-            startPress(e.touches[0].clientX, e.touches[0].clientY);
+            startGesture(e.touches[0].clientX, e.touches[0].clientY);
           }, { passive: true });
 
           el.addEventListener('touchmove', (e) => {
