@@ -89,6 +89,7 @@
       border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
     }
 
+    /* СВЕТОФОРЫ */
     .tl-menu-container { position: relative; margin-bottom: 6px; }
     .btn-tl-main {
       width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
@@ -102,8 +103,9 @@
     .tl-dropdown-btn {
       background: #1e293b; border: 1px solid #334155; color: #cbd5e1;
       padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 600;
-      cursor: pointer; text-align: left;
+      cursor: pointer; text-align: left; display: flex; align-items: center; gap: 6px;
     }
+    .tl-dropdown-btn:hover { background: #334155; color: #fff; }
 
     /* СПОЙЛЕР УПРАВЛЕНИЯ СЕРВЕРОМ */
     .server-menu-container { position: relative; margin-bottom: 8px; }
@@ -149,17 +151,15 @@
       0% { transform: scale(1); opacity: 1; }
       100% { transform: scale(2.4); opacity: 0; }
     }
-    .radar-circle.active-dragging-target {
-      transform: scale(1.5) !important; box-shadow: 0 0 0 4px #00f3ff, 0 0 25px 8px #00f3ff !important;
-      cursor: grab !important; z-index: 9999 !important;
-    }
 
+    /* СТИЛИ СВЕТОФОРОВ НА КАРТЕ */
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
       border-radius: 13px !important; padding: 3px 2px !important;
       display: flex !important; flex-direction: column !important; align-items: center !important; gap: 3px !important;
-      width: 20px !important; height: 36px !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.45) !important; width: 20px !important; height: 36px !important;
     }
+    .traffic-pill.draggable-mode { cursor: grab; border-color: #38bdf8 !important; box-shadow: 0 0 14px 4px #38bdf8 !important; }
     .tl-lamp { width: 11px; height: 11px; border-radius: 50%; }
     .tl-lamp.red-active { background: var(--color-red) !important; box-shadow: 0 0 10px 3px var(--color-red) !important; }
     .tl-lamp.red-dim { background: #3b1114 !important; opacity: 0.25; }
@@ -187,7 +187,7 @@
 
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
-      <div class="points-count" id="countText" onclick="handleSecretClick()">
+      <div class="points-count" id="countText">
         <span>Точок: 0</span>
         <span class="drag-handle-hint">✥</span>
       </div>
@@ -217,8 +217,12 @@
           <span id="tlDropdownArrow">▾</span>
         </button>
         <div id="tlDropdown" class="tl-dropdown">
-          <button id="btnToggleTl" class="tl-dropdown-btn" onclick="toggleTrafficLights()">Сховати / Показати</button>
-          <button id="btnSetup" class="tl-dropdown-btn" onclick="toggleEditMode()">Розставити (рухати)</button>
+          <button id="btnToggleTl" class="tl-dropdown-btn" onclick="toggleTrafficLights()">
+            <span id="btnToggleTlIcon">👁️</span><span id="btnToggleTlText">Сховати світлофори</span>
+          </button>
+          <button id="btnSetup" class="tl-dropdown-btn" onclick="toggleEditMode()">
+            <span>📍</span><span id="btnSetupText">Розставити (рухати)</span>
+          </button>
         </div>
       </div>
 
@@ -254,6 +258,201 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
+    const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
+    const LIFETIME_MS = 40 * 60 * 1000;
+    const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
+
+    let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
+    let currentMapType = localStorage.getItem("radar_map_type") || "google";
+    let isEditMode = false;
+    let trafficMarkersMap = {};
+    let allPoints = [];
+
+    // ТОЧКИ СВЕТОФОРОВ (МАРШРУТ)
+    let checkpoints = [
+      { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
+      { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
+      { id: "kombainoviy", name: "Комбайновий (Белелюбського)", lat: 48.4795, lng: 34.9845, keys: ["комбайн", "ударник"] },
+      { id: "krasnozavodska", name: "Краснозаводська (ДТРЗ)", lat: 48.4812, lng: 34.9940, keys: ["краснозавод", "белелюб", "дтрз"] },
+      { id: "pavlova", name: "вул. Академіка Павлова", lat: 48.4818, lng: 35.0012, keys: ["павлов"] },
+      { id: "rechport", name: "Річпорт (Набережна Заводська)", lat: 48.4805, lng: 35.0210, keys: ["речпорт", "річпорт"] },
+      { id: "vodokachka", name: "Водокачка (Набережна Заводська)", lat: 48.4910, lng: 34.9480, keys: ["водокачк"] },
+      { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан"] }
+    ];
+
+    const isMobile = window.innerWidth < 768;
+    const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], isMobile ? 12 : 13);
+
+    const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+      subdomains: ['0', '1', '2', '3'], maxZoom: 20, attribution: 'Google Maps'
+    });
+    const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, attribution: 'Esri World Street Map'
+    });
+
+    if (currentMapType === "osm") esriLayer.addTo(map);
+    else googleLayer.addTo(map);
+
+    const markersLayer = L.layerGroup().addTo(map);
+    const trafficLightLayer = L.layerGroup().addTo(map);
+    if (!showTrafficLights) map.removeLayer(trafficLightLayer);
+
+    function showToast(text) {
+      const toast = document.getElementById("toast");
+      toast.innerText = text; toast.style.display = "block";
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
+    }
+
+    function hardReload() {
+      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+    }
+
+    function isCleanPoint(p) {
+      if (p.color === "green" || p.status === "чисто") return true;
+      if (p.color === "red" || p.status === "опасно") return false;
+      const t = (p.text || "").toLowerCase();
+      return t.includes("чисто") || t.includes("👍") || t.includes("пусто");
+    }
+
+    // --- ФУНКЦИИ СВЕТОФОРОВ ---
+    function toggleTlDropdown() {
+      const drop = document.getElementById("tlDropdown");
+      const arrow = document.getElementById("tlDropdownArrow");
+      const isVis = drop.style.display === "flex";
+      drop.style.display = isVis ? "none" : "flex";
+      arrow.innerText = isVis ? "▾" : "▴";
+    }
+
+    function toggleTrafficLights() {
+      showTrafficLights = !showTrafficLights;
+      localStorage.setItem("radar_tl_visible", showTrafficLights);
+      updateTrafficLightsBtnUI();
+
+      if (showTrafficLights) {
+        if (!map.hasLayer(trafficLightLayer)) map.addLayer(trafficLightLayer);
+        renderTrafficLights();
+        showToast("🚦 Світлофори увімкнено!");
+      } else {
+        trafficLightLayer.clearLayers();
+        trafficMarkersMap = {};
+        if (map.hasLayer(trafficLightLayer)) map.removeLayer(trafficLightLayer);
+        showToast("🙈 Світлофори приховано!");
+      }
+    }
+
+    function updateTrafficLightsBtnUI() {
+      const icon = document.getElementById("btnToggleTlIcon");
+      const text = document.getElementById("btnToggleTlText");
+      if (showTrafficLights) {
+        if (icon) icon.innerText = "👁️";
+        if (text) text.innerText = "Сховати світлофори";
+      } else {
+        if (icon) icon.innerText = "🙈";
+        if (text) text.innerText = "Показати світлофори";
+      }
+    }
+    updateTrafficLightsBtnUI();
+
+    async function toggleEditMode() {
+      if (!showTrafficLights) toggleTrafficLights();
+      isEditMode = !isEditMode;
+      const btnText = document.getElementById("btnSetupText");
+
+      if (isEditMode) {
+        if (btnText) btnText.innerText = "Зафіксувати позиції";
+        showToast("📍 Перетягуйте світлофори по карті.");
+      } else {
+        if (btnText) btnText.innerText = "Розставити (рухати)";
+        await syncCheckpointsToCloud();
+        showToast("✅ Позиції світлофорів збережено!");
+      }
+      renderTrafficLights();
+    }
+
+    async function syncCheckpointsToCloud() {
+      localStorage.setItem("dnepr_radar_checkpoints_v2", JSON.stringify(checkpoints));
+      try {
+        await fetch(FIREBASE_CONFIG_URL, {
+          method: "PUT", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(checkpoints)
+        });
+      } catch (e) {}
+    }
+
+    async function loadCheckpointsFromCloud() {
+      try {
+        const local = localStorage.getItem("dnepr_radar_checkpoints_v2");
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (Array.isArray(parsed) && parsed.length > 0) checkpoints = parsed;
+        }
+        const res = await fetch(`${FIREBASE_CONFIG_URL}?t=${Date.now()}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            checkpoints = data;
+            localStorage.setItem("dnepr_radar_checkpoints_v2", JSON.stringify(data));
+          }
+        }
+      } catch (e) {}
+    }
+
+    function renderTrafficLights() {
+      if (!showTrafficLights) return;
+
+      checkpoints.forEach(cp => {
+        const matched = allPoints.filter(p => {
+          const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
+          return cp.keys.some(k => text.includes(k));
+        });
+        matched.sort((a, b) => (b.time || 0) - (a.time || 0));
+        const latest = matched[0];
+
+        if (!latest && !isEditMode) {
+          if (trafficMarkersMap[cp.id]) {
+            trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
+            delete trafficMarkersMap[cp.id];
+          }
+          return;
+        }
+
+        let redClass = "tl-lamp off", greenClass = "tl-lamp off", statusTitle = "⚪ Очікування";
+        if (latest) {
+          if (isCleanPoint(latest)) {
+            redClass = "tl-lamp red-dim"; greenClass = "tl-lamp green-active"; statusTitle = "🟢 ЧИСТО";
+          } else {
+            redClass = "tl-lamp red-active"; greenClass = "tl-lamp green-dim"; statusTitle = "🔴 УВАГА";
+          }
+        }
+
+        const iconHtml = `<div class="traffic-pill ${isEditMode ? 'draggable-mode' : ''}"><div class="${redClass}"></div><div class="${greenClass}"></div></div>`;
+        const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
+
+        let popupContent = `<div style="padding:4px;"><div style="font-weight:700; color:#0284c7;">🚦 ${cp.name}</div><div style="font-size:12px; font-weight:700; margin:4px 0;">${statusTitle}</div>`;
+        if (latest) popupContent += `<div style="font-size:12px;">${latest.text || ""}</div>`;
+        popupContent += `</div>`;
+
+        if (trafficMarkersMap[cp.id]) {
+          trafficMarkersMap[cp.id].setIcon(tlIcon);
+          trafficMarkersMap[cp.id].setPopupContent(popupContent);
+          if (isEditMode) trafficMarkersMap[cp.id].dragging.enable();
+          else trafficMarkersMap[cp.id].dragging.disable();
+        } else {
+          const marker = L.marker([cp.lat, cp.lng], { icon: tlIcon, zIndexOffset: 1000, draggable: isEditMode });
+          marker.on('dragend', async (e) => {
+            const pos = e.target.getLatLng();
+            cp.lat = Number(pos.lat.toFixed(5)); cp.lng = Number(pos.lng.toFixed(5));
+            await syncCheckpointsToCloud();
+          });
+          marker.bindPopup(popupContent);
+          trafficLightLayer.addLayer(marker);
+          trafficMarkersMap[cp.id] = marker;
+        }
+      });
+    }
+
+    // --- УПРАВЛЕНИЕ СЕРВЕРОМ GITHUB ACTIONS ---
     function toggleServerDropdown() {
       const drop = document.getElementById("serverDropdown");
       const arrow = document.getElementById("serverDropdownArrow");
@@ -265,7 +464,7 @@
     async function triggerGitHubActions() {
       let token = localStorage.getItem("gh_pat_token");
       if (!token) {
-        token = prompt("Введіть ваш GitHub Personal Access Token (створюється 1 раз у налаштуваннях GitHub):");
+        token = prompt("Введіть ваш GitHub Personal Access Token:");
         if (!token) return;
         token = token.trim();
         localStorage.setItem("gh_pat_token", token);
@@ -313,6 +512,7 @@
       }
     }
 
+    // WAKE LOCK
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
@@ -325,6 +525,7 @@
     window.addEventListener('click', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
+    // ШАПКА
     const dashPanel = document.getElementById("dashPanel");
     const collapsibleBody = document.getElementById("collapsibleBody");
     const btnToggle = document.getElementById("btnToggle");
@@ -403,27 +604,6 @@
     }
     makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
 
-    const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
-    const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
-    const LIFETIME_MS = 40 * 60 * 1000;
-    const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
-
-    let showTrafficLights = localStorage.getItem("radar_tl_visible") !== "false";
-    let currentMapType = localStorage.getItem("radar_map_type") || "google";
-
-    const isMobile = window.innerWidth < 768;
-    const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], isMobile ? 12 : 13);
-
-    const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
-      subdomains: ['0', '1', '2', '3'], maxZoom: 20, attribution: 'Google Maps'
-    });
-    const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, attribution: 'Esri World Street Map'
-    });
-
-    if (currentMapType === "osm") esriLayer.addTo(map);
-    else googleLayer.addTo(map);
-
     function toggleMapLayer() {
       if (currentMapType === "google") {
         map.removeLayer(googleLayer); esriLayer.addTo(map); currentMapType = "osm";
@@ -435,26 +615,11 @@
       showToast(currentMapType === "google" ? "🗺️ Google Карта увімкнена!" : "🗺️ Вулична Карта (Esri) увімкнена!");
     }
 
-    const markersLayer = L.layerGroup().addTo(map);
-    const trafficLightLayer = L.layerGroup().addTo(map);
-    let allPoints = [];
-    let isEditMode = false;
-    let trafficMarkersMap = {};
-    let searchPinMarker = null;
-
-    function showToast(text) {
-      const toast = document.getElementById("toast");
-      toast.innerText = text; toast.style.display = "block";
-      setTimeout(() => { toast.style.display = "none"; }, 3000);
-    }
-
-    function hardReload() {
-      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
-    }
-
+    // ПОИСК УЛИЦ ПО ДНЕПРУ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
     let searchDebounceTimer = null;
+    let searchPinMarker = null;
 
     streetSearchInput.addEventListener("input", () => {
       clearTimeout(searchDebounceTimer);
@@ -501,25 +666,21 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    function toggleTlDropdown() {
-      const drop = document.getElementById("tlDropdown");
-      const isVis = drop.style.display === "flex";
-      drop.style.display = isVis ? "none" : "flex";
-      document.getElementById("tlDropdownArrow").innerText = isVis ? "▾" : "▴";
-    }
-
+    // ЗАГРУЗКА ТОЧЕК КАРТЫ
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
         if (!res.ok) return;
         const data = await res.json();
-        if (!data) { allPoints = []; renderMarkers(); return; }
+        if (!data) { allPoints = []; renderMarkers(); renderTrafficLights(); return; }
         const now = Date.now();
         allPoints = Object.entries(data).map(([key, p]) => {
           if (!p || typeof p !== 'object' || !p.lat || !p.lng) return null;
           p._fbKey = key; return p;
         }).filter(p => p && (now - (p.time || p.timestamp || 0)) <= LIFETIME_MS);
+
         renderMarkers();
+        renderTrafficLights();
       } catch (err) {}
     }
 
@@ -534,7 +695,7 @@
         if (diff > LIFETIME_MS) return;
 
         const isFresh = diff <= FRESH_THRESHOLD_MS;
-        const clean = (p.color === "green" || p.status === "чисто");
+        const clean = isCleanPoint(p);
         const colorClass = clean ? "color-green" : "color-red";
         const freshClass = isFresh ? "fresh" : "";
         const emoji = clean ? "🟢" : "🔴";
@@ -561,7 +722,9 @@
       document.getElementById('countText').innerHTML = `<span>Точок: ${visibleCount}</span><span class="drag-handle-hint">✥</span>`;
     }
 
-    loadPoints();
+    loadCheckpointsFromCloud().then(() => {
+      loadPoints();
+    });
     setInterval(loadPoints, 15000);
   </script>
 </body>
