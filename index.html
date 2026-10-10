@@ -409,6 +409,33 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
+    // УСИЛЕННЫЙ WAKE LOCK — ЧТОБЫ ЭКРАН НЕ ГАС НИКОГДА
+    let screenWakeLock = null;
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator && !screenWakeLock) {
+          screenWakeLock = await navigator.wakeLock.request('screen');
+          screenWakeLock.addEventListener('release', () => {
+            screenWakeLock = null;
+          });
+        }
+      } catch (err) {}
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') requestWakeLock();
+    });
+    ['click', 'touchstart', 'touchend', 'mousemove'].forEach(evt => {
+      window.addEventListener(evt, () => {
+        if (!screenWakeLock) requestWakeLock();
+      }, { passive: true });
+    });
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && !screenWakeLock) {
+        requestWakeLock();
+      }
+    }, 10000);
+    requestWakeLock();
+
     // КОНТРОЛЛЕР ПЕРЕМЕЩЕНИЯ КРУЖОЧКОВ (ОБУЧЕНИЕ ИИ)
     const dragController = {
       activeMarker: null,
@@ -500,7 +527,7 @@
       if (dragController.isDragging) dragController.isDragging = false;
     });
 
-    // ХРАНИЛИЩЕ РУЧНЫХ КОРРЕКТИРОВОК СВЕТОФОРОВ
+    // ХРАНИЛИЩЕ РУЧНЫХ КОРРЕКТИРОВОК
     let manualOverrides = {};
     try {
       manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}");
@@ -656,7 +683,7 @@
       });
     }
 
-    // СТРОКА СТАТУСА МАРШРУТА
+    // ПОЛНАЯ СИНХРОНИЗАЦИЯ СТРОКИ СТАТУСА И СВЕТОФОРОВ НА КАРТЕ
     const routeStatusBar = document.getElementById("routeStatusBar");
     const routeStatusIcon = document.getElementById("routeStatusIcon");
     const routeStatusText = document.getElementById("routeStatusText");
@@ -679,18 +706,18 @@
       let detectedStreets = [];
 
       checkpoints.forEach(cp => {
+        // Ищем ПОСЛЕДНЕЕ актуальное сообщение для контрольной точки
         const matched = allPoints.filter(p => {
           const diff = now - (p.time || p.timestamp || 0);
           if (diff > LIFETIME_MS) return false;
-          if (isCleanPoint(p)) return false;
           const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
           return cp.keys.some(k => text.includes(k));
         });
         matched.sort((a, b) => (b.time || 0) - (a.time || 0));
-        const latestDanger = matched[0];
+        const latest = matched[0];
 
         const override = manualOverrides[cp.id];
-        const hasFresherDanger = latestDanger && override && (latestDanger.time > override.time);
+        const hasFresherDanger = latest && !isCleanPoint(latest) && override && (latest.time > override.time);
         const isOverrideActive = override && (now - override.time < LIFETIME_MS) && !hasFresherDanger;
 
         if (isOverrideActive) {
@@ -701,7 +728,8 @@
           return;
         }
 
-        if (latestDanger) {
+        // КРИТИЧЕСКИ ВАЖНО: опасность считается ТОЛЬКО если последний отчет тревожный!
+        if (latest && !isCleanPoint(latest)) {
           dangerCount++;
           detectedStreets.push(cp.name);
         }
@@ -1065,7 +1093,6 @@
         const iconHtml = `<div class="traffic-pill ${isEditMode ? 'draggable-mode' : ''}"><div class="${redClass}"></div><div class="${greenClass}"></div></div>`;
         const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
 
-        // ФОРМИРУЕМ ЧИСТЫЙ ТЕКСТ СООБЩЕНИЯ (ЕДИНЫЙ СВЕТЛЫЙ ФОН, ЧЕРНЫЙ ТЕКСТ И РЕАЛЬНОЕ ВРЕМЯ)
         let messageBlock = "";
         if (latest && (!isOverrideActive || (override && override.status !== 'off'))) {
           const rawText = latest.text || latest.raw_text || "";
@@ -1190,7 +1217,7 @@
       });
     }
 
-    // УПРАВЛЕНИЕ СЕРВЕРОМ GITHUB ACTIONS
+    // GITHUB ACTIONS
     function toggleServerDropdown() {
       const drop = document.getElementById("serverDropdown");
       const arrow = document.getElementById("serverDropdownArrow");
@@ -1250,20 +1277,7 @@
       }
     }
 
-    // WAKE LOCK
-    let screenWakeLock = null;
-    async function requestScreenWakeLock() {
-      try {
-        if ('wakeLock' in navigator) screenWakeLock = await navigator.wakeLock.request('screen');
-      } catch (err) {}
-    }
-    document.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'visible') requestScreenWakeLock();
-    });
-    window.addEventListener('click', requestScreenWakeLock, { once: true });
-    requestScreenWakeLock();
-
-    // ШАПКА И ПЕРЕМЕЩЕНИЕ ЭЛЕМЕНТОВ
+    // ПЕРЕМЕЩЕНИЕ ЭЛЕМЕНТОВ
     const dashPanel = document.getElementById("dashPanel");
     const neonPanel = document.getElementById("neonPanel");
     const btnToggle = document.getElementById("btnToggle");
@@ -1413,7 +1427,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА И ОТРИСОВКА КРУЖОЧКОВ
+    // ЗАГРУЗКА И ОТРИСОВКА ТОЧЕК
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
