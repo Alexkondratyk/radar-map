@@ -336,7 +336,6 @@
       <span style="cursor:pointer; font-size:16px; padding: 0 4px;" onclick="closeNeonPanel()">✕</span>
     </div>
 
-    <!-- ТУМБЛЕР СТРОКИ СТАТУСА -->
     <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🛣️ Інформер дороги:</div>
     <label class="sector-item" style="margin-bottom:10px;">
       <input type="checkbox" id="chkRouteStatusBar" onchange="toggleRouteStatusBarVisible()" checked>
@@ -396,13 +395,12 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // ХРАНИЛИЩЕ РУЧНЫХ КОРРЕКТИРОВОК СВЕТОФОРОВ
+    // ХРАНИЛИЩЕ РУЧНЫХ КОРРЕКТИРОВОК
     let manualOverrides = {};
     try {
       manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}");
     } catch(e) {}
 
-    // ФУНКЦИЯ УПРАВЛЕНИЯ СВЕТОФОРОМ В 1 КЛИК
     window.setTrafficLightManual = function(cpId, status) {
       if (status === 'auto') {
         delete manualOverrides[cpId];
@@ -417,7 +415,6 @@
       renderTrafficLights();
       updateRouteStatus();
 
-      // Автоматически обновляем открытый попап
       if (trafficMarkersMap[cpId] && trafficMarkersMap[cpId].isPopupOpen()) {
         trafficMarkersMap[cpId].openPopup();
       }
@@ -554,7 +551,7 @@
       });
     }
 
-    // ОБНОВЛЕНИЕ ПЛАВАЮЩЕЙ СТРОКИ СТАТУСА
+    // СТРОКА СТАТУСА МАРШРУТА
     const routeStatusBar = document.getElementById("routeStatusBar");
     const routeStatusIcon = document.getElementById("routeStatusIcon");
     const routeStatusText = document.getElementById("routeStatusText");
@@ -577,18 +574,6 @@
       let detectedStreets = [];
 
       checkpoints.forEach(cp => {
-        const override = manualOverrides[cp.id];
-
-        // 1. Ручной режим приоритетнее
-        if (override && (now - override.time < LIFETIME_MS)) {
-          if (override.status === 'red') {
-            dangerCount++;
-            detectedStreets.push(cp.name);
-          }
-          return;
-        }
-
-        // 2. Автоматический подсчёт
         const matched = allPoints.filter(p => {
           const diff = now - (p.time || p.timestamp || 0);
           if (diff > LIFETIME_MS) return false;
@@ -596,8 +581,23 @@
           const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
           return cp.keys.some(k => text.includes(k));
         });
+        matched.sort((a, b) => (b.time || 0) - (a.time || 0));
+        const latestDanger = matched[0];
 
-        if (matched.length > 0) {
+        const override = manualOverrides[cp.id];
+        // Ручной режим сбрасывается, если появился свежий отчет о БП ПОСЛЕ ручного клика!
+        const hasFresherDanger = latestDanger && override && (latestDanger.time > override.time);
+        const isOverrideActive = override && (now - override.time < LIFETIME_MS) && !hasFresherDanger;
+
+        if (isOverrideActive) {
+          if (override.status === 'red') {
+            dangerCount++;
+            detectedStreets.push(cp.name);
+          }
+          return;
+        }
+
+        if (latestDanger) {
           dangerCount++;
           detectedStreets.push(cp.name);
         }
@@ -793,7 +793,7 @@
       });
     }
 
-    // РЕНДЕР СВЕТОФОРОВ + КОМПАКТНЫЙ МИКРО-ПУЛЬТ В POPUP
+    // РЕНДЕР СВЕТОФОРОВ (С АВТОСБРОСОМ ПРИ СВЕЖЕМ СООБЩЕНИИ)
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -894,9 +894,10 @@
         matched.sort((a, b) => (b.time || 0) - (a.time || 0));
         let latest = matched[0];
 
-        // ПРОВЕРКА РУЧНОЙ КОРРЕКЦИИ
         const override = manualOverrides[cp.id];
-        const isOverrideActive = override && (now - override.time < LIFETIME_MS);
+        // Если пришло свежее сообщение о БП ПОСЛЕ того, как вы нажали кнопку — ручной режим аннулируется!
+        const hasFresherDanger = latest && !isCleanPoint(latest) && override && (latest.time > override.time);
+        const isOverrideActive = override && (now - override.time < LIFETIME_MS) && !hasFresherDanger;
 
         if (!latest && !isEditMode && !isOverrideActive) {
           if (trafficMarkersMap[cp.id]) {
@@ -928,7 +929,6 @@
         const iconHtml = `<div class="traffic-pill ${isEditMode ? 'draggable-mode' : ''}"><div class="${redClass}"></div><div class="${greenClass}"></div></div>`;
         const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
 
-        // КОМПАКТНЫЙ POPUP С МИКРО-ПУЛЬТОМ КОРРЕКТИРОВКИ
         const overrideBadge = isOverrideActive ? `<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>` : "";
         
         let popupContent = `
