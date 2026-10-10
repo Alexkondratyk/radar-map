@@ -74,10 +74,11 @@
     /* НАВИГАЦИОННЫЕ ТАБЫ */
     .tabs-nav {
       display: flex; gap: 6px; margin-bottom: 16px; background: #0b1120; padding: 4px; border-radius: 10px; border: 1px solid #1e293b;
+      overflow-x: auto;
     }
     .tab-btn {
-      flex: 1; padding: 9px 4px; background: transparent; border: none; color: #94a3b8;
-      font-size: 11px; font-weight: 800; border-radius: 7px; cursor: pointer; transition: all 0.2s;
+      flex: 1; min-width: 130px; padding: 9px 6px; background: transparent; border: none; color: #94a3b8;
+      font-size: 11px; font-weight: 800; border-radius: 7px; cursor: pointer; transition: all 0.2s; white-space: nowrap; text-align: center;
     }
     .tab-btn.active {
       background: #0284c7; color: #fff; box-shadow: 0 0 14px rgba(2, 132, 199, 0.6);
@@ -94,48 +95,59 @@
 
     /* ПУЛЬТ КНОПОК ФИЛЬТРА УЛИЦ */
     .street-control-toolbar {
-      background: #070d1d;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 10px;
-      margin-bottom: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      background: #070d1d; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 10px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px;
     }
     .ctrl-modes-row {
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
     }
     .btn-multi-toggle {
       background: #0f172a; border: 1px solid #334155; color: #94a3b8;
-      padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800;
-      cursor: pointer; transition: all 0.2s;
+      padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s;
     }
     .btn-multi-toggle.active {
-      background: #ca8a04; border-color: #f59e0b; color: #fff;
-      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+      background: #ca8a04; border-color: #f59e0b; color: #fff; box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
     }
     .btn-all-streets {
       background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8;
-      padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 800;
-      cursor: pointer; transition: all 0.2s;
+      padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; transition: all 0.2s;
     }
     .btn-all-streets.active {
       background: #0284c7; color: #fff; box-shadow: 0 0 12px rgba(2, 132, 199, 0.6);
     }
 
-    .ctrl-streets-row {
-      display: flex; flex-wrap: wrap; gap: 6px;
-    }
+    .ctrl-streets-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .street-pill-btn {
       padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 800;
       cursor: pointer; background: #0b1120; border: 1.5px solid #334155;
       color: #94a3b8; opacity: 0.45; transition: all 0.2s;
     }
     .street-pill-btn.active {
-      opacity: 1 !important;
-      color: #fff !important;
-      box-shadow: 0 0 12px currentColor;
+      opacity: 1 !important; color: #fff !important; box-shadow: 0 0 12px currentColor;
+    }
+
+    /* ПЕРЕКЛЮЧАТЕЛЬ НЕДЕЛЬ И ДНЕЙ */
+    .week-nav-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 8px;
+      padding: 6px 10px; margin-bottom: 10px;
+    }
+    .btn-nav-week {
+      background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8;
+      padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer;
+    }
+    .btn-nav-week:disabled { opacity: 0.3; cursor: not-allowed; border-color: #334155; color: #64748b; }
+    .week-status-label { font-size: 11px; font-weight: 800; color: #f1f5f9; }
+
+    .day-selector-pills {
+      display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .pill-day-btn {
+      background: #0f172a; border: 1px solid #334155; color: #94a3b8;
+      padding: 4px 9px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer;
+    }
+    .pill-day-btn.active {
+      background: #0284c7; border-color: #00f3ff; color: #fff; box-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
     }
 
     /* ХРОНОМЕТРАЖ (ТАБ 1) */
@@ -200,6 +212,18 @@
     .st-badge.before { border-color: #a855f7; color: #a855f7; }
     .st-badge.week { border-color: #ec4899; color: #ec4899; }
 
+    /* ГОДОВАЯ СТАТИСТИКА (ТАБ 4) */
+    .year-nav-row {
+      display: flex; gap: 8px; align-items: center; margin-bottom: 12px;
+    }
+    .btn-year-tab {
+      background: #1e293b; border: 1px solid #334155; color: #94a3b8;
+      padding: 6px 16px; border-radius: 7px; font-size: 12px; font-weight: 800; cursor: pointer;
+    }
+    .btn-year-tab.active {
+      background: #0284c7; border-color: #00f3ff; color: #fff; box-shadow: 0 0 12px rgba(0, 243, 255, 0.4);
+    }
+
     .chart-canvas-wrap { position: relative; width: 100%; height: 280px; }
 
     /* МОДАЛЬНОЕ ОКНО */
@@ -214,10 +238,8 @@
       box-shadow: 0 0 30px rgba(0, 243, 255, 0.35); position: relative;
     }
     .modal-close-btn {
-      position: absolute; top: 12px; right: 14px; font-size: 18px; color: #94a3b8;
-      cursor: pointer; font-weight: 800;
+      position: absolute; top: 12px; right: 14px; font-size: 18px; color: #94a3b8; cursor: pointer; font-weight: 800;
     }
-    .modal-close-btn:hover { color: #fff; }
     .modal-head-title { font-size: 15px; font-weight: 900; color: #00f3ff; margin-bottom: 4px; }
     .modal-head-sub { font-size: 11px; color: #94a3b8; margin-bottom: 12px; }
     .modal-reports-list { display: flex; flex-direction: column; gap: 8px; }
@@ -268,12 +290,13 @@
       </div>
     </div>
 
-    <!-- НАВИГАЦИОННЫЕ ТАБЫ -->
+    <!-- НАВИГАЦИОННЫЕ ТАБЫ (ВКЛАДКА МЕСЯЦЕВ СТРОГО МЕЖДУ 3 И 5) -->
     <div class="tabs-nav">
       <button id="tabBtn1" class="tab-btn active" onclick="setTab(1)">⏱️ Хронометраж</button>
       <button id="tabBtn2" class="tab-btn" onclick="setTab(2)">📊 Стовпчики по днях</button>
       <button id="tabBtn3" class="tab-btn" onclick="setTab(3)">🕒 Години та дні (маршрут)</button>
-      <button id="tabBtn4" class="tab-btn" onclick="setTab(4)">🌐 Інше місто</button>
+      <button id="tabBtn4" class="tab-btn" onclick="setTab(4)">📅 По місяцях (Рік)</button>
+      <button id="tabBtn5" class="tab-btn" onclick="setTab(5)">🌐 Інші місця Дніпра</button>
     </div>
 
     <!-- ТАБ 1: ХРОНОМЕТРАЖ -->
@@ -295,7 +318,6 @@
         <span>📊 Блокпости: Сьогодні / Вчора / Позавчора / 7 днів:</span>
       </div>
 
-      <!-- ПУЛЬТ ФИЛЬТРА УЛИЦ ДЛЯ ТАБ 2 -->
       <div class="street-control-toolbar">
         <div class="ctrl-modes-row">
           <button id="btnMultiTab2" class="btn-multi-toggle" onclick="toggleMultiSelectMode('tab2')">
@@ -317,13 +339,15 @@
       <div class="street-time-cards" id="streetTimeCards"></div>
     </div>
 
-    <!-- ТАБ 3: ЧАСЫ И ДНИ (МАРШРУТ) -->
+    <!-- ТАБ 3: ЧАСЫ И ДНИ (СИНХРОНИЗАЦИЯ КЛИКАМИ ПО ДНЯМ И ВЫБОРОМ НЕДЕЛИ) -->
     <div id="tabContent3" class="hud-card" style="display:none;">
-      <div class="hud-card-title">
-        <span>🕒 Активність по годинах (24h) та по днях:</span>
+      <!-- ПЕРЕКЛЮЧАТЕЛЬ НЕДЕЛИ -->
+      <div class="week-nav-bar">
+        <button class="btn-nav-week" onclick="changeWeekOffset(-1)">◀ Попередній тиждень</button>
+        <span id="weekNavStatusLabel" class="week-status-label">Поточний тиждень</span>
+        <button id="btnNextWeek" class="btn-nav-week" onclick="changeWeekOffset(1)" disabled>Наступний тиждень ▶</button>
       </div>
 
-      <!-- ПУЛЬТ ФИЛЬТРА УЛИЦ ДЛЯ ТАБ 3 -->
       <div class="street-control-toolbar">
         <div class="ctrl-modes-row">
           <button id="btnMultiTab3" class="btn-multi-toggle" onclick="toggleMultiSelectMode('tab3')">
@@ -336,24 +360,59 @@
         <div class="ctrl-streets-row" id="pillsContainerTab3"></div>
       </div>
 
+      <!-- ВЫБОР ДНЯ ДЛЯ ПОЧАСОВОГО ГРАФИКА -->
       <div class="hud-card-title" style="margin-top:10px; font-size:13px;">
-        <span>🕒 По годинах доби (24h):</span>
+        <span id="hourlyChartHeading">🕒 Розподіл по годинах (Всі дні вибраного тижня):</span>
       </div>
+      <div class="day-selector-pills" id="daySelectorPills"></div>
+
       <div class="chart-canvas-wrap" style="height:230px;">
         <canvas id="canvasRouteHourly"></canvas>
       </div>
 
       <div class="hud-card-title" style="margin-top:20px; font-size:13px;">
-        <span>📅 По днях тижня:</span>
+        <span>📅 По днях тижня (натисніть на стовпчик для вибору дня!):</span>
       </div>
       <div class="chart-canvas-wrap" style="height:230px;">
         <canvas id="canvasRouteWeekly"></canvas>
       </div>
     </div>
 
-    <!-- ТАБ 4: ДРУГИЕ РАЙОНЫ -->
+    <!-- ТАБ 4: ГОДОВАЯ СТАТИСТИКА ПО МЕСЯЦАМ -->
     <div id="tabContent4" class="hud-card" style="display:none;">
-      <div class="hud-card-title">🌐 Активність в інших районах Дніпра:</div>
+      <div class="hud-card-title">
+        <span>📅 Статистика по ваших 7 місцях по місяцях:</span>
+        <div class="year-nav-row">
+          <button id="btnYear2026" class="btn-year-tab active" onclick="setStatsYear(2026)">2026 рік</button>
+          <button id="btnYear2027" class="btn-year-tab" onclick="setStatsYear(2027)">2027 рік</button>
+        </div>
+      </div>
+
+      <div class="street-control-toolbar">
+        <div class="ctrl-modes-row">
+          <button id="btnMultiTab4" class="btn-multi-toggle" onclick="toggleMultiSelectMode('tab4')">
+            🔲 Вибір кількох вулиць (Вимк)
+          </button>
+          <button id="btnAllTab4" class="btn-all-streets active" onclick="handleStreetButtonClick('tab4', 'all')">
+            🌐 Всі 7 вулиць
+          </button>
+        </div>
+        <div class="ctrl-streets-row" id="pillsContainerTab4"></div>
+      </div>
+
+      <div class="chart-canvas-wrap" style="height:270px;">
+        <canvas id="canvasYearlyMonths"></canvas>
+      </div>
+
+      <div style="font-size:11px; color:#38bdf8; margin: 12px 0 6px; font-weight:700;">
+        📋 Підсумок по місяцях вибраного року:
+      </div>
+      <div class="street-time-cards" id="monthlyBreakdownCards"></div>
+    </div>
+
+    <!-- ТАБ 5: ДРУГИЕ МЕСТА ДНЕПРА -->
+    <div id="tabContent5" class="hud-card" style="display:none;">
+      <div class="hud-card-title">🌐 Активність в інших місцях Дніпра (фоново):</div>
       <div id="otherSectorsList"></div>
     </div>
   </div>
@@ -373,15 +432,20 @@
     let rawArchive = [];
     let onlyConfirmedMode = true;
     let timelineDayOffset = 0; // 0 = Сьогодні, 1 = Вчора
+    let currentWeekOffset = 0; // 0 = текущая неделя, -1 = прошлая неделя, etc.
+    let selectedDayTimestamp = null; // null = вся неделя, число = фильтр по конкретному дню
+    let selectedStatsYear = 2026; // 2026 по умолчанию
+
     let streetDaysChartInstance = null;
     let routeHourlyChartInstance = null;
     let routeWeeklyChartInstance = null;
+    let yearlyMonthsChartInstance = null;
     let targetSessionsGlobal = {};
 
-    // СОСТОЯНИЕ ФИЛЬТРОВ УЛИЦ ДЛЯ ТАБ 2 И ТАБ 3
     const streetFilters = {
       tab2: { multi: false, selected: new Set(['all']) },
-      tab3: { multi: false, selected: new Set(['all']) }
+      tab3: { multi: false, selected: new Set(['all']) },
+      tab4: { multi: false, selected: new Set(['all']) }
     };
 
     const TARGET_CHECKPOINTS = [
@@ -458,6 +522,7 @@
       }
       renderPillsControls('tab2');
       renderPillsControls('tab3');
+      renderPillsControls('tab4');
       renderAll();
     }
 
@@ -481,11 +546,27 @@
       renderAll();
     }
 
-    // --- УПРАВЛЕНИЕ КНОПКАМИ УЛИЦ (ОДИНАРНЫЙ ВЫБОР VS МУЛЬТИВЫБОР) ---
+    function setStatsYear(year) {
+      selectedStatsYear = year;
+      document.getElementById("btnYear2026").classList.toggle("active", year === 2026);
+      document.getElementById("btnYear2027").classList.toggle("active", year === 2027);
+      renderYearlyTab();
+    }
+
+    function changeWeekOffset(delta) {
+      currentWeekOffset += delta;
+      if (currentWeekOffset > 0) currentWeekOffset = 0;
+      selectedDayTimestamp = null; // сбрасываем фильтр по дню при переключении недели
+      document.getElementById("btnNextWeek").disabled = (currentWeekOffset === 0);
+      document.getElementById("weekNavStatusLabel").innerText = currentWeekOffset === 0 ? "Поточний тиждень" : `${Math.abs(currentWeekOffset)} тиж. тому`;
+      renderAll();
+    }
+
+    // УПРАВЛЕНИЕ КНОПКАМИ УЛИЦ
     function toggleMultiSelectMode(tabKey) {
       const f = streetFilters[tabKey];
       f.multi = !f.multi;
-      const btn = document.getElementById(tabKey === 'tab2' ? 'btnMultiTab2' : 'btnMultiTab3');
+      const btn = document.getElementById(tabKey === 'tab2' ? 'btnMultiTab2' : (tabKey === 'tab3' ? 'btnMultiTab3' : 'btnMultiTab4'));
       if (f.multi) {
         btn.classList.add('active');
         btn.innerText = "☑️ Мультивибір (УВІМКНЕНО)";
@@ -503,11 +584,9 @@
         f.selected.add('all');
       } else {
         if (!f.multi) {
-          // ОДИНОЧНЫЙ РЕЖИМ (SOLO): нажал улицу — горит только она, остальные погасли
           f.selected.clear();
           f.selected.add(streetId);
         } else {
-          // МУЛЬТИРЕЖИМ: добавляем или убираем конкретную улицу независимо
           if (f.selected.has('all')) {
             f.selected.clear();
             f.selected.add(streetId);
@@ -524,22 +603,19 @@
 
       updatePillsUI(tabKey);
 
-      // Перерисовываем графики выбранного таба
       const nowDate = new Date();
       const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
       const yesterdayStart = todayStart - 86400000;
       const beforeYesterdayStart = todayStart - 86400000 * 2;
       const weekStart = todayStart - 86400000 * 6;
 
-      if (tabKey === 'tab2') {
-        renderStreetDaysChart(targetSessionsGlobal, todayStart, yesterdayStart, beforeYesterdayStart, weekStart);
-      } else {
-        renderRouteTimeCharts(targetSessionsGlobal, todayStart);
-      }
+      if (tabKey === 'tab2') renderStreetDaysChart(targetSessionsGlobal, todayStart, yesterdayStart, beforeYesterdayStart, weekStart);
+      else if (tabKey === 'tab3') renderRouteTimeCharts(targetSessionsGlobal, todayStart);
+      else if (tabKey === 'tab4') renderYearlyTab();
     }
 
     function renderPillsControls(tabKey) {
-      const container = document.getElementById(tabKey === 'tab2' ? 'pillsContainerTab2' : 'pillsContainerTab3');
+      const container = document.getElementById(tabKey === 'tab2' ? 'pillsContainerTab2' : (tabKey === 'tab3' ? 'pillsContainerTab3' : 'pillsContainerTab4'));
       container.innerHTML = "";
 
       TARGET_CHECKPOINTS.forEach(t => {
@@ -557,7 +633,7 @@
 
     function updatePillsUI(tabKey) {
       const f = streetFilters[tabKey];
-      const allBtn = document.getElementById(tabKey === 'tab2' ? 'btnAllTab2' : 'btnAllTab3');
+      const allBtn = document.getElementById(tabKey === 'tab2' ? 'btnAllTab2' : (tabKey === 'tab3' ? 'btnAllTab3' : 'btnAllTab4'));
       const isAll = f.selected.has('all');
 
       allBtn.classList.toggle('active', isAll);
@@ -568,7 +644,7 @@
         const isActive = isAll || f.selected.has(t.id);
         btn.classList.toggle('active', isActive);
         if (isActive) {
-          btn.style.backgroundColor = t.color + '26'; // 15% прозрачность
+          btn.style.backgroundColor = t.color + '26';
           btn.style.color = "#ffffff";
           btn.style.borderColor = t.color;
         } else {
@@ -623,7 +699,7 @@
     }
 
     function setTab(num) {
-      for (let i = 1; i <= 4; i++) {
+      for (let i = 1; i <= 5; i++) {
         document.getElementById(`tabContent${i}`).style.display = (i === num) ? 'block' : 'none';
         document.getElementById(`tabBtn${i}`).classList.toggle('active', i === num);
       }
@@ -632,6 +708,7 @@
         if (routeHourlyChartInstance) routeHourlyChartInstance.resize();
         if (routeWeeklyChartInstance) routeWeeklyChartInstance.resize();
       }
+      if (num === 4 && yearlyMonthsChartInstance) yearlyMonthsChartInstance.resize();
     }
 
     function renderAll() {
@@ -671,6 +748,7 @@
       renderTimeline(targetSessionsGlobal, now, todayStart, yesterdayStart, ACTIVE_THRESHOLD_MS);
       renderStreetDaysChart(targetSessionsGlobal, todayStart, yesterdayStart, beforeYesterdayStart, weekStart);
       renderRouteTimeCharts(targetSessionsGlobal, todayStart);
+      renderYearlyTab();
       renderOtherSectors();
     }
 
@@ -744,6 +822,7 @@
             const segEnd = Math.min(effectiveEnd, viewDayEnd);
             const startMinutes = (segStart - viewDayStart) / 60000;
             const endMinutes = (segEnd - viewDayStart) / 60000;
+
             const leftPercent = (startMinutes / 1440) * 100;
             const widthPercent = Math.max(2.0, ((endMinutes - startMinutes) / 1440) * 100);
             const isCarryoverStart = (s.startTime < viewDayStart);
@@ -777,12 +856,10 @@
       });
     }
 
-    // ТАБ 2: СТОЛБИКИ ПО ДНЯМ С ФИЛЬТРАЦИЕЙ ПО КНОПКАМ УЛИЦ
+    // ТАБ 2: СТОЛБИКИ ПО ДНЯМ
     function renderStreetDaysChart(targetSessionsMap, todayStart, yesterdayStart, beforeYesterdayStart, weekStart) {
       const f = streetFilters.tab2;
       const isAll = f.selected.has('all');
-
-      // Фильтруем улицы согласно кнопкам
       const displayedTargets = TARGET_CHECKPOINTS.filter(t => isAll || f.selected.has(t.id));
 
       const countsToday = [];
@@ -848,10 +925,7 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: {
-              display: true,
-              labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } }
-            },
+            legend: { display: true, labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } } },
             tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для відкриття звітів' } }
           },
           onClick: (e, elements) => {
@@ -871,13 +945,58 @@
       });
     }
 
-    // ТАБ 3: ЧАСЫ И ДНИ С КНОПОЧНЫМ ВЫБОРОМ УЛИЦ И СУММАРНОЙ ЛИНИЕЙ
+    // ТАБ 3: ЧАСЫ И ДНИ С ВЫБОРОМ НЕДЕЛИ И КЛИКАБЕЛЬНЫМИ ДНЯМИ
     function renderRouteTimeCharts(targetSessionsMap, todayStart) {
       const f = streetFilters.tab3;
       const isAll = f.selected.has('all');
       const hourLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
 
-      // 1. По часам
+      // 7 дней выбранной недели с учетом currentWeekOffset
+      const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+      const days = [];
+      const nowDate = new Date();
+      const baseMondayShift = (currentWeekOffset * 7);
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate() - i + baseMondayShift);
+        const startT = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        days.push({
+          name: dayNames[d.getDay()],
+          date: d.toLocaleDateString([], {day:'2-digit', month:'2-digit'}),
+          startTime: startT,
+          endTime: startT + 86400000
+        });
+      }
+
+      // Плашки выбора дня
+      const dayPillsContainer = document.getElementById("daySelectorPills");
+      dayPillsContainer.innerHTML = "";
+
+      const allDaysBtn = document.createElement("button");
+      allDaysBtn.className = `pill-day-btn ${selectedDayTimestamp === null ? 'active' : ''}`;
+      allDaysBtn.innerText = "🌐 Всі дні тижня";
+      allDaysBtn.onclick = () => { selectedDayTimestamp = null; renderRouteTimeCharts(targetSessionsMap, todayStart); };
+      dayPillsContainer.appendChild(allDaysBtn);
+
+      days.forEach(d => {
+        const btn = document.createElement("button");
+        const isSel = (selectedDayTimestamp === d.startTime);
+        btn.className = `pill-day-btn ${isSel ? 'active' : ''}`;
+        btn.innerText = `${d.name} (${d.date})`;
+        btn.onclick = () => { selectedDayTimestamp = d.startTime; renderRouteTimeCharts(targetSessionsMap, todayStart); };
+        dayPillsContainer.appendChild(btn);
+      });
+
+      // Заголовок почасового графика
+      const headEl = document.getElementById("hourlyChartHeading");
+      if (selectedDayTimestamp !== null) {
+        const selDayObj = days.find(d => d.startTime === selectedDayTimestamp);
+        headEl.innerText = `🕒 По годинах доби — ${selDayObj ? selDayObj.name + ' (' + selDayObj.date + ')' : ''}:`;
+      } else {
+        headEl.innerText = `🕒 По годинах доби — сумарно за весь вибраний тиждень:`;
+      }
+
+      // 1. Почасовой график
       const totalByHour = new Array(24).fill(0);
       const datasetsHourly = [];
 
@@ -887,6 +1006,15 @@
         const hourData = new Array(24).fill(0);
 
         sessions.forEach(s => {
+          // Фильтруем по выбранному дню или по всей неделе
+          if (selectedDayTimestamp !== null) {
+            if (s.startTime < selectedDayTimestamp || s.startTime >= selectedDayTimestamp + 86400000) return;
+          } else {
+            const weekRangeStart = days[0].startTime;
+            const weekRangeEnd = days[6].endTime;
+            if (s.startTime < weekRangeStart || s.startTime >= weekRangeEnd) return;
+          }
+
           const h = new Date(s.startTime).getHours();
           hourData[h]++;
           if (isVisible) totalByHour[h]++;
@@ -903,10 +1031,9 @@
         }
       });
 
-      // Добавляем линию "Всі вибрані разом"
       datasetsHourly.unshift({
         type: 'line',
-        label: isAll ? '📈 Всі 7 вулиць разом (Сумарно)' : '📈 Вибрані вулиці разом (Сумарно)',
+        label: '📈 Всі вибрані разом',
         data: totalByHour,
         borderColor: '#ffffff',
         borderWidth: 2.5,
@@ -915,10 +1042,6 @@
         tension: 0.3,
         fill: false
       });
-
-      let peakH = 0, peakVal = 0;
-      totalByHour.forEach((cnt, h) => { if (cnt > peakVal) { peakVal = cnt; peakH = h; } });
-      document.getElementById("kpiPeakHour").innerText = peakVal > 0 ? `${peakH}:00` : "--:00";
 
       const ctxH = document.getElementById('canvasRouteHourly').getContext('2d');
       if (routeHourlyChartInstance) routeHourlyChartInstance.destroy();
@@ -930,8 +1053,8 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }, // Выключаем стандартную зачёркивающуюся легенду!
-            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду години' } }
+            legend: { display: false },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для відкриття звітів' } }
           },
           onClick: (e, elements) => {
             if (elements && elements.length > 0) openHourlyDetailModal(elements[0].index);
@@ -943,20 +1066,7 @@
         }
       });
 
-      // 2. По дням недели
-      const dayNames = ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-      const days = [];
-      const nowDate = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate() - i);
-        days.push({
-          name: dayNames[d.getDay()],
-          date: d.toLocaleDateString([], {day:'2-digit', month:'2-digit'}),
-          startTime: d.getTime(),
-          endTime: d.getTime() + 86400000
-        });
-      }
-
+      // 2. График дней недели (НАЖАТИЕ НА СТОЛБИК ПЕРЕКЛЮЧАЕТ ЧАСОВОЙ ГРАФИК!)
       const totalByDay = new Array(7).fill(0);
       const datasetsWeekly = [];
 
@@ -982,7 +1092,7 @@
 
       datasetsWeekly.unshift({
         type: 'line',
-        label: isAll ? '📈 Всі 7 вулиць разом (Сумарно)' : '📈 Вибрані вулиці разом (Сумарно)',
+        label: '📈 Всі разом',
         data: totalByDay,
         borderColor: '#ffffff',
         borderWidth: 2.5,
@@ -1003,10 +1113,18 @@
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду дня' } }
+            tooltip: {
+              callbacks: {
+                afterLabel: () => '👉 Натисніть для фільтрації годин по цьому дню!'
+              }
+            }
           },
           onClick: (e, elements) => {
-            if (elements && elements.length > 0) openDayDetailModal(days[elements[0].index]);
+            if (elements && elements.length > 0) {
+              const dayIndex = elements[0].index;
+              selectedDayTimestamp = days[dayIndex].startTime;
+              renderRouteTimeCharts(targetSessionsMap, todayStart);
+            }
           },
           scales: {
             x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#f1f5f9', font: { size: 10, weight: 'bold' } } },
@@ -1016,7 +1134,121 @@
       });
     }
 
-    // ТАБ 4: ДРУГИЕ РАЙОНЫ
+    // ТАБ 4: ГОДОВАЯ СТАТИСТИКА ПО МЕСЯЦАМ
+    function renderYearlyTab() {
+      const f = streetFilters.tab4;
+      const isAll = f.selected.has('all');
+      const displayedTargets = TARGET_CHECKPOINTS.filter(t => isAll || f.selected.has(t.id));
+
+      const monthNames = [
+        "Січ", "Лют", "Бер", "Кві", "Тра", "Чер",
+        "Лип", "Сер", "Вер", "Жов", "Лис", "Гру"
+      ];
+      const monthFullNames = [
+        "Січень", "Лютий", "Березень", "Квітень", "Травень", "Червень",
+        "Липень", "Серпень", "Вересень", "Жовтень", "Листопад", "Грудень"
+      ];
+
+      const datasetsMonthly = [];
+      const totalByMonth = new Array(12).fill(0);
+
+      displayedTargets.forEach(t => {
+        const sessions = targetSessionsGlobal[t.id] || [];
+        const monthCounts = new Array(12).fill(0);
+
+        sessions.forEach(s => {
+          const d = new Date(s.startTime);
+          if (d.getFullYear() === selectedStatsYear) {
+            const m = d.getMonth();
+            monthCounts[m]++;
+            totalByMonth[m]++;
+          }
+        });
+
+        datasetsMonthly.push({
+          type: 'bar',
+          label: t.name,
+          data: monthCounts,
+          backgroundColor: t.color,
+          borderRadius: 4
+        });
+      });
+
+      datasetsMonthly.unshift({
+        type: 'line',
+        label: '📈 Всього за місяць',
+        data: totalByMonth,
+        borderColor: '#ffffff',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#00f3ff',
+        pointRadius: 4,
+        tension: 0.3,
+        fill: false
+      });
+
+      const ctxM = document.getElementById('canvasYearlyMonths').getContext('2d');
+      if (yearlyMonthsChartInstance) yearlyMonthsChartInstance.destroy();
+
+      yearlyMonthsChartInstance = new Chart(ctxM, {
+        type: 'bar',
+        data: { labels: monthNames, datasets: datasetsMonthly },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду місяця' } }
+          },
+          onClick: (e, elements) => {
+            if (elements && elements.length > 0) {
+              const mIndex = elements[0].index;
+              openMonthlyDetailModal(selectedStatsYear, mIndex, monthFullNames[mIndex]);
+            }
+          },
+          scales: {
+            x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#f1f5f9', font: { size: 10, weight: 'bold' } } },
+            y: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', stepSize: 1, beginAtZero: true } }
+          }
+        }
+      });
+
+      // Карточки разбивки по месяцам под графиком
+      const breakdownBox = document.getElementById("monthlyBreakdownCards");
+      breakdownBox.innerHTML = "";
+
+      displayedTargets.forEach(t => {
+        const sessions = targetSessionsGlobal[t.id] || [];
+        const inYear = sessions.filter(s => new Date(s.startTime).getFullYear() === selectedStatsYear);
+
+        let monthsBadgesHtml = "";
+        for (let m = 0; m < 12; m++) {
+          const cnt = inYear.filter(s => new Date(s.startTime).getMonth() === m).length;
+          if (cnt > 0) {
+            monthsBadgesHtml += `
+              <span class="st-badge week" onclick="openMonthlyDetailModal(${selectedStatsYear}, ${m}, '${monthFullNames[m]}')">
+                ${monthNames[m]}: ${cnt} блокп.
+              </span>
+            `;
+          }
+        }
+
+        if (!monthsBadgesHtml) monthsBadgesHtml = `<span style="font-size:10px; color:#64748b;">Блокпостів у ${selectedStatsYear} році не зафіксовано.</span>`;
+
+        breakdownBox.innerHTML += `
+          <div class="st-time-card" style="border-left-color: ${t.color};">
+            <div class="st-card-head">
+              <span style="color:${t.color};">${t.fullName}</span>
+              <span style="color:#94a3b8;">У ${selectedStatsYear} р.: ${inYear.length} блокпостів</span>
+            </div>
+            <div class="st-time-row">
+              ${monthsBadgesHtml}
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    // ТАБ 5: ДРУГИЕ МЕСТА ДНЕПРА
     function renderOtherSectors() {
       const otherListEl = document.getElementById("otherSectorsList");
       otherListEl.innerHTML = "";
@@ -1044,6 +1276,41 @@
     }
 
     // МОДАЛЬНЫЕ ОКНА
+    function openMonthlyDetailModal(year, monthIndex, monthName) {
+      document.getElementById("modalTitle").innerText = `Місяць: ${monthName} ${year} року`;
+      document.getElementById("modalSub").innerText = `Блокпости по ваших 7 місцях за цей місяць`;
+
+      const reportsBox = document.getElementById("modalReports");
+      reportsBox.innerHTML = "";
+      let foundAny = false;
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const sessions = targetSessionsGlobal[t.id] || [];
+        const inMonth = sessions.filter(s => {
+          const d = new Date(s.startTime);
+          return d.getFullYear() === year && d.getMonth() === monthIndex;
+        });
+
+        if (inMonth.length > 0) {
+          foundAny = true;
+          inMonth.forEach(s => {
+            const dt = new Date(s.startTime).toLocaleDateString([], { day:'2-digit', month:'2-digit' });
+            const st = new Date(s.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            const et = new Date(s.endTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+            reportsBox.innerHTML += `
+              <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
+                <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt}, ${st}–${et})</div>
+                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
+              </div>
+            `;
+          });
+        }
+      });
+
+      if (!foundAny) reportsBox.innerHTML = `<div style="color:#94a3b8; font-size:12px;">У цьому місяці блокпостів на маршруті не було.</div>`;
+      document.getElementById("detailModal").style.display = "flex";
+    }
+
     function openPeriodDetailModal(targetId, period) {
       const target = TARGET_CHECKPOINTS.find(t => t.id === targetId);
       if (!target) return;
@@ -1084,12 +1351,10 @@
           const st = new Date(s.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
           const et = new Date(s.endTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
           const dt = new Date(s.startTime).toLocaleDateString([], { day:'2-digit', month:'2-digit' });
-          const quoteTexts = s.reports.map(r => `• «${r.text}»`).join("<br>");
-
           reportsBox.innerHTML += `
             <div class="modal-report-item">
               <div class="modal-report-time">🕒 ${dt} (${st} ➔ ${et}) | Підтверджено: ${s.count} людей</div>
-              <div style="color:#e2e8f0; margin-top:4px;">${quoteTexts}</div>
+              <div style="color:#e2e8f0; margin-top:4px;">${s.reports.map(r => `• «\${r.text}»`).join("<br>")}</div>
             </div>
           `;
         });
@@ -1125,7 +1390,7 @@
 
     function openHourlyDetailModal(hour) {
       document.getElementById("modalTitle").innerText = `Година: ${hour}:00 – ${hour}:59`;
-      document.getElementById("modalSub").innerText = `Активність по ваших 7 вулицях`;
+      document.getElementById("modalSub").innerText = `Активність по ваших 7 місцях`;
 
       const reportsBox = document.getElementById("modalReports");
       reportsBox.innerHTML = "";
@@ -1133,7 +1398,13 @@
 
       TARGET_CHECKPOINTS.forEach(t => {
         const sessions = targetSessionsGlobal[t.id] || [];
-        const inHour = sessions.filter(s => new Date(s.startTime).getHours() === hour);
+        const inHour = sessions.filter(s => {
+          if (selectedDayTimestamp !== null) {
+            if (s.startTime < selectedDayTimestamp || s.startTime >= selectedDayTimestamp + 86400000) return false;
+          }
+          return new Date(s.startTime).getHours() === hour;
+        });
+
         if (inHour.length > 0) {
           foundAny = true;
           inHour.forEach(s => {
@@ -1149,36 +1420,6 @@
       });
 
       if (!foundAny) reportsBox.innerHTML = `<div style="color:#94a3b8; font-size:12px;">У цей час блокпостів на маршруті не зафіксовано.</div>`;
-      document.getElementById("detailModal").style.display = "flex";
-    }
-
-    function openDayDetailModal(dayObj) {
-      document.getElementById("modalTitle").innerText = `День: ${dayObj.name} (${dayObj.date})`;
-      document.getElementById("modalSub").innerText = `Фіксації блокпостів по вашому маршруту`;
-
-      const reportsBox = document.getElementById("modalReports");
-      reportsBox.innerHTML = "";
-      let foundAny = false;
-
-      TARGET_CHECKPOINTS.forEach(t => {
-        const sessions = targetSessionsGlobal[t.id] || [];
-        const inDay = sessions.filter(s => s.startTime >= dayObj.startTime && s.startTime < dayObj.endTime);
-        if (inDay.length > 0) {
-          foundAny = true;
-          inDay.forEach(s => {
-            const st = new Date(s.startTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-            const et = new Date(s.endTime).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
-            reportsBox.innerHTML += `
-              <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
-                <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${st}–${et})</div>
-                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
-              </div>
-            `;
-          });
-        }
-      });
-
-      if (!foundAny) reportsBox.innerHTML = `<div style="color:#94a3b8; font-size:12px;">У цей день блокпостів на маршруті не було.</div>`;
       document.getElementById("detailModal").style.display = "flex";
     }
 
