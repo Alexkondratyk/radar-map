@@ -555,9 +555,6 @@
       { name: "Лівий берег (Слобожанський, Сонячний)", regex: /(?:слобожанск|слобожанськ|правд|сонячн|солнечн|малиновськ|придніпров|ігрень)/i }
     ];
 
-    // ==========================================================================
-    // ШІ-АНАЛИТИК В СТАТИСТИКЕ
-    // ==========================================================================
     function updateAiStatsSuggestedChips() {
       const container = document.getElementById("aiStatsSuggestedChips");
       if (!container) return;
@@ -597,6 +594,47 @@
 
     async function analyzeCurrentStatsTab() {
       askAiStatsQuestion("Зроби глибокий та корисний військово-дорожній аналіз поточної вкладки для водія");
+    }
+
+    // НАДЕЖНЫЙ ЗАПРОС С ПЕРЕБОРОМ ПРИ ОШИБКЕ HIGH DEMAND (503)
+    async function executeStatsGemini(promptText, apiKey) {
+      const candidateModels = [
+        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-2.0-flash'
+      ];
+      let lastErr = null;
+
+      for (let attempt = 0; attempt < 2; attempt++) {
+        for (const m of candidateModels) {
+          try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+            const res = await fetch(url, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [{ role: "user", parts: [{ text: promptText }] }],
+                generationConfig: { temperature: 0.2 }
+              })
+            });
+
+            if (res.ok) {
+              const data = await res.json();
+              const reply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (reply) return { model: m, reply: reply };
+            } else {
+              const errObj = await res.json().catch(() => ({}));
+              lastErr = errObj.error?.message || `HTTP ${res.status}`;
+            }
+          } catch(e) {
+            lastErr = e.message;
+          }
+        }
+        await new Promise(r => setTimeout(r, 1200));
+      }
+      throw new Error(lastErr || "Сервери Google тимчасово перевантажені, спробуйте ще раз через кілька секунд.");
     }
 
     async function askAiStatsQuestion(userQuestion) {
@@ -641,40 +679,16 @@ ${recentReports}
 "${userQuestion}"
 
 ІНСТРУКЦІЯ:
-Дай розумну, живу, аналітичну відповідь людською мовою (українською або російською, залежно від мови запитання).
-Спирайся на точні дані, вкажи конкретні години, дні або вулиці, дай водієві чітку практичну пораду.
+Дай розумну, живу, аналітичну відповідь людською мовою (українською або російською).
+Спирайся на точні цифри, вкажи конкретні години, дні або вулиці, дай водієві чітку практичну пораду.
 `;
 
-      const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.5-flash'];
-      let lastErr = null;
-
-      for (const m of models) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-              generationConfig: { temperature: 0.2 }
-            })
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Аналіз завершено.";
-            output.innerHTML = `<b>🤖 Gemini (${m}):</b>\n\n${reply}`;
-            return;
-          } else {
-            const errObj = await res.json().catch(() => ({}));
-            lastErr = errObj.error?.message || `HTTP ${res.status}`;
-          }
-        } catch(e) {
-          lastErr = e.message;
-        }
+      try {
+        const result = await executeStatsGemini(fullPrompt, apiKey);
+        output.innerHTML = `<b>🤖 Gemini (${result.model}):</b>\n\n${result.reply}`;
+      } catch(err) {
+        output.innerHTML = `<span style="color:#ef4444;">⚠️ ${err.message}</span>`;
       }
-
-      output.innerHTML = `<span style="color:#ef4444;">⚠️ Помилка Gemini API: ${lastErr}</span>`;
     }
 
     async function loadStats() {
@@ -1535,7 +1549,7 @@ ${recentReports}
             reportsBox.innerHTML += `
               <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
                 <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt}, ${st}–${et})</div>
-                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
+                <div>${s.reports.map(r => `• ${r.text}`).join("<br>")}</div>
               </div>
             `;
           });
@@ -1589,7 +1603,7 @@ ${recentReports}
           reportsBox.innerHTML += `
             <div class="modal-report-item">
               <div class="modal-report-time">🕒 ${dt} (${st} ➔ ${et}) | Підтверджено: ${s.count} людей</div>
-              <div style="color:#e2e8f0; margin-top:4px;">${s.reports.map(r => `• «\${r.text}»`).join("<br>")}</div>
+              <div style="color:#e2e8f0; margin-top:4px;">${s.reports.map(r => `• «${r.text}»`).join("<br>")}</div>
             </div>
           `;
         });
@@ -1647,7 +1661,7 @@ ${recentReports}
             reportsBox.innerHTML += `
               <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
                 <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt})</div>
-                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
+                <div>${s.reports.map(r => `• ${r.text}`).join("<br>")}</div>
               </div>
             `;
           });
