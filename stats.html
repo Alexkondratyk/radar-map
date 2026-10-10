@@ -556,7 +556,7 @@
     ];
 
     // ==========================================================================
-    // НАСТОЯЩИЙ ШІ GEMINI В СТАТИСТИКЕ
+    // ШІ-АНАЛИТИК В СТАТИСТИКЕ
     // ==========================================================================
     function updateAiStatsSuggestedChips() {
       const container = document.getElementById("aiStatsSuggestedChips");
@@ -599,34 +599,10 @@
       askAiStatsQuestion("Зроби глибокий та корисний військово-дорожній аналіз поточної вкладки для водія");
     }
 
-    async function resolveActiveGeminiModel(apiKey) {
-      const cached = sessionStorage.getItem("active_gemini_model_name");
-      if (cached) return cached;
-
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        if (res.ok) {
-          const data = await res.json();
-          const valid = (data.models || []).filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
-          const selected = valid.find(m => m.name.includes("gemini-2.5-flash"))
-                        || valid.find(m => m.name.includes("gemini-2.0-flash") && !m.name.includes("lite"))
-                        || valid.find(m => m.name.includes("gemini-3.5-flash-lite"))
-                        || valid.find(m => m.name.includes("flash"))
-                        || valid[0];
-          if (selected) {
-            const mName = selected.name.replace(/^models\//, '');
-            sessionStorage.setItem("active_gemini_model_name", mName);
-            return mName;
-          }
-        }
-      } catch(e) {}
-      return "gemini-2.5-flash";
-    }
-
     async function askAiStatsQuestion(userQuestion) {
       const output = document.getElementById("aiStatsOutput");
       output.style.display = "block";
-      output.innerHTML = "🧠 Gemini аналізує всю аналітику...";
+      output.innerHTML = "🧠 Gemini аналізує дані...";
 
       let apiKey = localStorage.getItem("gemini_api_key");
       if (!apiKey) {
@@ -636,7 +612,6 @@
         localStorage.setItem("gemini_api_key", apiKey);
       }
 
-      // СОБИРАЕМ ВСЮ БАЗУ ДАННЫХ ДЛЯ ШИ
       let streetSummary = "";
       TARGET_CHECKPOINTS.forEach(t => {
         const sList = targetSessionsGlobal[t.id] || [];
@@ -670,29 +645,36 @@ ${recentReports}
 Спирайся на точні дані, вкажи конкретні години, дні або вулиці, дай водієві чітку практичну пораду.
 `;
 
-      try {
-        const modelName = await resolveActiveGeminiModel(apiKey);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-            generationConfig: { temperature: 0.2 }
-          })
-        });
+      const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.5-flash'];
+      let lastErr = null;
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error?.message || `HTTP ${res.status}`);
+      for (const m of models) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+              generationConfig: { temperature: 0.2 }
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Аналіз завершено.";
+            output.innerHTML = `<b>🤖 Gemini (${m}):</b>\n\n${reply}`;
+            return;
+          } else {
+            const errObj = await res.json().catch(() => ({}));
+            lastErr = errObj.error?.message || `HTTP ${res.status}`;
+          }
+        } catch(e) {
+          lastErr = e.message;
         }
-
-        const data = await res.json();
-        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Аналіз завершено.";
-        output.innerHTML = `<b>🤖 Gemini (${modelName}):</b>\n\n${reply}`;
-      } catch(err) {
-        output.innerHTML = `<span style="color:#ef4444;">⚠️ Помилка Gemini API: ${err.message}</span>`;
       }
+
+      output.innerHTML = `<span style="color:#ef4444;">⚠️ Помилка Gemini API: ${lastErr}</span>`;
     }
 
     async function loadStats() {
@@ -1553,7 +1535,7 @@ ${recentReports}
             reportsBox.innerHTML += `
               <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
                 <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt}, ${st}–${et})</div>
-                <div>${s.reports.map(r => `• ${r.text}`).join("<br>")}</div>
+                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
               </div>
             `;
           });
