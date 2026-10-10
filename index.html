@@ -37,13 +37,36 @@
       z-index: 1; background: #0b1120;
     }
 
-    /* ШАПКА КАРТЫ */
+    /* ==========================================================================
+       ЕДИНЫЙ СТИЛЬ ДЛЯ 4 ПЛАВАЮЩИХ ПРЯМОУГОЛЬНИКОВ (38px ВЫСОТА, 12px СКРУГЛЕНИЕ)
+       ========================================================================== */
+    .hud-pill {
+      height: 38px;
+      box-sizing: border-box;
+      background: rgba(15, 23, 42, 0.94);
+      backdrop-filter: blur(10px);
+      border: 1.5px solid #334155;
+      border-radius: 12px;
+      color: #f8fafc;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* 1. ШАПКА КАРТЫ (СЛЕВА ВВЕРХУ) */
     .dashboard {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
-      background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
       padding: 10px 12px; border-radius: 14px; color: #fff;
       box-shadow: 0 6px 25px rgba(0,0,0,0.45); width: 235px;
-      border: 1px solid #334155; touch-action: none;
+      border: 1.5px solid #334155; touch-action: none;
       transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease;
       overflow: hidden;
     }
@@ -53,37 +76,135 @@
       transition: all 0.25s ease;
     }
     .points-count { 
-      font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;
       cursor: pointer; white-space: nowrap;
     }
     .drag-handle-hint { font-size: 10px; color: #64748b; margin-left: 2px; }
     
     .btn-toggle {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
-      width: 24px; height: 24px; border-radius: 6px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; font-size: 11px;
-      touch-action: auto; flex-shrink: 0; margin-left: 8px;
+      width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 10px;
+      touch-action: auto; flex-shrink: 0; margin-left: 6px;
     }
 
     .collapsible-body { margin-top: 6px; }
 
+    /* КОГДА ШАПКА СВЕРНУТА: 38px ВЫСОТА */
     html.dash-collapsed .dashboard {
       width: auto !important;
-      display: inline-flex;
-      flex-direction: column;
-      padding: 7px 10px;
-      border-radius: 12px;
+      height: 38px !important;
+      display: inline-flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 0 12px !important;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
     }
     html.dash-collapsed .dash-header {
-      margin-bottom: 0;
-      padding-bottom: 0;
-      border-bottom: none;
-      gap: 6px;
+      margin-bottom: 0 !important;
+      padding-bottom: 0 !important;
+      border-bottom: none !important;
+      gap: 6px !important;
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
+    /* 2. БЛОК ИИ (СПРАВА ВВЕРХУ) */
+    .ai-pill-panel {
+      position: absolute; top: 15px; right: 15px; z-index: 1000;
+      background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
+      border: 1.5px solid #0284c7; border-radius: 12px; color: #fff;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), height 0.28s ease, padding 0.25s ease;
+      overflow: hidden; touch-action: none;
+    }
+    .ai-pill-panel.compact {
+      width: auto !important;
+      height: 38px !important;
+      padding: 0 12px !important;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: move;
+    }
+    .ai-pill-panel.compact .ai-pill-body { display: none; }
+    .ai-pill-panel.expanded {
+      width: 270px !important;
+      height: auto !important;
+      padding: 10px 12px !important;
+      border-radius: 14px !important;
+      border-color: #00f3ff !important;
+      box-shadow: 0 6px 25px rgba(0, 243, 255, 0.35) !important;
+    }
+    .ai-pill-panel.expanded .ai-pill-compact-content {
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
 
+    .ai-pill-compact-content {
+      display: flex; align-items: center; justify-content: space-between; width: 100%;
+      cursor: move; user-select: none;
+    }
+    .ai-title-badge {
+      font-size: 12px; font-weight: 800; color: #00f3ff; display: flex; align-items: center; gap: 5px;
+      cursor: pointer;
+    }
+
+    .ai-pill-body { display: flex; flex-direction: column; gap: 6px; }
+    .ai-inline-textarea {
+      width: 100%; height: 60px; background: #0b1120; border: 1px solid #334155;
+      border-radius: 8px; color: #fff; padding: 6px 8px; font-size: 11px; resize: none; outline: none;
+    }
+    .ai-inline-textarea:focus { border-color: #00f3ff; }
+    .ai-chips-compact { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ai-mini-chip {
+      background: #1e293b; border: 1px solid #475569; color: #cbd5e1;
+      padding: 3px 6px; border-radius: 5px; font-size: 9px; font-weight: 700; cursor: pointer;
+    }
+    .ai-mini-chip:hover { border-color: #00f3ff; color: #00f3ff; }
+    .btn-ai-inline-submit {
+      width: 100%; background: linear-gradient(135deg, #0284c7 0%, #00f3ff 100%);
+      border: none; color: #0f172a; padding: 7px; border-radius: 7px; font-size: 11px; font-weight: 900;
+      cursor: pointer;
+    }
+    .ai-inline-res {
+      padding: 6px 8px; border-radius: 6px; font-size: 10px; line-height: 1.35;
+      display: none; background: #060913; border: 1px solid #334155;
+    }
+
+    /* 3. СТРОКА СТАТУСА (СЛЕВА ВНИЗУ) */
+    .route-status-bar {
+      position: absolute; bottom: 25px; left: 15px; z-index: 1000;
+      height: 38px; box-sizing: border-box;
+      background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
+      border: 1.5px solid #10b981; border-radius: 12px;
+      color: #f8fafc; padding: 0 12px;
+      font-size: 12px; font-weight: 800; display: flex; align-items: center; gap: 6px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); cursor: move; user-select: none;
+      touch-action: none; white-space: nowrap;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .route-status-bar.danger {
+      border-color: #ff334b !important;
+      box-shadow: 0 0 18px rgba(255, 51, 75, 0.45) !important;
+    }
+
+    /* 4. КНОПКА ОБНОВИТЬ (СПРАВА ВНИЗУ) */
+    .btn-refresh {
+      position: absolute; bottom: 25px; right: 15px; z-index: 1000;
+      height: 38px; box-sizing: border-box;
+      background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
+      color: #f8fafc; border: 1.5px solid #334155;
+      padding: 0 12px; border-radius: 12px; cursor: move;
+      font-size: 12px; font-weight: 800; box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      user-select: none; touch-action: none; white-space: nowrap;
+    }
+
+    /* ОБЩИЕ ЭЛЕМЕНТЫ ШАПКИ */
+    .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
       width: 100%; background: #0b1120; border: 1px solid #334155; color: #fff;
@@ -111,7 +232,6 @@
       border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
     }
 
-    /* СВЕТОФОРЫ */
     .tl-menu-container { position: relative; margin-bottom: 6px; }
     .btn-tl-main {
       width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
@@ -129,7 +249,6 @@
     }
     .tl-dropdown-btn:hover { background: #334155; color: #fff; }
 
-    /* СПОЙЛЕР СЕРВЕРА */
     .server-menu-container { position: relative; margin-bottom: 8px; }
     .btn-server-main {
       width: 100%; background: #131d31; border: 1px solid #334155; color: #94a3b8;
@@ -171,19 +290,16 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
-    /* АНИМАЦИЯ ПРИ ЗАЖАТИИ КРУЖОЧКА (ВЫДЕЛЕНИЕ) */
     .radar-circle.active-dragging-target {
       transform: scale(1.6) !important;
       box-shadow: 0 0 0 4px #00f3ff, 0 0 25px 8px #00f3ff !important;
-      cursor: grab !important;
-      z-index: 9999 !important;
+      cursor: grab !important; z-index: 9999 !important;
       animation: target-pulse 0.7s infinite alternate !important;
     }
     @keyframes target-pulse {
       from { transform: scale(1.4); } to { transform: scale(1.7); }
     }
 
-    /* СТИЛИ СВЕТОФОРОВ */
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
       border-radius: 13px !important; padding: 3px 2px !important;
@@ -200,25 +316,9 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* ПЛАВАЮЩАЯ СТРОКА СТАТУСА МАРШРУТА */
-    .route-status-bar {
-      position: absolute; bottom: 30px; left: 15px; z-index: 1000;
-      background: rgba(15, 23, 42, 0.94); border: 1.5px solid #10b981;
-      color: #f8fafc; padding: 6px 12px; border-radius: 20px;
-      font-size: 11px; font-weight: 800; display: flex; align-items: center; gap: 6px;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); cursor: move; user-select: none;
-      touch-action: none; white-space: nowrap; backdrop-filter: blur(8px);
-      transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-    .route-status-bar.danger {
-      border-color: #ff334b !important;
-      box-shadow: 0 0 18px rgba(255, 51, 75, 0.45) !important;
-    }
-    .status-drag-hint { font-size: 9px; color: #64748b; margin-left: 2px; }
-
     /* СЕКРЕТНОЕ МЕНЮ */
     .neon-panel {
-      position: absolute; top: 15px; right: 15px; z-index: 1500;
+      position: absolute; top: 60px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
       border-radius: 14px; padding: 12px 14px; color: #fff; width: 260px;
       max-height: 85vh; overflow-y: auto; display: none; box-shadow: 0 6px 25px rgba(0,0,0,0.5);
@@ -254,19 +354,12 @@
       z-index: 2000; background: #0f172a; border: 1px solid #38bdf8; color: #fff; padding: 8px 18px;
       border-radius: 8px; font-size: 12px; font-weight: 600; box-shadow: 0 4px 20px rgba(0, 243, 255, 0.35); display: none; text-align: center;
     }
-
-    .btn-refresh {
-      position: absolute; bottom: 25px; right: 20px; z-index: 1000;
-      background: #0f172a; color: #fff; border: 1px solid #334155;
-      padding: 10px 18px; border-radius: 10px; cursor: pointer;
-      font-size: 13px; font-weight: 600; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <!-- ШАПКА КАРТЫ -->
+  <!-- 1. ШАПКА КАРТЫ (СЛЕВА ВВЕРХУ) -->
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">
@@ -335,10 +428,42 @@
     </div>
   </div>
 
-  <!-- СТРОКА СТАТУСА МАРШРУТА -->
+  <!-- 2. НОВЫЙ ЧЕТВЕРТЫЙ ПРЯМОУГОЛЬНИК: ШІ-КОРЕКТОР (СПРАВА ВВЕРХУ) -->
+  <div id="aiPillPanel" class="ai-pill-panel compact">
+    <div id="aiPillHeader" class="ai-pill-compact-content" onclick="toggleAiPillExpand()">
+      <div class="ai-titleBadge" style="display:flex; align-items:center; gap:5px;">
+        <span style="font-size:14px;">🤖</span>
+        <span id="aiPillLabel">ШІ</span>
+        <span class="drag-handle-hint">✥</span>
+      </div>
+      <button class="btn-toggle" id="btnAiPillToggle">▼</button>
+    </div>
+
+    <div class="ai-pill-body" id="aiPillBody">
+      <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Зауваження або команда для ШІ..."></textarea>
+      
+      <div class="ai-chips-compact">
+        <span class="ai-mini-chip" onclick="setAiInlineText('РОВД чисто, виправ')">🟢 РОВД чисто</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('На РОВД блокпост')">🔴 РОВД БП</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('Павлова чисто')">🟢 Павлова</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('Погасити Водолікарню')">⚪ Погасити</span>
+      </div>
+
+      <button class="btn-ai-inline-submit" onclick="submitAiInlineCorrection()">⚡ Обробити ШІ</button>
+      <div id="aiInlineResult" class="ai-inline-res"></div>
+    </div>
+  </div>
+
+  <!-- 3. СТРОКА СТАТУСА МАРШРУТА (СПРАВА/СЛЕВА ВНИЗУ) -->
   <div id="routeStatusBar" class="route-status-bar">
     <span id="routeStatusIcon">🟢</span>
     <span id="routeStatusText">Мій шлях: Чисто</span>
+    <span class="status-drag-hint">✥</span>
+  </div>
+
+  <!-- 4. КНОПКА ОБНОВИТЬ (СПРАВА ВНИЗУ) -->
+  <div id="btnRefresh" class="btn-refresh">
+    <span>🔄</span><span>Оновити</span>
     <span class="status-drag-hint">✥</span>
   </div>
 
@@ -389,7 +514,6 @@
   </div>
 
   <div id="toast" class="toast-msg">✅ Збережено!</div>
-  <button class="btn-refresh" onclick="hardReload()">🔄 Оновити</button>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
@@ -397,6 +521,7 @@
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
     const FIREBASE_KB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/knowledge_base.json";
+    const FIREBASE_AI_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/ai_feedback.json";
 
     const LIFETIME_MS = 40 * 60 * 1000;
     const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
@@ -409,15 +534,13 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // УСИЛЕННЫЙ WAKE LOCK — ЧТОБЫ ЭКРАН НЕ ГАС НИКОГДА
+    // ПОСИЛЕНИЙ WAKE LOCK
     let screenWakeLock = null;
     async function requestWakeLock() {
       try {
         if ('wakeLock' in navigator && !screenWakeLock) {
           screenWakeLock = await navigator.wakeLock.request('screen');
-          screenWakeLock.addEventListener('release', () => {
-            screenWakeLock = null;
-          });
+          screenWakeLock.addEventListener('release', () => { screenWakeLock = null; });
         }
       } catch (err) {}
     }
@@ -425,18 +548,14 @@
       if (document.visibilityState === 'visible') requestWakeLock();
     });
     ['click', 'touchstart', 'touchend', 'mousemove'].forEach(evt => {
-      window.addEventListener(evt, () => {
-        if (!screenWakeLock) requestWakeLock();
-      }, { passive: true });
+      window.addEventListener(evt, () => { if (!screenWakeLock) requestWakeLock(); }, { passive: true });
     });
     setInterval(() => {
-      if (document.visibilityState === 'visible' && !screenWakeLock) {
-        requestWakeLock();
-      }
+      if (document.visibilityState === 'visible' && !screenWakeLock) requestWakeLock();
     }, 10000);
     requestWakeLock();
 
-    // КОНТРОЛЛЕР ПЕРЕМЕЩЕНИЯ КРУЖОЧКОВ (ОБУЧЕНИЕ ИИ)
+    // КОНТРОЛЕР ПЕРЕМІЩЕННЯ ТОЧОК ДЛЯ НАВЧАННЯ ШІ
     const dragController = {
       activeMarker: null,
       activePoint: null,
@@ -463,14 +582,12 @@
         phrase = (point.raw_text || point.text || "").replace(" (чисто)", "").trim().slice(0, 30);
       }
 
-      point.lat = newLat;
-      point.lng = newLng;
+      point.lat = newLat; point.lng = newLng;
 
       if (point._fbKey) {
         try {
           await fetch(FIREBASE_POINTS_URL.replace(".json", `/${point._fbKey}.json`), {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
+            method: "PATCH", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ lat: newLat, lng: newLng })
           });
         } catch(e) {}
@@ -478,14 +595,10 @@
 
       try {
         await fetch(FIREBASE_KB_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+          method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            phrase: phrase,
-            address: point.address || "Дніпро",
-            lat: newLat,
-            lng: newLng,
-            updated_at: Date.now()
+            phrase: phrase, address: point.address || "Дніпро",
+            lat: newLat, lng: newLng, updated_at: Date.now()
           })
         });
       } catch(e) {}
@@ -514,20 +627,12 @@
     }, { passive: false });
 
     window.addEventListener('mousemove', (e) => {
-      if (dragController.isDragging && dragController.activeMarker) {
-        onGlobalMove(e.clientX, e.clientY);
-      }
+      if (dragController.isDragging && dragController.activeMarker) onGlobalMove(e.clientX, e.clientY);
     });
+    window.addEventListener('touchend', () => { if (dragController.isDragging) dragController.isDragging = false; });
+    window.addEventListener('mouseup', () => { if (dragController.isDragging) dragController.isDragging = false; });
 
-    window.addEventListener('touchend', () => {
-      if (dragController.isDragging) dragController.isDragging = false;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (dragController.isDragging) dragController.isDragging = false;
-    });
-
-    // ХРАНИЛИЩЕ РУЧНЫХ КОРРЕКТИРОВОК
+    // РУЧНЫЕ КОРРЕКТИРОВКИ СВЕТОФОРОВ
     let manualOverrides = {};
     try {
       manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}");
@@ -664,10 +769,13 @@
     }
 
     function isCleanPoint(p) {
+      const t = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
+      if (/(?:чисто|чистенько|пусто|вільно|спокійно|проїзд|без\s+бп)/i.test(t) && !/(?:не\s+чисто|не\s+пусто)/i.test(t)) {
+        return true;
+      }
       if (p.color === "green" || p.status === "чисто") return true;
       if (p.color === "red" || p.status === "опасно") return false;
-      const t = (p.text || "").toLowerCase();
-      return t.includes("чисто") || t.includes("👍") || t.includes("пусто");
+      return false;
     }
 
     function isPointInActiveSectors(p) {
@@ -683,7 +791,7 @@
       });
     }
 
-    // ПОЛНАЯ СИНХРОНИЗАЦИЯ СТРОКИ СТАТУСА И СВЕТОФОРОВ НА КАРТЕ
+    // СИНХРОНИЗАЦИЯ СТРОКИ СТАТУСА
     const routeStatusBar = document.getElementById("routeStatusBar");
     const routeStatusIcon = document.getElementById("routeStatusIcon");
     const routeStatusText = document.getElementById("routeStatusText");
@@ -706,7 +814,6 @@
       let detectedStreets = [];
 
       checkpoints.forEach(cp => {
-        // Ищем ПОСЛЕДНЕЕ актуальное сообщение для контрольной точки
         const matched = allPoints.filter(p => {
           const diff = now - (p.time || p.timestamp || 0);
           if (diff > LIFETIME_MS) return false;
@@ -728,7 +835,6 @@
           return;
         }
 
-        // КРИТИЧЕСКИ ВАЖНО: опасность считается ТОЛЬКО если последний отчет тревожный!
         if (latest && !isCleanPoint(latest)) {
           dangerCount++;
           detectedStreets.push(cp.name);
@@ -749,6 +855,105 @@
         routeStatusIcon.innerText = "🔴";
         routeStatusText.innerText = `Мій шлях: Є ${dangerCount} блокпости!`;
       }
+    }
+
+    // ==========================================================================
+    // ЛОГИКА ШИ-КОРЕКТОРА (НОВЫЙ ПРЯМОУГОЛЬНИК И КОНТЕКСТНЫЙ РЕЖИМ)
+    // ==========================================================================
+    const aiPillPanel = document.getElementById("aiPillPanel");
+    const aiInlineInput = document.getElementById("aiInlineInput");
+    const aiInlineResult = document.getElementById("aiInlineResult");
+    const btnAiPillToggle = document.getElementById("btnAiPillToggle");
+
+    function toggleAiPillExpand(e) {
+      if (e && (e.target.closest('textarea') || e.target.closest('button.btn-ai-inline-submit') || e.target.closest('.ai-mini-chip'))) return;
+      const isExpanded = aiPillPanel.classList.toggle("expanded");
+      aiPillPanel.classList.toggle("compact", !isExpanded);
+      btnAiPillToggle.innerText = isExpanded ? "▲" : "▼";
+      if (isExpanded) {
+        setTimeout(() => aiInlineInput.focus(), 150);
+      }
+    }
+
+    function setAiInlineText(txt) {
+      aiInlineInput.value = txt;
+    }
+
+    // Вызов ИИ для конкретной точки или светофора
+    window.openAiContext = function(type, id, name) {
+      if (aiPillPanel.classList.contains("compact")) {
+        aiPillPanel.classList.remove("compact");
+        aiPillPanel.classList.add("expanded");
+        btnAiPillToggle.innerText = "▲";
+      }
+      if (type === 'traffic_light') {
+        aiInlineInput.value = `Світлофор "${name}": `;
+      } else if (type === 'point') {
+        aiInlineInput.value = `Точка "${name}": `;
+      } else {
+        aiInlineInput.value = "";
+      }
+      setTimeout(() => {
+        aiInlineInput.focus();
+        aiInlineInput.selectionStart = aiInlineInput.selectionEnd = aiInlineInput.value.length;
+      }, 150);
+      showToast("🤖 Введіть зауваження для ШІ!");
+    };
+
+    async function submitAiInlineCorrection() {
+      const query = aiInlineInput.value.trim();
+      if (!query) return;
+
+      aiInlineResult.style.display = "block";
+      aiInlineResult.innerHTML = "⏳ ШІ аналізує текст...";
+
+      const qLower = query.toLowerCase();
+      let matchedCp = checkpoints.find(cp => cp.keys.some(k => qLower.includes(k)));
+      let appliedAction = "Зауваження враховано ШІ";
+
+      if (matchedCp) {
+        if (qLower.includes("чист") || qLower.includes("зелен") || qLower.includes("вільно")) {
+          setTrafficLightManual(matchedCp.id, 'green');
+          appliedAction = `Світлофор «${matchedCp.name}» ➔ 🟢 ЧИСТО`;
+        } else if (qLower.includes("бп") || qLower.includes("червон") || qLower.includes("блокпост") || qLower.includes("увага") || qLower.includes("стоять")) {
+          setTrafficLightManual(matchedCp.id, 'red');
+          appliedAction = `Світлофор «${matchedCp.name}» ➔ 🔴 УВАГА (БП)`;
+        } else if (qLower.includes("погас") || qLower.includes("вимкн") || qLower.includes("потуш")) {
+          setTrafficLightManual(matchedCp.id, 'off');
+          appliedAction = `Світлофор «${matchedCp.name}» ➔ ⚪ ПОГАШЕНО`;
+        }
+      }
+
+      try {
+        await fetch(FIREBASE_AI_URL, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            text: query,
+            matched_point: matchedCp ? matchedCp.name : "Загальне",
+            action: appliedAction,
+            time: Date.now()
+          })
+        });
+
+        if (matchedCp) {
+          await fetch(FIREBASE_KB_URL, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              phrase: query.slice(0, 45),
+              address: matchedCp.name,
+              lat: matchedCp.lat,
+              lng: matchedCp.lng,
+              updated_at: Date.now()
+            })
+          });
+        }
+      } catch (err) {}
+
+      aiInlineResult.innerHTML = `
+        <div style="color:#00f3ff; font-weight:800;">🤖 Результат:</div>
+        <div style="color:#e2e8f0;">✅ ${appliedAction}.</div>
+      `;
+      showToast("🤖 Зауваження збережено ШІ!");
     }
 
     // СЕКРЕТНОЕ МЕНЮ
@@ -1114,6 +1319,7 @@
 
         const overrideBadge = isOverrideActive ? '<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>' : "";
 
+        // ДОБАВЛЕНА КНОПКА КОНТЕКСТНОГО ИИ
         const standardPopupContent = 
           '<div style="padding:2px; min-width:180px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#0f172a;">' +
             '<div style="font-weight:800; font-size:12px; color:#0284c7; display:flex; align-items:center; justify-content:space-between;">' +
@@ -1123,7 +1329,10 @@
               statusTitle +
             '</div>' +
             messageBlock +
-            '<div style="font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:3px; text-align:center;">💡 Затисніть на 0.5с для керування</div>' +
+            '<div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:4px;">' +
+              '<span>💡 Затисніть 0.5с</span>' +
+              '<span onclick="openAiContext(\'traffic_light\', \'' + cp.id + '\', \'' + cp.name + '\')" style="color:#0284c7; font-weight:800; cursor:pointer;">🤖 Зауваження для ШІ</span>' +
+            '</div>' +
           '</div>';
 
         let marker = trafficMarkersMap[cp.id];
@@ -1149,8 +1358,7 @@
 
           function startPress(clientX, clientY) {
             isLongPress = false;
-            startX = clientX;
-            startY = clientY;
+            startX = clientX; startY = clientY;
             pressTimer = setTimeout(() => {
               isLongPress = true;
               if (navigator.vibrate) navigator.vibrate(60);
@@ -1159,10 +1367,7 @@
           }
 
           function cancelPress() {
-            if (pressTimer) {
-              clearTimeout(pressTimer);
-              pressTimer = null;
-            }
+            if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
           }
 
           marker.on('add', () => {
@@ -1174,9 +1379,7 @@
             }, { passive: true });
 
             el.addEventListener('touchmove', (e) => {
-              if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) {
-                cancelPress();
-              }
+              if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
             el.addEventListener('touchend', (e) => {
@@ -1192,22 +1395,16 @@
             });
 
             el.addEventListener('mousemove', (e) => {
-              if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) {
-                cancelPress();
-              }
+              if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) cancelPress();
             });
 
             el.addEventListener('mouseup', () => {
-              if (isLongPress) {
-                e.stopPropagation();
-              }
+              if (isLongPress) e.stopPropagation();
               cancelPress();
             });
 
             el.addEventListener('click', () => {
-              if (!isLongPress) {
-                marker.setPopupContent(standardPopupContent);
-              }
+              if (!isLongPress) marker.setPopupContent(standardPopupContent);
             });
           });
 
@@ -1277,8 +1474,13 @@
       }
     }
 
-    // ПЕРЕМЕЩЕНИЕ ЭЛЕМЕНТОВ
+    // ==========================================================================
+    // ПЕРЕМЕЩЕНИЕ И ЗАПОМИНАНИЕ ПОЗИЦИЙ ДЛЯ ВСЕХ 4 ПРЯМОУГОЛЬНИКОВ
+    // ==========================================================================
     const dashPanel = document.getElementById("dashPanel");
+    const aiPillPanelEl = document.getElementById("aiPillPanel");
+    const routeStatusBarEl = document.getElementById("routeStatusBar");
+    const btnRefreshEl = document.getElementById("btnRefresh");
     const neonPanel = document.getElementById("neonPanel");
     const btnToggle = document.getElementById("btnToggle");
 
@@ -1294,36 +1496,40 @@
       localStorage.setItem("radar_dash_collapsed", isNowCollapsed ? "true" : "false");
     }
 
+    // Восстановление координат для всех 4 прямоугольников
     const savedDashTop = localStorage.getItem("dash_pos_top");
     const savedDashLeft = localStorage.getItem("dash_pos_left");
-    if (savedDashTop && savedDashLeft) {
-      dashPanel.style.top = savedDashTop;
-      dashPanel.style.left = savedDashLeft;
-    }
+    if (savedDashTop && savedDashLeft) { dashPanel.style.top = savedDashTop; dashPanel.style.left = savedDashLeft; }
 
-    const savedNeonTop = localStorage.getItem("neon_pos_top");
-    const savedNeonLeft = localStorage.getItem("neon_pos_left");
-    if (savedNeonTop && savedNeonLeft) {
-      neonPanel.style.top = savedNeonTop;
-      neonPanel.style.left = savedNeonLeft;
-    }
+    const savedAiTop = localStorage.getItem("ai_pos_top");
+    const savedAiLeft = localStorage.getItem("ai_pos_left");
+    if (savedAiTop && savedAiLeft) { aiPillPanelEl.style.top = savedAiTop; aiPillPanelEl.style.left = savedAiLeft; aiPillPanelEl.style.right = "auto"; }
 
     const savedStatusTop = localStorage.getItem("route_status_pos_top");
     const savedStatusLeft = localStorage.getItem("route_status_pos_left");
-    if (savedStatusTop && savedStatusLeft && routeStatusBar) {
-      routeStatusBar.style.top = savedStatusTop;
-      routeStatusBar.style.left = savedStatusLeft;
-      routeStatusBar.style.bottom = "auto";
-    }
+    if (savedStatusTop && savedStatusLeft && routeStatusBarEl) { routeStatusBarEl.style.top = savedStatusTop; routeStatusBarEl.style.left = savedStatusLeft; routeStatusBarEl.style.bottom = "auto"; }
 
-    function makeElementDraggable(elmnt, handle, storagePrefix) {
+    const savedRefreshTop = localStorage.getItem("refresh_pos_top");
+    const savedRefreshLeft = localStorage.getItem("refresh_pos_left");
+    if (savedRefreshTop && savedRefreshLeft && btnRefreshEl) { btnRefreshEl.style.top = savedRefreshTop; btnRefreshEl.style.left = savedRefreshLeft; btnRefreshEl.style.bottom = "auto"; btnRefreshEl.style.right = "auto"; }
+
+    const savedNeonTop = localStorage.getItem("neon_pos_top");
+    const savedNeonLeft = localStorage.getItem("neon_pos_left");
+    if (savedNeonTop && savedNeonLeft) { neonPanel.style.top = savedNeonTop; neonPanel.style.left = savedNeonLeft; }
+
+    function makeElementDraggable(elmnt, handle, storagePrefix, clickCallback = null) {
       let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      let startX = 0, startY = 0;
+      let hasDragged = false;
+
       handle.onmousedown = dragMouseDown;
       handle.ontouchstart = dragTouchStart;
 
       function dragMouseDown(e) {
-        if (e.target.closest('#btnToggle') || e.target.closest('button') || e.target.closest('input')) return;
+        if (e.target.closest('#btnToggle') || e.target.closest('#btnAiPillToggle') || e.target.closest('textarea') || e.target.closest('input')) return;
         e.preventDefault();
+        startX = e.clientX; startY = e.clientY;
+        hasDragged = false;
         pos3 = e.clientX; pos4 = e.clientY;
         document.onmouseup = closeDragElement;
         document.onmousemove = elementDrag;
@@ -1331,24 +1537,27 @@
 
       function elementDrag(e) {
         e.preventDefault();
+        if (Math.hypot(e.clientX - startX, e.clientY - startY) > 5) hasDragged = true;
         pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
         pos3 = e.clientX; pos4 = e.clientY;
         const topVal = Math.max(10, Math.min(window.innerHeight - 50, elmnt.offsetTop - pos2)) + "px";
         const leftVal = Math.max(10, Math.min(window.innerWidth - 60, elmnt.offsetLeft - pos1)) + "px";
-        elmnt.style.top = topVal;
-        elmnt.style.left = leftVal;
-        elmnt.style.bottom = "auto";
+        elmnt.style.top = topVal; elmnt.style.left = leftVal;
+        elmnt.style.bottom = "auto"; elmnt.style.right = "auto";
         localStorage.setItem(storagePrefix + "_top", topVal);
         localStorage.setItem(storagePrefix + "_left", leftVal);
       }
 
       function closeDragElement() {
         document.onmouseup = null; document.onmousemove = null;
+        if (!hasDragged && clickCallback) clickCallback();
       }
 
       function dragTouchStart(e) {
-        if (e.target.closest('#btnToggle') || e.target.closest('button') || e.target.closest('input')) return;
+        if (e.target.closest('#btnToggle') || e.target.closest('#btnAiPillToggle') || e.target.closest('textarea') || e.target.closest('input')) return;
         const touch = e.touches[0];
+        startX = touch.clientX; startY = touch.clientY;
+        hasDragged = false;
         pos3 = touch.clientX; pos4 = touch.clientY;
         document.ontouchend = closeTouchDrag;
         document.ontouchmove = elementTouchDrag;
@@ -1356,25 +1565,29 @@
 
       function elementTouchDrag(e) {
         const touch = e.touches[0];
+        if (Math.hypot(touch.clientX - startX, touch.clientY - startY) > 5) hasDragged = true;
         pos1 = pos3 - touch.clientX; pos2 = pos4 - touch.clientY;
         pos3 = touch.clientX; pos4 = touch.clientY;
         const topVal = Math.max(10, Math.min(window.innerHeight - 50, elmnt.offsetTop - pos2)) + "px";
         const leftVal = Math.max(10, Math.min(window.innerWidth - 60, elmnt.offsetLeft - pos1)) + "px";
-        elmnt.style.top = topVal;
-        elmnt.style.left = leftVal;
-        elmnt.style.bottom = "auto";
+        elmnt.style.top = topVal; elmnt.style.left = leftVal;
+        elmnt.style.bottom = "auto"; elmnt.style.right = "auto";
         localStorage.setItem(storagePrefix + "_top", topVal);
         localStorage.setItem(storagePrefix + "_left", leftVal);
       }
 
       function closeTouchDrag() {
         document.ontouchend = null; document.ontouchmove = null;
+        if (!hasDragged && clickCallback) clickCallback();
       }
     }
 
+    // Подключаем перемещение для всех 4 прямоугольников
     makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
+    makeElementDraggable(aiPillPanelEl, document.getElementById("aiPillHeader"), "ai_pos");
+    if (routeStatusBarEl) makeElementDraggable(routeStatusBarEl, routeStatusBarEl, "route_status_pos");
+    if (btnRefreshEl) makeElementDraggable(btnRefreshEl, btnRefreshEl, "refresh_pos", () => hardReload());
     makeElementDraggable(neonPanel, document.getElementById("neonHeader"), "neon_pos");
-    if (routeStatusBar) makeElementDraggable(routeStatusBar, routeStatusBar, "route_status_pos");
 
     // ПОИСК УЛИЦ
     const streetSearchInput = document.getElementById("streetSearchInput");
@@ -1427,7 +1640,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА И ОТРИСОВКА ТОЧЕК
+    // ЗАГРУЗКА И ОТРИСОВКА КРУЖОЧКОВ
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -1473,13 +1686,17 @@
 
         const remMinutes = Math.floor(Math.max(0, LIFETIME_MS - diff) / 60000);
         const dateStr = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const cleanTextSafe = (p.text || "").replace(/'/g, "\\'");
 
         const popupContent = `
-          <div style="padding:4px;">
+          <div style="padding:4px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; min-width:160px;">
             <div style="font-weight:700; font-size:13px;">${emoji} ${p.text || ""}</div>
             <div style="font-size:11px; color:#64748b; margin-top:4px;">⏳ Зникне через: ${remMinutes} хв</div>
             <div style="font-size:11px; color:#64748b;">🕒 Додано: ${dateStr}</div>
             <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Затисніть 0.4с для переміщення</div>
+            <div style="text-align:right; margin-top:6px; border-top:1px solid #e2e8f0; padding-top:4px;">
+              <span onclick="openAiContext('point', '${p._fbKey || ''}', '${cleanTextSafe}')" style="color:#0284c7; font-weight:800; font-size:10px; cursor:pointer;">🤖 Повідомити ШІ</span>
+            </div>
           </div>
         `;
 
@@ -1497,9 +1714,7 @@
             finishDragAndTrainAI(oldPoint, oldPos);
           }
           dragController.reset();
-
-          startX = clientX;
-          startY = clientY;
+          startX = clientX; startY = clientY;
 
           timer = setTimeout(() => {
             timer = null;
@@ -1518,11 +1733,8 @@
         }
 
         function cancelGesture(clientX, clientY) {
-          if (timer) {
-            if (Math.hypot(clientX - startX, clientY - startY) > 8) {
-              clearTimeout(timer);
-              timer = null;
-            }
+          if (timer && Math.hypot(clientX - startX, clientY - startY) > 8) {
+            clearTimeout(timer); timer = null;
           }
         }
 
@@ -1531,30 +1743,17 @@
           if (!el) return;
 
           el.addEventListener('touchstart', (e) => {
-            const t = e.touches[0];
-            startGesture(t.clientX, t.clientY);
+            startGesture(e.touches[0].clientX, e.touches[0].clientY);
           }, { passive: true });
 
           el.addEventListener('touchmove', (e) => {
-            const t = e.touches[0];
-            cancelGesture(t.clientX, t.clientY);
+            cancelGesture(e.touches[0].clientX, e.touches[0].clientY);
           }, { passive: true });
 
-          el.addEventListener('touchend', () => {
-            if (timer) { clearTimeout(timer); timer = null; }
-          });
-
-          el.addEventListener('mousedown', (e) => {
-            startGesture(e.clientX, e.clientY);
-          });
-
-          el.addEventListener('mousemove', (e) => {
-            cancelGesture(e.clientX, e.clientY);
-          });
-
-          el.addEventListener('mouseup', () => {
-            if (timer) { clearTimeout(timer); timer = null; }
-          });
+          el.addEventListener('touchend', () => { if (timer) { clearTimeout(timer); timer = null; } });
+          el.addEventListener('mousedown', (e) => { startGesture(e.clientX, e.clientY); });
+          el.addEventListener('mousemove', (e) => { cancelGesture(e.clientX, e.clientY); });
+          el.addEventListener('mouseup', () => { if (timer) { clearTimeout(timer); timer = null; } });
         });
 
         markersLayer.addLayer(marker);
