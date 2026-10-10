@@ -658,7 +658,7 @@
       }
     };
 
-    // ВИПРАВЛЕНО КЛЮЧІ: "СТАН 550" БІЛЬШЕ НЕ РЕАГУЄ НА "ОСТАНОВИЛИ"
+    // ТОЧНІ КЛЮЧІ: "СТАН 550" НЕ РЕАГУЄ НА "ОСТАНОВИЛИ"
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -860,7 +860,7 @@
     }
 
     // ==========================================================================
-    // ІНТЕГРАЦІЯ GOOGLE GEMINI API (З ПЕРЕБОРОМ МОДЕЛЕЙ 2.0 / 2.5 / 1.5)
+    // РОЗУМНИЙ БЛОК ШІ (GEMINI API З АВТОПОШУКОМ МОДЕЛЕЙ ТА КОНТЕКСТОМ КАРТИ)
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -911,6 +911,39 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
+    // АВТОМАТИЧНИЙ ПОШУК ПРАЦЮЮЧОЇ МОДЕЛІ ДЛЯ ВАШОГО КЛЮЧА
+    async function getActiveGeminiEndpoint(apiKey) {
+      for (const ver of ['v1beta', 'v1']) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/${ver}/models?key=${apiKey}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.models && data.models.length > 0) {
+              const genModels = data.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'));
+              const pref = genModels.find(m => m.name.includes('gemini-2.0-flash'))
+                        || genModels.find(m => m.name.includes('gemini-2.5-flash'))
+                        || genModels.find(m => m.name.includes('gemini-1.5-flash'))
+                        || genModels.find(m => m.name.includes('flash'))
+                        || genModels[0];
+              if (pref) {
+                return {
+                  ver: ver,
+                  model: pref.name.replace('models/', ''),
+                  url: `https://generativelanguage.googleapis.com/${ver}/${pref.name}:generateContent?key=${apiKey}`
+                };
+              }
+            }
+          }
+        } catch(e) {}
+      }
+      // Запасний варіант
+      return {
+        ver: 'v1beta',
+        model: 'gemini-2.0-flash',
+        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+      };
+    }
+
     async function submitAiInlineCorrection() {
       const query = aiInlineInput.value.trim();
       if (!query) return;
@@ -926,83 +959,61 @@
       aiInlineResult.style.display = "block";
       aiInlineResult.innerHTML = "🧠 Gemini AI думає та аналізує...";
 
+      // Формуємо контекст поточної карти для ШІ
+      const mapContext = checkpoints.map(cp => {
+        const matched = allPoints.filter(p => cp.keys.some(k => ((p.raw_text || p.text || '') + ' ' + (p.address || '')).toLowerCase().includes(k)));
+        matched.sort((a,b) => (b.time||0) - (a.time||0));
+        const latest = matched[0];
+        const override = manualOverrides[cp.id];
+        let state = "Очікування";
+        if (override) state = override.status === 'green' ? 'Зелений (вручну)' : (override.status === 'red' ? 'Червоний (вручну)' : 'Погашено');
+        else if (latest) state = isCleanPoint(latest) ? 'Зелений (чисто)' : 'Червоний (небезпека)';
+        return `• ${cp.name} (id: "${cp.id}"): зараз горить ${state}. Останнє повідомлення: "${latest ? (latest.text || latest.raw_text) : 'немає'}".`;
+      }).join('\n');
+
       const systemPrompt = `
-Ти — високоточний аналітик дорожнього руху у місті Дніпро для водія.
-Твоє завдання — проаналізувати запит/повідомлення водія і визначити дію для світлофора на карті:
-Контрольні пункти:
-- "kaidak_rovd" (РОВД / Кайдацький з'їзд)
-- "vodolechebnitsa" (Водолікарня / пр. Свободи)
-- "kombainoviy" (Комбайновий / Белелюбського)
-- "krasnozavodska" (Краснозаводська / ДТРЗ)
-- "pavlova" (вул. Академіка Павлова)
-- "rechport" (Річпорт / Набережна Заводська)
-- "vodokachka" (Водокачка / Набережна Заводська)
-- "stan_550" (Стан 550 / Набережна Заводська)
+Ти — інтелектуальний штурман-помічник для водія в місті Дніпро.
+Тобі надано реальний стан 8 контрольних світлофорів на дорозі:
+${mapContext}
 
-Дії:
-- "green": якщо там чисто, вільно, проїзд спокійний, знялися, або користувач просить зняти червоний бо там чисто.
-- "red": якщо там блокпост, патруль, зупиняють, перевіряють, сині, хмари, дощ, небезпека.
-- "off": якщо просять погасити світлофор або повідомлення хибне.
-- "none": якщо повідомлення загальне чи відповідь на питання.
+Якщо водій ставить питання (наприклад "чому горить червоний на Набережній?"), ПОЯСНИ йому причину простою людською мовою, посилаючись на повідомлення вище.
+Якщо водій дає команду/зауваження змінити стан світлофора (наприклад "РОВД чисто", "на Павлова бп", "погаси світлофор"):
+- "green": якщо там чисто, вільно, проїзд спокійний, знялися, або просять зняти червоний.
+- "red": якщо там блокпост, патруль, зупиняють, сині, хмари, дощ, небезпека.
+- "off": якщо просять вимкнути або повідомлення помилкове.
+- "none": якщо це просто питання або відповідь.
 
-Відповідай СТРОГО валідним JSON без markdown-лапок:
+Відповідай СТРОГО валідним JSON без markdown-форматування:
 {
   "checkpoint_id": "id або null",
   "action": "green" | "red" | "off" | "none",
-  "explanation": "Коротка зрозуміла відповідь українською мовою"
+  "explanation": "Коротка, зрозуміла та корисна відповідь водію українською мовою"
 }
 `;
 
-      const candidateModels = [
-        'gemini-2.0-flash',
-        'gemini-2.5-flash',
-        'gemini-1.5-flash-latest',
-        'gemini-1.5-flash'
-      ];
-
-      let lastError = null;
-      let successData = null;
-
-      for (const model of candidateModels) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                { role: "user", parts: [{ text: systemPrompt + "\n\nПовідомлення користувача:\n" + query }] }
-              ],
-              generationConfig: {
-                temperature: 0.1,
-                responseMimeType: "application/json"
-              }
-            })
-          });
-
-          if (response.ok) {
-            successData = await response.json();
-            break;
-          } else {
-            const errJson = await response.json().catch(() => ({}));
-            lastError = errJson.error?.message || `HTTP ${response.status}`;
-          }
-        } catch (e) {
-          lastError = e.message;
-        }
-      }
-
-      if (!successData) {
-        aiInlineResult.innerHTML = `
-          <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
-          <div style="color:#cbd5e1; font-size:10px;">${lastError}</div>
-          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для перевірки ключа</div>
-        `;
-        return;
-      }
-
       try {
-        let rawReply = successData.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const ep = await getActiveGeminiEndpoint(apiKey);
+        const response = await fetch(ep.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              { role: "user", parts: [{ text: systemPrompt + "\n\nПовідомлення водія:\n" + query }] }
+            ],
+            generationConfig: {
+              temperature: 0.1,
+              responseMimeType: "application/json"
+            }
+          })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        let rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         rawReply = rawReply.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(rawReply);
 
@@ -1013,7 +1024,7 @@
           if (cp) {
             setTrafficLightManual(cp.id, parsed.action);
             const statusIcon = parsed.action === 'green' ? '🟢 ЧИСТО' : (parsed.action === 'red' ? '🔴 УВАГА' : '⚪ ПОГАШЕНО');
-            actionResultText = `Світлофор «${cp.name}» ➔ ${statusIcon}. (${parsed.explanation})`;
+            actionResultText = `Світлофор «${cp.name}» ➔ ${statusIcon}. ${parsed.explanation}`;
           }
         }
 
@@ -1025,12 +1036,17 @@
         } catch(e) {}
 
         aiInlineResult.innerHTML = `
-          <div style="color:#00f3ff; font-weight:800;">🤖 Gemini AI:</div>
+          <div style="color:#00f3ff; font-weight:800;">🤖 Gemini AI (${ep.model}):</div>
           <div style="color:#e2e8f0;">${actionResultText}</div>
         `;
         showToast("🤖 Відповідь Gemini отримана!");
+
       } catch (err) {
-        aiInlineResult.innerHTML = `<div style="color:#ef4444;">Помилка розбору відповіді: ${err.message}</div>`;
+        aiInlineResult.innerHTML = `
+          <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
+          <div style="color:#cbd5e1; font-size:10px;">${err.message}</div>
+          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для перевірки ключа</div>
+        `;
       }
     }
 
@@ -1407,7 +1423,7 @@
             '</div>' +
             messageBlock +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:4px;">' +
-              '<span>💡 Затисніть на 0.5с</span>' +
+              '<span>💡 Затисніть 0.5с</span>' +
               '<span onclick="openAiContext(\'traffic_light\', \'' + cp.id + '\', \'' + cp.name + '\')" style="color:#0284c7; font-weight:800; cursor:pointer;">🤖 Зауваження для ШІ</span>' +
             '</div>' +
           '</div>';
@@ -1467,10 +1483,7 @@
               cancelPress();
             });
 
-            el.addEventListener('mousedown', (e) => {
-              startPress(e.clientX, e.clientY);
-            });
-
+            el.addEventListener('mousedown', (e) => { startPress(e.clientX, e.clientY); });
             el.addEventListener('mousemove', (e) => {
               if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) cancelPress();
             });
