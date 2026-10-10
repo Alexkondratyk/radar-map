@@ -32,7 +32,7 @@
     }
     .btn-back:hover { background: #0284c7; color: #fff; }
 
-    /* ФИЛЬТР */
+    /* ФИЛЬТР ВЕРХНИЙ */
     .filter-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: #0b1120; border: 1px solid #1e293b; border-radius: 10px;
@@ -48,7 +48,7 @@
       background: #0284c7; color: #fff; box-shadow: 0 0 10px rgba(2, 132, 199, 0.6);
     }
 
-    /* KPI ПАНЕЛЬ */
+    /* KPI */
     .kpi-row {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px;
     }
@@ -92,19 +92,60 @@
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
     }
 
-    /* ПЕРЕКЛЮЧАТЕЛЬ ДНЯ ШКАЛЫ (СЬОГОДНІ / ВЧОРА) */
-    .timeline-day-switch {
-      display: flex; gap: 6px; align-items: center;
+    /* ПУЛЬТ КНОПОК ФИЛЬТРА УЛИЦ */
+    .street-control-toolbar {
+      background: #070d1d;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
+    .ctrl-modes-row {
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;
+    }
+    .btn-multi-toggle {
+      background: #0f172a; border: 1px solid #334155; color: #94a3b8;
+      padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-multi-toggle.active {
+      background: #ca8a04; border-color: #f59e0b; color: #fff;
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+    }
+    .btn-all-streets {
+      background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8;
+      padding: 5px 14px; border-radius: 6px; font-size: 11px; font-weight: 800;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-all-streets.active {
+      background: #0284c7; color: #fff; box-shadow: 0 0 12px rgba(2, 132, 199, 0.6);
+    }
+
+    .ctrl-streets-row {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .street-pill-btn {
+      padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: 800;
+      cursor: pointer; background: #0b1120; border: 1.5px solid #334155;
+      color: #94a3b8; opacity: 0.45; transition: all 0.2s;
+    }
+    .street-pill-btn.active {
+      opacity: 1 !important;
+      color: #fff !important;
+      box-shadow: 0 0 12px currentColor;
+    }
+
+    /* ХРОНОМЕТРАЖ (ТАБ 1) */
+    .timeline-day-switch { display: flex; gap: 6px; align-items: center; }
     .timeline-day-btn {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
       padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; cursor: pointer;
     }
-    .timeline-day-btn.active {
-      background: #0284c7; border-color: #00f3ff; color: #fff;
-    }
+    .timeline-day-btn.active { background: #0284c7; border-color: #00f3ff; color: #fff; }
 
-    /* БЛОКИ ХРОНОЛОГИИ (ТАБ 1) */
     .timeline-node {
       background: #0f172a; border: 1px solid #1e293b; border-radius: 10px;
       padding: 12px; margin-bottom: 12px; border-left: 5px solid #00f3ff;
@@ -125,9 +166,7 @@
       position: absolute; top: 0; height: 100%; border-radius: 2px; cursor: pointer;
       box-shadow: 0 0 6px currentColor;
     }
-    .strip-segment.night-carryover {
-      border-right: 2px dashed #fff;
-    }
+    .strip-segment.night-carryover { border-right: 2px dashed #fff; }
 
     .session-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
     .session-pill {
@@ -143,10 +182,8 @@
       padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: 800; margin-left: 6px;
     }
 
-    /* СТОЛБИКИ ПО ДНЯМ (ТАБ 2) */
-    .street-time-cards {
-      display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 14px;
-    }
+    /* КАРТОЧКИ ПО УЛИЦАМ (ТАБ 2) */
+    .street-time-cards { display: grid; grid-template-columns: 1fr; gap: 8px; margin-top: 14px; }
     .st-time-card {
       background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 12px;
       display: flex; flex-direction: column; gap: 6px; border-left: 4px solid #00f3ff;
@@ -257,26 +294,57 @@
       <div class="hud-card-title">
         <span>📊 Блокпости: Сьогодні / Вчора / Позавчора / 7 днів:</span>
       </div>
+
+      <!-- ПУЛЬТ ФИЛЬТРА УЛИЦ ДЛЯ ТАБ 2 -->
+      <div class="street-control-toolbar">
+        <div class="ctrl-modes-row">
+          <button id="btnMultiTab2" class="btn-multi-toggle" onclick="toggleMultiSelectMode('tab2')">
+            🔲 Вибір кількох вулиць (Вимк)
+          </button>
+          <button id="btnAllTab2" class="btn-all-streets active" onclick="handleStreetButtonClick('tab2', 'all')">
+            🌐 Всі 7 вулиць
+          </button>
+        </div>
+        <div class="ctrl-streets-row" id="pillsContainerTab2"></div>
+      </div>
+
       <div class="chart-canvas-wrap">
         <canvas id="canvasStreetDays"></canvas>
       </div>
       <div style="font-size:11px; color:#38bdf8; margin: 8px 0; font-weight:700;">
-        💡 Натискайте на будь-який стовпчик або плашку нижче, щоб побачити точний час та повідомлення!
+        💡 Натискайте на будь-який стовпчик або плашку нижче, щоб відкрити точні часи та звіти!
       </div>
       <div class="street-time-cards" id="streetTimeCards"></div>
     </div>
 
-    <!-- ТАБ 3: ЧАСЫ И ДНИ С ОБЩЕЙ СУММАРНОЙ ЛИНИЕЙ -->
+    <!-- ТАБ 3: ЧАСЫ И ДНИ (МАРШРУТ) -->
     <div id="tabContent3" class="hud-card" style="display:none;">
       <div class="hud-card-title">
-        <span>🕒 Активність по годинах (всі 7 вулиць разом + окремо):</span>
+        <span>🕒 Активність по годинах (24h) та по днях:</span>
+      </div>
+
+      <!-- ПУЛЬТ ФИЛЬТРА УЛИЦ ДЛЯ ТАБ 3 -->
+      <div class="street-control-toolbar">
+        <div class="ctrl-modes-row">
+          <button id="btnMultiTab3" class="btn-multi-toggle" onclick="toggleMultiSelectMode('tab3')">
+            🔲 Вибір кількох вулиць (Вимк)
+          </button>
+          <button id="btnAllTab3" class="btn-all-streets active" onclick="handleStreetButtonClick('tab3', 'all')">
+            🌐 Всі 7 вулиць (Разом)
+          </button>
+        </div>
+        <div class="ctrl-streets-row" id="pillsContainerTab3"></div>
+      </div>
+
+      <div class="hud-card-title" style="margin-top:10px; font-size:13px;">
+        <span>🕒 По годинах доби (24h):</span>
       </div>
       <div class="chart-canvas-wrap" style="height:230px;">
         <canvas id="canvasRouteHourly"></canvas>
       </div>
 
-      <div class="hud-card-title" style="margin-top:20px;">
-        <span>📅 По днях тижня (всі 7 вулиць разом + окремо):</span>
+      <div class="hud-card-title" style="margin-top:20px; font-size:13px;">
+        <span>📅 По днях тижня:</span>
       </div>
       <div class="chart-canvas-wrap" style="height:230px;">
         <canvas id="canvasRouteWeekly"></canvas>
@@ -309,6 +377,12 @@
     let routeHourlyChartInstance = null;
     let routeWeeklyChartInstance = null;
     let targetSessionsGlobal = {};
+
+    // СОСТОЯНИЕ ФИЛЬТРОВ УЛИЦ ДЛЯ ТАБ 2 И ТАБ 3
+    const streetFilters = {
+      tab2: { multi: false, selected: new Set(['all']) },
+      tab3: { multi: false, selected: new Set(['all']) }
+    };
 
     const TARGET_CHECKPOINTS = [
       {
@@ -382,6 +456,8 @@
       } catch (e) {
         rawArchive = [];
       }
+      renderPillsControls('tab2');
+      renderPillsControls('tab3');
       renderAll();
     }
 
@@ -403,6 +479,104 @@
       document.getElementById("btnDayToday").classList.toggle("active", offset === 0);
       document.getElementById("btnDayYesterday").classList.toggle("active", offset === 1);
       renderAll();
+    }
+
+    // --- УПРАВЛЕНИЕ КНОПКАМИ УЛИЦ (ОДИНАРНЫЙ ВЫБОР VS МУЛЬТИВЫБОР) ---
+    function toggleMultiSelectMode(tabKey) {
+      const f = streetFilters[tabKey];
+      f.multi = !f.multi;
+      const btn = document.getElementById(tabKey === 'tab2' ? 'btnMultiTab2' : 'btnMultiTab3');
+      if (f.multi) {
+        btn.classList.add('active');
+        btn.innerText = "☑️ Мультивибір (УВІМКНЕНО)";
+      } else {
+        btn.classList.remove('active');
+        btn.innerText = "🔲 Вибір кількох вулиць (Вимк)";
+      }
+    }
+
+    function handleStreetButtonClick(tabKey, streetId) {
+      const f = streetFilters[tabKey];
+
+      if (streetId === 'all') {
+        f.selected.clear();
+        f.selected.add('all');
+      } else {
+        if (!f.multi) {
+          // ОДИНОЧНЫЙ РЕЖИМ (SOLO): нажал улицу — горит только она, остальные погасли
+          f.selected.clear();
+          f.selected.add(streetId);
+        } else {
+          // МУЛЬТИРЕЖИМ: добавляем или убираем конкретную улицу независимо
+          if (f.selected.has('all')) {
+            f.selected.clear();
+            f.selected.add(streetId);
+          } else {
+            if (f.selected.has(streetId)) {
+              f.selected.delete(streetId);
+              if (f.selected.size === 0) f.selected.add('all');
+            } else {
+              f.selected.add(streetId);
+            }
+          }
+        }
+      }
+
+      updatePillsUI(tabKey);
+
+      // Перерисовываем графики выбранного таба
+      const nowDate = new Date();
+      const todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate()).getTime();
+      const yesterdayStart = todayStart - 86400000;
+      const beforeYesterdayStart = todayStart - 86400000 * 2;
+      const weekStart = todayStart - 86400000 * 6;
+
+      if (tabKey === 'tab2') {
+        renderStreetDaysChart(targetSessionsGlobal, todayStart, yesterdayStart, beforeYesterdayStart, weekStart);
+      } else {
+        renderRouteTimeCharts(targetSessionsGlobal, todayStart);
+      }
+    }
+
+    function renderPillsControls(tabKey) {
+      const container = document.getElementById(tabKey === 'tab2' ? 'pillsContainerTab2' : 'pillsContainerTab3');
+      container.innerHTML = "";
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const btn = document.createElement("button");
+        btn.className = "street-pill-btn active";
+        btn.id = `pill_${tabKey}_${t.id}`;
+        btn.innerText = t.name;
+        btn.style.borderColor = t.color;
+        btn.style.color = t.color;
+        btn.onclick = () => handleStreetButtonClick(tabKey, t.id);
+        container.appendChild(btn);
+      });
+      updatePillsUI(tabKey);
+    }
+
+    function updatePillsUI(tabKey) {
+      const f = streetFilters[tabKey];
+      const allBtn = document.getElementById(tabKey === 'tab2' ? 'btnAllTab2' : 'btnAllTab3');
+      const isAll = f.selected.has('all');
+
+      allBtn.classList.toggle('active', isAll);
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const btn = document.getElementById(`pill_${tabKey}_${t.id}`);
+        if (!btn) return;
+        const isActive = isAll || f.selected.has(t.id);
+        btn.classList.toggle('active', isActive);
+        if (isActive) {
+          btn.style.backgroundColor = t.color + '26'; // 15% прозрачность
+          btn.style.color = "#ffffff";
+          btn.style.borderColor = t.color;
+        } else {
+          btn.style.backgroundColor = "#0b1120";
+          btn.style.color = "#64748b";
+          btn.style.borderColor = "#1e293b";
+        }
+      });
     }
 
     function buildSessionsForTarget(target) {
@@ -500,7 +674,7 @@
       renderOtherSectors();
     }
 
-    // ТАБ 1: ХРОНОМЕТРАЖ С ПРАВИЛЬНЫМ НОЧНЫМ ПЕРЕХОДОМ
+    // ТАБ 1: ХРОНОМЕТРАЖ
     function renderTimeline(targetSessionsMap, now, todayStart, yesterdayStart, ACTIVE_THRESHOLD_MS) {
       const timelineListEl = document.getElementById("timelineList");
       timelineListEl.innerHTML = "";
@@ -561,22 +735,17 @@
           });
         }
 
-        // Отрисовка суточной полосы с обрезкой по дням
         let segmentsHtml = "";
         sessions.forEach(s => {
           const effectiveEnd = (!s.closedByClean && (now - s.endTime <= ACTIVE_THRESHOLD_MS)) ? now : s.endTime;
 
-          // Проверяем пересечение с выбранным днём (viewDayStart – viewDayEnd)
           if (s.startTime < viewDayEnd && effectiveEnd > viewDayStart) {
             const segStart = Math.max(s.startTime, viewDayStart);
             const segEnd = Math.min(effectiveEnd, viewDayEnd);
-
             const startMinutes = (segStart - viewDayStart) / 60000;
             const endMinutes = (segEnd - viewDayStart) / 60000;
-
             const leftPercent = (startMinutes / 1440) * 100;
             const widthPercent = Math.max(2.0, ((endMinutes - startMinutes) / 1440) * 100);
-
             const isCarryoverStart = (s.startTime < viewDayStart);
 
             segmentsHtml += `
@@ -608,8 +777,14 @@
       });
     }
 
-    // ТАБ 2: СТОЛБИКИ ПО ДНЯМ С КЛИКАБЕЛЬНОСТЬЮ
+    // ТАБ 2: СТОЛБИКИ ПО ДНЯМ С ФИЛЬТРАЦИЕЙ ПО КНОПКАМ УЛИЦ
     function renderStreetDaysChart(targetSessionsMap, todayStart, yesterdayStart, beforeYesterdayStart, weekStart) {
+      const f = streetFilters.tab2;
+      const isAll = f.selected.has('all');
+
+      // Фильтруем улицы согласно кнопкам
+      const displayedTargets = TARGET_CHECKPOINTS.filter(t => isAll || f.selected.has(t.id));
+
       const countsToday = [];
       const countsYesterday = [];
       const countsBefore = [];
@@ -618,7 +793,7 @@
       const cardsContainer = document.getElementById("streetTimeCards");
       cardsContainer.innerHTML = "";
 
-      TARGET_CHECKPOINTS.forEach(t => {
+      displayedTargets.forEach(t => {
         const sessions = targetSessionsMap[t.id] || [];
         const sToday = sessions.filter(s => s.startTime >= todayStart || (s.endTime >= todayStart && s.startTime >= yesterdayStart));
         const sYesterday = sessions.filter(s => s.startTime >= yesterdayStart && s.startTime < todayStart);
@@ -661,7 +836,7 @@
       streetDaysChartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
-          labels: TARGET_CHECKPOINTS.map(t => t.name),
+          labels: displayedTargets.map(t => t.name),
           datasets: [
             { label: 'Сьогодні', data: countsToday, backgroundColor: '#00f3ff', borderRadius: 4 },
             { label: 'Вчора', data: countsYesterday, backgroundColor: '#f59e0b', borderRadius: 4 },
@@ -672,19 +847,21 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } }
+            },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для відкриття звітів' } }
+          },
           onClick: (e, elements) => {
             if (elements && elements.length > 0) {
               const el = elements[0];
-              const streetIndex = el.index;
+              const target = displayedTargets[el.index];
               const datasetIndex = el.datasetIndex;
               const periodKeys = ['today', 'yesterday', 'before', 'week'];
-              const target = TARGET_CHECKPOINTS[streetIndex];
               openPeriodDetailModal(target.id, periodKeys[datasetIndex]);
             }
-          },
-          plugins: {
-            legend: { labels: { color: '#e2e8f0', font: { size: 11, weight: 'bold' } } },
-            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для відкриття звітів' } }
           },
           scales: {
             x: { grid: { color: '#1e293b' }, ticks: { color: '#f1f5f9', font: { size: 10, weight: 'bold' } } },
@@ -694,32 +871,42 @@
       });
     }
 
-    // ТАБ 3: ЧАСЫ И ДНИ С ЛИНИЕЙ «ВСЕ 7 УЛИЦ ВМЕСТЕ»
+    // ТАБ 3: ЧАСЫ И ДНИ С КНОПОЧНЫМ ВЫБОРОМ УЛИЦ И СУММАРНОЙ ЛИНИЕЙ
     function renderRouteTimeCharts(targetSessionsMap, todayStart) {
+      const f = streetFilters.tab3;
+      const isAll = f.selected.has('all');
       const hourLabels = Array.from({length: 24}, (_, i) => `${i}:00`);
 
       // 1. По часам
       const totalByHour = new Array(24).fill(0);
-      const datasetsHourly = TARGET_CHECKPOINTS.map(t => {
+      const datasetsHourly = [];
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const isVisible = isAll || f.selected.has(t.id);
         const sessions = targetSessionsMap[t.id] || [];
         const hourData = new Array(24).fill(0);
+
         sessions.forEach(s => {
           const h = new Date(s.startTime).getHours();
           hourData[h]++;
-          totalByHour[h]++;
+          if (isVisible) totalByHour[h]++;
         });
-        return {
-          type: 'bar',
-          label: t.name,
-          data: hourData,
-          backgroundColor: t.color,
-          borderRadius: 3
-        };
+
+        if (isVisible) {
+          datasetsHourly.push({
+            type: 'bar',
+            label: t.name,
+            data: hourData,
+            backgroundColor: t.color,
+            borderRadius: 3
+          });
+        }
       });
 
+      // Добавляем линию "Всі вибрані разом"
       datasetsHourly.unshift({
         type: 'line',
-        label: '📈 Всі 7 вулиць разом (Сумарно)',
+        label: isAll ? '📈 Всі 7 вулиць разом (Сумарно)' : '📈 Вибрані вулиці разом (Сумарно)',
         data: totalByHour,
         borderColor: '#ffffff',
         borderWidth: 2.5,
@@ -742,12 +929,12 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false }, // Выключаем стандартную зачёркивающуюся легенду!
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду години' } }
+          },
           onClick: (e, elements) => {
             if (elements && elements.length > 0) openHourlyDetailModal(elements[0].index);
-          },
-          plugins: {
-            legend: { labels: { color: '#cbd5e1', font: { size: 10 } } },
-            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду години' } }
           },
           scales: {
             x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
@@ -771,25 +958,31 @@
       }
 
       const totalByDay = new Array(7).fill(0);
-      const datasetsWeekly = TARGET_CHECKPOINTS.map(t => {
+      const datasetsWeekly = [];
+
+      TARGET_CHECKPOINTS.forEach(t => {
+        const isVisible = isAll || f.selected.has(t.id);
         const sessions = targetSessionsMap[t.id] || [];
         const dayData = days.map((d, dIdx) => {
           const c = sessions.filter(s => s.startTime >= d.startTime && s.startTime < d.endTime).length;
-          totalByDay[dIdx] += c;
+          if (isVisible) totalByDay[dIdx] += c;
           return c;
         });
-        return {
-          type: 'bar',
-          label: t.name,
-          data: dayData,
-          backgroundColor: t.color,
-          borderRadius: 3
-        };
+
+        if (isVisible) {
+          datasetsWeekly.push({
+            type: 'bar',
+            label: t.name,
+            data: dayData,
+            backgroundColor: t.color,
+            borderRadius: 3
+          });
+        }
       });
 
       datasetsWeekly.unshift({
         type: 'line',
-        label: '📈 Всі 7 вулиць разом (Сумарно)',
+        label: isAll ? '📈 Всі 7 вулиць разом (Сумарно)' : '📈 Вибрані вулиці разом (Сумарно)',
         data: totalByDay,
         borderColor: '#ffffff',
         borderWidth: 2.5,
@@ -808,12 +1001,12 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду дня' } }
+          },
           onClick: (e, elements) => {
             if (elements && elements.length > 0) openDayDetailModal(days[elements[0].index]);
-          },
-          plugins: {
-            legend: { labels: { color: '#cbd5e1', font: { size: 10 } } },
-            tooltip: { callbacks: { afterLabel: () => '👉 Натисніть для перегляду дня' } }
           },
           scales: {
             x: { stacked: true, grid: { color: '#1e293b' }, ticks: { color: '#f1f5f9', font: { size: 10, weight: 'bold' } } },
@@ -850,7 +1043,7 @@
       });
     }
 
-    // МОДАЛЬНЫЕ ОКНА ДЕТАЛИЗАЦИИ
+    // МОДАЛЬНЫЕ ОКНА
     function openPeriodDetailModal(targetId, period) {
       const target = TARGET_CHECKPOINTS.find(t => t.id === targetId);
       if (!target) return;
