@@ -303,7 +303,7 @@
       <a href="index.html" class="btn-back">← До карти</a>
     </div>
 
-    <!-- ВНЕДРЕННЫЙ ШІ-АНАЛИТИК -->
+    <!-- БЛОК ШІ-АНАЛІТИКА -->
     <div class="ai-stats-card">
       <div class="ai-stats-header">
         <span class="ai-stats-title">🤖 ШІ-Аналітик Gemini:</span>
@@ -596,14 +596,12 @@
       askAiStatsQuestion("Зроби глибокий та корисний військово-дорожній аналіз поточної вкладки для водія");
     }
 
-    // НАДЕЖНЫЙ ЗАПРОС С ПЕРЕБОРОМ ПРИ ОШИБКЕ HIGH DEMAND (503)
+    // НАДЕЖНЫЙ ЗАПРОС К GEMINI (ТОЛЬКО РАБОЧИЕ МОДЕЛИ)
     async function executeStatsGemini(promptText, apiKey) {
       const candidateModels = [
         'gemini-3.8-flash',
         'gemini-3.5-flash-lite',
-        'gemini-3.5-flash',
-        'gemini-2.5-flash',
-        'gemini-2.0-flash'
+        'gemini-3.5-flash'
       ];
       let lastErr = null;
 
@@ -632,7 +630,7 @@
             lastErr = e.message;
           }
         }
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, 1000));
       }
       throw new Error(lastErr || "Сервери Google тимчасово перевантажені, спробуйте ще раз через кілька секунд.");
     }
@@ -1661,7 +1659,7 @@ ${recentReports}
             reportsBox.innerHTML += `
               <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
                 <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt})</div>
-                <div>${s.reports.map(r => `• ${r.text}`).join("<br>")}</div>
+                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
               </div>
             `;
           });
