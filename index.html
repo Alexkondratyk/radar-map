@@ -34,7 +34,7 @@
 
     #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #0b1120; }
 
-    /* 4 ПЛАВАЮЩИХ ПРЯМОУГОЛЬНИКА */
+    /* 4 ПЛАВАЮЩИХ ПРЯМОУГОЛЬНИКА (38px ВЫСОТА, 12px СКРУГЛЕНИЕ) */
     .hud-pill {
       height: 38px; box-sizing: border-box;
       background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
@@ -45,7 +45,7 @@
       display: inline-flex; align-items: center; gap: 6px;
     }
 
-    /* 1. ШАПКА КАРТЫ */
+    /* 1. ШАПКА КАРТЫ (СЛЕВА ВВЕРХУ) */
     .dashboard {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
@@ -87,7 +87,7 @@
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    /* 2. БЛОК ШІ */
+    /* 2. БЛОК ШІ (СПРАВА ВВЕРХУ) */
     .ai-pill-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
@@ -143,7 +143,7 @@
       max-height: 250px; overflow-y: auto;
     }
 
-    /* 3. СТРОКА СТАТУСУ */
+    /* 3. СТРОКА СТАТУСА (СЛЕВА ВНИЗУ) */
     .route-status-bar {
       position: absolute; bottom: 25px; left: 15px; z-index: 1000;
       height: 38px; box-sizing: border-box;
@@ -160,7 +160,7 @@
       box-shadow: 0 0 18px rgba(255, 51, 75, 0.45) !important;
     }
 
-    /* 4. КНОПКА ОНОВИТИ */
+    /* 4. КНОПКА ОБНОВИТЬ (СПРАВА ВНИЗУ) */
     .btn-refresh {
       position: absolute; bottom: 25px; right: 15px; z-index: 1000;
       height: 38px; box-sizing: border-box;
@@ -172,7 +172,7 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
-    /* СТИЛІ ІНТЕРФЕЙСУ */
+    /* СТИЛИ */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -224,6 +224,7 @@
       padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: space-between;
     }
+    .btn-server-main:hover { border-color: #64748b; color: #cbd5e1; }
     .server-dropdown {
       background: #0b1120; border: 1px solid #334155; border-radius: 8px;
       padding: 6px; margin-top: 4px; display: none; flex-direction: column; gap: 4px;
@@ -319,7 +320,7 @@
 <body>
   <div id="map"></div>
 
-  <!-- 1. ШАПКА КАРТИ -->
+  <!-- 1. ШАПКА КАРТЫ (СЛЕВА ВВЕРХУ) -->
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">
@@ -374,7 +375,7 @@
     </div>
   </div>
 
-  <!-- 2. БЛОК ШІ GEMINI -->
+  <!-- 2. БЛОК ШІ GEMINI (СПРАВА ВВЕРХУ) -->
   <div id="aiPillPanel" class="ai-pill-panel compact">
     <div id="aiPillHeader" class="ai-pill-compact-content" onclick="toggleAiPillExpand()">
       <div class="ai-titleBadge" style="display:flex; align-items:center; gap:5px;">
@@ -403,20 +404,20 @@
     </div>
   </div>
 
-  <!-- 3. СТРОКА СТАТУСУ -->
+  <!-- 3. СТРОКА СТАТУСУ (СЛЕВА ВНИЗУ) -->
   <div id="routeStatusBar" class="route-status-bar">
     <span id="routeStatusIcon">🟢</span>
     <span id="routeStatusText">Мій шлях: Чисто</span>
     <span class="status-drag-hint">✥</span>
   </div>
 
-  <!-- 4. КНОПКА ОНОВИТИ -->
+  <!-- 4. КНОПКА ОБНОВИТЬ (СПРАВА ВНИЗУ) -->
   <div id="btnRefresh" class="btn-refresh">
     <span>🔄</span><span>Оновити</span>
     <span class="status-drag-hint">✥</span>
   </div>
 
-  <!-- СЕКРЕТНЕ МЕНЮ -->
+  <!-- СЕКРЕТНОЕ МЕНЮ -->
   <div id="neonPanel" class="neon-panel">
     <div id="neonHeader" class="neon-title">
       <span>⚙️ Секретне меню ✥</span>
@@ -773,7 +774,7 @@
     }
 
     // ==========================================================================
-    // НАСТОЯЩЕЕ ИИ GEMINI С ПОЛНЫМ ВИДЕНИЕМ ВСЕЙ КАРТЫ
+    // ПРЯМОЙ ВЫЗОВ GEMINI-3.8-FLASH / GEMINI-3.5-FLASH-LITE С ПОЛНОЙ КАРТИНОЙ КАРТЫ
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -796,7 +797,6 @@
       const newKey = prompt("Введіть ваш Google Gemini API Key:", currentKey);
       if (newKey !== null) {
         localStorage.setItem("gemini_api_key", newKey.trim());
-        sessionStorage.removeItem("active_gemini_model_name");
         showToast("🔑 Gemini API Key збережено!");
       }
     }
@@ -817,29 +817,39 @@
       showToast("🤖 Введіть запитання чи зауваження для ШІ!");
     };
 
-    // АВТОПОИСК РАБОЧЕЙ МОДЕЛИ
-    async function resolveActiveGeminiModel(apiKey) {
-      const cached = sessionStorage.getItem("active_gemini_model_name");
-      if (cached) return cached;
+    // ФУНКЦИЯ ЗАПРОСА В АКТУАЛЬНЫЕ МОДЕЛИ
+    async function executeGeminiRequest(promptText, apiKey) {
+      const models = [
+        'gemini-3.8-flash',
+        'gemini-3.5-flash-lite',
+        'gemini-3.5-flash'
+      ];
+      let lastErr = null;
 
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-        if (res.ok) {
-          const data = await res.json();
-          const valid = (data.models || []).filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
-          const selected = valid.find(m => m.name.includes("gemini-2.5-flash"))
-                        || valid.find(m => m.name.includes("gemini-2.0-flash") && !m.name.includes("lite"))
-                        || valid.find(m => m.name.includes("gemini-3.5-flash-lite"))
-                        || valid.find(m => m.name.includes("flash"))
-                        || valid[0];
-          if (selected) {
-            const mName = selected.name.replace(/^models\//, '');
-            sessionStorage.setItem("active_gemini_model_name", mName);
-            return mName;
+      for (const m of models) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: promptText }] }],
+              generationConfig: { temperature: 0.2 }
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            return { model: m, data: data };
+          } else {
+            const errJson = await res.json().catch(() => ({}));
+            lastErr = errJson.error?.message || `HTTP ${res.status}`;
           }
+        } catch (e) {
+          lastErr = e.message;
         }
-      } catch(e) {}
-      return "gemini-2.5-flash";
+      }
+      throw new Error(lastErr || "Усі моделі Gemini недоступні");
     }
 
     async function submitAiInlineCorrection() {
@@ -855,11 +865,11 @@
       }
 
       aiInlineResult.style.display = "block";
-      aiInlineResult.innerHTML = "🧠 ШІ аналізує всю карту...";
+      aiInlineResult.innerHTML = "🧠 ШІ аналізує дорожню ситуацію...";
 
       const now = Date.now();
 
-      // ПОЛНЫЙ СРЕЗ ВСЕХ ТОЧЕК НА КАРТЕ ДЛЯ ШИ
+      // ПЕРЕДАЕМ В МОДЕЛЬ ВСЕ 34+ ТОЧЕК НА КАРТЕ
       const allLiveReportsText = allPoints.map((p, idx) => {
         const diffMin = Math.round((now - (p.time || p.timestamp || 0)) / 60000);
         const st = isCleanPoint(p) ? "ЧИСТО (зелена мітка)" : "БЛОКПОСТ/УВАГА (червона мітка)";
@@ -899,37 +909,20 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
 
 ІНСТРУКЦІЯ:
 1. Відповідай як живий розумний ШІ-партнер — чітко, корисно, людською мовою (мовою запиту користувача, українською або російською).
-2. Якщо водій запитує "де зараз блокпости?", "на яких вулицях?", або питає за конкретний район/вулицю:
+2. Якщо водій запитує про конкретну вулицю (наприклад "Що на вулиці Шкільній?", "де блокпости?"):
    - Уважно прочитай УСІ ${allPoints.length} повідомлень вище!
-   - Знайди всі червоні точки / повідомлення про перевірки та перелічи конкретні вулиці й адреси з часу їх надходження.
-3. Якщо водій дає команду керування інтерфейсом карти:
+   - Якщо на запитаній вулиці є повідомлення, передай їх зміст і час. Якщо на цій вулиці в базі повідомлень немає, так прямо і скажи: "По вулиці Шкільній свіжих повідомлень про блокпости чи патрулі за останні 40 хвилин немає".
+3. Якщо водій дає команду керування картою:
    - Сховати світлофори: додай у самий кінець повідомлення тег: <<<ACTION:{"cmd":"toggle_tl","val":"hide"}>>>
    - Показати світлофори: додай у самий кінець повідомлення тег: <<<ACTION:{"cmd":"toggle_tl","val":"show"}>>>
    - Змінити світлофор на чисто/бп/погасити: додай у самий кінець: <<<ACTION:{"cmd":"set_tl","id":"id_світлофора","val":"green"|"red"|"off"}>>>
-   - Перемкнути карту на супутник/вулиці: <<<ACTION:{"cmd":"set_layer","val":"satellite"|"google"|"osm"}>>>
+   - Перемкнути карту: <<<ACTION:{"cmd":"set_layer","val":"satellite"|"google"|"osm"}>>>
 `;
 
       try {
-        const modelName = await resolveActiveGeminiModel(apiKey);
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
-            generationConfig: { temperature: 0.2 }
-          })
-        });
+        const resObj = await executeGeminiRequest(fullPrompt, apiKey);
+        let reply = resObj.data.candidates?.[0]?.content?.parts?.[0]?.text || "Готово.";
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err.error?.message || `HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        let reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Готово.";
-
-        // ПАРСИНГ И ИСПОЛНЕНИЕ КОМАНД
         const actionMatch = reply.match(/<<<ACTION:(.*?)>>>/);
         if (actionMatch) {
           try {
@@ -948,7 +941,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
         const cleanDisplay = reply.replace(/<<<ACTION:.*?>>>/g, '').trim();
 
         aiInlineResult.innerHTML = `
-          <div style="color:#00f3ff; font-weight:800; margin-bottom:4px;">🤖 Gemini (${modelName}):</div>
+          <div style="color:#00f3ff; font-weight:800; margin-bottom:4px;">🤖 Gemini (${resObj.model}):</div>
           <div style="line-height:1.45; white-space:pre-wrap;">${cleanDisplay}</div>
         `;
         showToast("🤖 Відповідь отримана!");
@@ -957,12 +950,12 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
         aiInlineResult.innerHTML = `
           <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
           <div style="color:#cbd5e1; font-size:10px;">${err.message}</div>
-          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для оновлення ключа</div>
+          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для зміни ключа</div>
         `;
       }
     }
 
-    // СЕКРЕТНЕ МЕНЮ
+    // СЕКРЕТНОЕ МЕНЮ
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -1387,7 +1380,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
               if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
-            el.addEventListener('touchend', () => {
+            el.addEventListener('touchend', (e) => {
               if (isLongPress) {
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
@@ -1476,7 +1469,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
       }
     }
 
-    // ПЕРЕМІЩЕННЯ 4 ПРЯМОКУТНИКІВ
+    // ПЕРЕМЕЩЕНИЕ 4 ПРЯМОУГОЛЬНИКОВ
     const dashPanel = document.getElementById("dashPanel");
     const aiPillPanelEl = document.getElementById("aiPillPanel");
     const routeStatusBarEl = document.getElementById("routeStatusBar");
@@ -1587,7 +1580,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
     if (btnRefreshEl) makeElementDraggable(btnRefreshEl, btnRefreshEl, "refresh_pos", () => hardReload());
     makeElementDraggable(neonPanel, document.getElementById("neonHeader"), "neon_pos");
 
-    // ПОШУК ВУЛИЦЬ
+    // ПОИСК УЛИЦ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
     let searchDebounceTimer = null;
@@ -1638,7 +1631,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАВАНТАЖЕННЯ ТОЧОК
+    // ЗАГРУЗКА ТОЧЕК
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -1741,7 +1734,7 @@ ${allLiveReportsText || "Повідомлень на карті зараз не�
           if (!el) return;
 
           el.addEventListener('touchstart', (e) => {
-            startGesture(e.touches[0].clientX, e.touches[0].clientY);
+            startPress(e.touches[0].clientX, e.touches[0].clientY);
           }, { passive: true });
 
           el.addEventListener('touchmove', (e) => {
