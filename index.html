@@ -62,16 +62,6 @@
 
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
 
-    /* КНОПКА ЗАПУСКА ACTIONS */
-    .btn-trigger-action {
-      width: 100%; background: linear-gradient(135deg, #065f46 0%, #047857 100%);
-      border: 1px solid #10b981; color: #fff; padding: 6px 8px; border-radius: 7px;
-      font-size: 11px; font-weight: 800; cursor: pointer; margin-bottom: 6px;
-      display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
-    }
-    .btn-trigger-action:hover { background: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
-    .btn-trigger-action:active { transform: scale(0.98); }
-
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
       width: 100%; background: #0b1120; border: 1px solid #334155; color: #fff;
@@ -99,7 +89,7 @@
       border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
     }
 
-    .tl-menu-container { position: relative; margin-bottom: 8px; }
+    .tl-menu-container { position: relative; margin-bottom: 6px; }
     .btn-tl-main {
       width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
       padding: 6px 8px; border-radius: 7px; font-size: 11px; font-weight: 700;
@@ -114,6 +104,28 @@
       padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 600;
       cursor: pointer; text-align: left;
     }
+
+    /* СПОЙЛЕР УПРАВЛЕНИЯ СЕРВЕРОМ */
+    .server-menu-container { position: relative; margin-bottom: 8px; }
+    .btn-server-main {
+      width: 100%; background: #131d31; border: 1px solid #334155; color: #94a3b8;
+      padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      transition: all 0.2s;
+    }
+    .btn-server-main:hover { border-color: #64748b; color: #cbd5e1; }
+    .server-dropdown {
+      background: #0b1120; border: 1px solid #334155; border-radius: 8px;
+      padding: 6px; margin-top: 4px; display: none; flex-direction: column; gap: 4px;
+    }
+    .btn-trigger-action {
+      width: 100%; background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+      border: 1px solid #10b981; color: #fff; padding: 6px 8px; border-radius: 6px;
+      font-size: 11px; font-weight: 800; cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between; transition: all 0.2s;
+    }
+    .btn-trigger-action:hover { background: #059669; box-shadow: 0 0 10px rgba(16, 185, 129, 0.4); }
+    .btn-trigger-action:active { transform: scale(0.98); }
 
     .legend { display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #94a3b8; border-top: 1px solid #334155; padding-top: 6px; }
     .legend-row { display: flex; align-items: center; gap: 7px; }
@@ -185,12 +197,6 @@
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
-      <!-- КНОПКА ДИСТАНЦИОННОГО ЗАПУСКА РАДАРА -->
-      <button class="btn-trigger-action" onclick="triggerGitHubActions()">
-        <span>▶️ Запустити Радар 24/7</span>
-        <span style="font-size:10px; opacity:0.8;" title="Змінити токен" onclick="changeGitHubToken(event)">⚙️</span>
-      </button>
-
       <div class="search-box">
         <input type="text" id="streetSearchInput" class="search-input" placeholder="🔍 Пошук вулиці у Дніпрі..." autocomplete="off">
         <div id="searchResults" class="search-results"></div>
@@ -204,6 +210,7 @@
         <span>📊</span><span>Аналітика блокпостів</span>
       </a>
 
+      <!-- СВЕТОФОРЫ -->
       <div class="tl-menu-container">
         <button class="btn-tl-main" onclick="toggleTlDropdown()">
           <span>🚦 Світлофори</span>
@@ -212,6 +219,20 @@
         <div id="tlDropdown" class="tl-dropdown">
           <button id="btnToggleTl" class="tl-dropdown-btn" onclick="toggleTrafficLights()">Сховати / Показати</button>
           <button id="btnSetup" class="tl-dropdown-btn" onclick="toggleEditMode()">Розставити (рухати)</button>
+        </div>
+      </div>
+
+      <!-- СПОЙЛЕР-ШТОРКА КЕРУВАННЯ СЕРВЕРОМ -->
+      <div class="server-menu-container">
+        <button class="btn-server-main" onclick="toggleServerDropdown()">
+          <span>⚙️ Керування сервером</span>
+          <span id="serverDropdownArrow">▾</span>
+        </button>
+        <div id="serverDropdown" class="server-dropdown">
+          <button class="btn-trigger-action" onclick="triggerGitHubActions()">
+            <span>▶️ Запустити Радар 24/7</span>
+            <span style="font-size:11px; opacity:0.85; padding-left:6px;" title="Змінити токен" onclick="changeGitHubToken(event)">⚙️</span>
+          </button>
         </div>
       </div>
 
@@ -233,7 +254,14 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ФУНКЦИЯ УДАЛЕННОГО ЗАПУСКА GITHUB ACTIONS ЧЕРЕЗ API
+    function toggleServerDropdown() {
+      const drop = document.getElementById("serverDropdown");
+      const arrow = document.getElementById("serverDropdownArrow");
+      const isVis = drop.style.display === "flex";
+      drop.style.display = isVis ? "none" : "flex";
+      arrow.innerText = isVis ? "▾" : "▴";
+    }
+
     async function triggerGitHubActions() {
       let token = localStorage.getItem("gh_pat_token");
       if (!token) {
@@ -262,9 +290,10 @@
 
         if (res.status === 204) {
           showToast("🚀 Успіх! Радар запущено на сервері GitHub!");
+          toggleServerDropdown();
         } else if (res.status === 401 || res.status === 403) {
           localStorage.removeItem("gh_pat_token");
-          alert("Помилка авторизації! Токен недійсний або не має прав 'workflow'. Спробуйте ввести ще раз.");
+          alert("Помилка авторизації! Токен недійсний або не має прав 'workflow'.");
         } else {
           const data = await res.json().catch(() => ({}));
           alert(`Помилка запуску: HTTP ${res.status}\n${data.message || ''}`);
@@ -284,7 +313,6 @@
       }
     }
 
-    // WAKE LOCK
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
@@ -297,7 +325,6 @@
     window.addEventListener('click', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
-    // ВОССТАНОВЛЕНИЕ СОСТОЯНИЯ ПАНЕЛИ
     const dashPanel = document.getElementById("dashPanel");
     const collapsibleBody = document.getElementById("collapsibleBody");
     const btnToggle = document.getElementById("btnToggle");
@@ -376,7 +403,6 @@
     }
     makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
 
-    // БАЗА ДАННЫХ
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const LIFETIME_MS = 40 * 60 * 1000;
@@ -426,7 +452,6 @@
       window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
     }
 
-    // ПОИСК УЛИЦ ПО ДНЕПРУ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
     let searchDebounceTimer = null;
@@ -483,7 +508,6 @@
       document.getElementById("tlDropdownArrow").innerText = isVis ? "▾" : "▴";
     }
 
-    // ТОЧКИ
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
