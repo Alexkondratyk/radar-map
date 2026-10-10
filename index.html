@@ -39,23 +39,13 @@
 
     /* 4 ПЛАВАЮЧИХ ЕЛЕМЕНТИ (38px ВИСОТА, 12px РАДІУС) */
     .hud-pill {
-      height: 38px;
-      box-sizing: border-box;
-      background: rgba(15, 23, 42, 0.94);
-      backdrop-filter: blur(10px);
-      border: 1.5px solid #334155;
-      border-radius: 12px;
-      color: #f8fafc;
-      font-size: 12px;
-      font-weight: 800;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
-      cursor: move;
-      user-select: none;
-      touch-action: none;
-      white-space: nowrap;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
+      height: 38px; box-sizing: border-box;
+      background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
+      border: 1.5px solid #334155; border-radius: 12px;
+      color: #f8fafc; font-size: 12px; font-weight: 800;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45); cursor: move;
+      user-select: none; touch-action: none; white-space: nowrap;
+      display: inline-flex; align-items: center; gap: 6px;
     }
 
     /* 1. ШАПКА КАРТИ (ЗЛІВА ВГОРІ) */
@@ -88,27 +78,20 @@
 
     .collapsible-body { margin-top: 6px; }
 
-    /* ШАПКА В ЗГОРНУТОМУ СТАНІ (38px) */
     html.dash-collapsed .dashboard {
-      width: auto !important;
-      height: 38px !important;
-      display: inline-flex !important;
-      flex-direction: row !important;
-      align-items: center !important;
-      justify-content: center !important;
-      padding: 0 12px !important;
-      border-radius: 12px !important;
+      width: auto !important; height: 38px !important;
+      display: inline-flex !important; flex-direction: row !important;
+      align-items: center !important; justify-content: center !important;
+      padding: 0 12px !important; border-radius: 12px !important;
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45) !important;
     }
     html.dash-collapsed .dash-header {
-      margin-bottom: 0 !important;
-      padding-bottom: 0 !important;
-      border-bottom: none !important;
-      gap: 6px !important;
+      margin-bottom: 0 !important; padding-bottom: 0 !important;
+      border-bottom: none !important; gap: 6px !important;
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    /* 2. БЛОК GEMINI ШІ (СПРАВА ВГОРІ) */
+    /* 2. БЛОК ШІ (СПРАВА ВГОРІ) */
     .ai-pill-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
@@ -118,27 +101,18 @@
       overflow: hidden; touch-action: none;
     }
     .ai-pill-panel.compact {
-      width: auto !important;
-      height: 38px !important;
-      padding: 0 12px !important;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      cursor: move;
+      width: auto !important; height: 38px !important;
+      padding: 0 12px !important; display: inline-flex;
+      align-items: center; gap: 6px; cursor: move;
     }
     .ai-pill-panel.compact .ai-pill-body { display: none; }
     .ai-pill-panel.expanded {
-      width: 285px !important;
-      height: auto !important;
-      padding: 10px 12px !important;
-      border-radius: 14px !important;
-      border-color: #00f3ff !important;
-      box-shadow: 0 6px 25px rgba(0, 243, 255, 0.35) !important;
+      width: 285px !important; height: auto !important;
+      padding: 10px 12px !important; border-radius: 14px !important;
+      border-color: #00f3ff !important; box-shadow: 0 6px 25px rgba(0, 243, 255, 0.35) !important;
     }
     .ai-pill-panel.expanded .ai-pill-compact-content {
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 6px;
-      margin-bottom: 8px;
+      border-bottom: 1px solid #1e293b; padding-bottom: 6px; margin-bottom: 8px;
     }
 
     .ai-pill-compact-content {
@@ -201,7 +175,6 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
-    /* СТИЛІ КАРТИ ТА ЕЛЕМЕНТІВ */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -314,7 +287,6 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* СЕКРЕТНЕ МЕНЮ */
     .neon-panel {
       position: absolute; top: 60px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
@@ -658,7 +630,6 @@
       }
     };
 
-    // ТОЧНІ КЛЮЧІ: "СТАН 550" НЕ РЕАГУЄ НА "ОСТАНОВИЛИ"
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -800,7 +771,6 @@
       });
     }
 
-    // СИНХРОНІЗАЦІЯ СТАТУСУ МАРШРУТУ
     const routeStatusBar = document.getElementById("routeStatusBar");
     const routeStatusIcon = document.getElementById("routeStatusIcon");
     const routeStatusText = document.getElementById("routeStatusText");
@@ -867,7 +837,7 @@
     }
 
     // ==========================================================================
-    // ШІ-КОРЕКТОР (GEMINI 2.0 FLASH + КЕРУВАННЯ КАРТОЮ + ВІДПОВІДІ НА ПИТАННЯ)
+    // 100% НАДІЙНИЙ ДИНАМІЧНИЙ ДЕТЕКТОР АКТИВНОЇ МОДЕЛІ GOOGLE
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -918,38 +888,27 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
-    async function callGeminiApi(promptText, apiKey) {
-      const modelsToTry = [
-        'gemini-2.0-flash',
-        'gemini-2.5-flash',
-        'gemini-2.0-flash-lite'
-      ];
-
-      let lastError = null;
-      for (const m of modelsToTry) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ role: "user", parts: [{ text: promptText }] }],
-              generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-            })
-          });
-
-          if (res.ok) {
-            const data = await res.json();
-            return { model: m, data: data };
-          } else {
-            const err = await res.json().catch(() => ({}));
-            lastError = err.error?.message || `HTTP ${res.status}`;
+    // Автопошук точної моделі за допомогою API Google
+    async function getActiveGeminiEndpoint(apiKey) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        if (res.ok) {
+          const data = await res.json();
+          const valid = (data.models || []).filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
+          // Шукаємо активні моделі від нових до класичних
+          const chosen = valid.find(m => m.name.includes("gemini-3.5-flash-lite"))
+                      || valid.find(m => m.name.includes("gemini-3.8-flash"))
+                      || valid.find(m => m.name.includes("gemini-2.5-flash"))
+                      || valid.find(m => m.name.includes("gemini-2.0-flash") && !m.name.includes("lite"))
+                      || valid.find(m => m.name.includes("flash"))
+                      || valid[0];
+          if (chosen) {
+            return `https://generativelanguage.googleapis.com/v1beta/${chosen.name}:generateContent?key=${apiKey}`;
           }
-        } catch(e) {
-          lastError = e.message;
         }
-      }
-      throw new Error(lastError || "Усі моделі Gemini недоступні");
+      } catch(e) {}
+      // Резервний варіант
+      return `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
     }
 
     async function submitAiInlineCorrection() {
@@ -965,9 +924,8 @@
       }
 
       aiInlineResult.style.display = "block";
-      aiInlineResult.innerHTML = "🧠 Gemini 2.0 AI аналізує...";
+      aiInlineResult.innerHTML = "🧠 ШІ аналізує дорожню ситуацію...";
 
-      // Формуємо поточний зріз карти
       const mapContext = checkpoints.map(cp => {
         const matched = allPoints.filter(p => cp.keys.some(k => ((p.raw_text || p.text || '') + ' ' + (p.address || '')).toLowerCase().includes(k)));
         matched.sort((a,b) => (b.time||0) - (a.time||0));
@@ -984,7 +942,6 @@
 Поточний стан світлофорів на карті:
 ${mapContext}
 Поточний стан показу світлофорів: ${showTrafficLights ? "увімкнено (видно)" : "вимкнено (приховано)"}.
-Поточний шар карти: ${currentMapType}.
 
 Користувач написав: "${query}"
 
@@ -1005,14 +962,28 @@ ${mapContext}
 `;
 
       try {
-        const result = await callGeminiApi(fullPrompt, apiKey);
-        let rawReply = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const endpointUrl = await getActiveGeminiEndpoint(apiKey);
+        const res = await fetch(endpointUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: fullPrompt }] }],
+            generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        let rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         rawReply = rawReply.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(rawReply);
 
         let replyMsg = parsed.reply || "Готово!";
 
-        // Виконання дій на карті
         if (parsed.command === 'toggle_tl') {
           if (parsed.target_val === 'hide' && showTrafficLights) toggleTrafficLights();
           else if (parsed.target_val === 'show' && !showTrafficLights) toggleTrafficLights();
@@ -1028,12 +999,12 @@ ${mapContext}
         try {
           await fetch(FIREBASE_AI_URL, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: query, ai_decision: parsed, model: result.model, time: Date.now() })
+            body: JSON.stringify({ text: query, ai_decision: parsed, time: Date.now() })
           });
         } catch(e) {}
 
         aiInlineResult.innerHTML = `
-          <div style="color:#00f3ff; font-weight:800;">🤖 Gemini (${result.model}):</div>
+          <div style="color:#00f3ff; font-weight:800;">🤖 ШІ Відповідь:</div>
           <div style="color:#e2e8f0;">${replyMsg}</div>
         `;
         showToast("🤖 Команду виконано ШІ!");
@@ -1826,17 +1797,34 @@ ${mapContext}
           if (!el) return;
 
           el.addEventListener('touchstart', (e) => {
-            startGesture(e.touches[0].clientX, e.touches[0].clientY);
+            startPress(e.touches[0].clientX, e.touches[0].clientY);
           }, { passive: true });
 
           el.addEventListener('touchmove', (e) => {
-            cancelGesture(e.touches[0].clientX, e.touches[0].clientY);
+            if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
           }, { passive: true });
 
-          el.addEventListener('touchend', () => { if (timer) { clearTimeout(timer); timer = null; } });
-          el.addEventListener('mousedown', (e) => { startGesture(e.clientX, e.clientY); });
-          el.addEventListener('mousemove', (e) => { cancelGesture(e.clientX, e.clientY); });
-          el.addEventListener('mouseup', () => { if (timer) { clearTimeout(timer); timer = null; } });
+          el.addEventListener('touchend', () => {
+            if (isLongPress) {
+              if (e.cancelable) e.preventDefault();
+              e.stopPropagation();
+            }
+            cancelPress();
+          });
+
+          el.addEventListener('mousedown', (e) => { startPress(e.clientX, e.clientY); });
+          el.addEventListener('mousemove', (e) => {
+            if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) cancelPress();
+          });
+
+          el.addEventListener('mouseup', () => {
+            if (isLongPress) e.stopPropagation();
+            cancelPress();
+          });
+
+          el.addEventListener('click', () => {
+            if (!isLongPress) marker.setPopupContent(standardPopupContent);
+          });
         });
 
         markersLayer.addLayer(marker);
