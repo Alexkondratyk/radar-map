@@ -8,7 +8,6 @@
   <meta http-equiv="Expires" content="0" />
   <meta name="color-scheme" content="light only">
   <title>Радар Дніпро</title>
-  <!-- ПІДКЛЮЧЕННЯ ВЛАСНОЇ ІКОНКИ ТА РЕЖИМУ ДОДАТКА -->
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icon.png">
   <link rel="apple-touch-icon" href="icon.png">
@@ -38,7 +37,7 @@
       z-index: 1; background: #0b1120;
     }
 
-    /* ШАПКА КАРТИ З ПЛАВНОЮ АНІМАЦІЄЮ ЗВУЖЕННЯ */
+    /* ШАПКА КАРТЫ */
     .dashboard {
       position: absolute; top: 15px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px);
@@ -68,7 +67,6 @@
 
     .collapsible-body { margin-top: 6px; }
 
-    /* КОЛИ ШАПКА ЗГОРНУТА: ВУЗЬКА, РІВНО ДО СТРІЛКИ */
     html.dash-collapsed .dashboard {
       width: auto !important;
       display: inline-flex;
@@ -113,7 +111,7 @@
       border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
     }
 
-    /* СВІТЛОФОРИ */
+    /* СВЕТОФОРЫ */
     .tl-menu-container { position: relative; margin-bottom: 6px; }
     .btn-tl-main {
       width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
@@ -173,6 +171,7 @@
       100% { transform: scale(2.4); opacity: 0; }
     }
 
+    /* СТИЛИ СВЕТОФОРОВ */
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
       border-radius: 13px !important; padding: 3px 2px !important;
@@ -188,7 +187,7 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* ОДНОРЯДКОВИЙ ПЛАВАЮЧИЙ РЯДОК СТАТУСУ ДОРОГИ */
+    /* ПЛАВАЮЩАЯ СТРОКА СТАТУСА МАРШРУТА */
     .route-status-bar {
       position: absolute; bottom: 30px; left: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.94); border: 1.5px solid #10b981;
@@ -204,7 +203,7 @@
     }
     .status-drag-hint { font-size: 9px; color: #64748b; margin-left: 2px; }
 
-    /* СЕКРЕТНЕ МЕНЮ */
+    /* СЕКРЕТНОЕ МЕНЮ */
     .neon-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
@@ -254,7 +253,7 @@
 <body>
   <div id="map"></div>
 
-  <!-- ШАПКА КАРТИ -->
+  <!-- ШАПКА КАРТЫ -->
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">
@@ -280,7 +279,7 @@
         <span>📊</span><span>Аналітика блокпостів</span>
       </a>
 
-      <!-- СВІТЛОФОРИ -->
+      <!-- СВЕТОФОРЫ -->
       <div class="tl-menu-container">
         <button class="btn-tl-main" onclick="toggleTlDropdown()">
           <span>🚦 Мої світлофори</span>
@@ -323,21 +322,21 @@
     </div>
   </div>
 
-  <!-- ОДНОРЯДКОВИЙ РЯДОК СТАТУСУ ДОРОГИ -->
+  <!-- СТРОКА СТАТУСА МАРШРУТА -->
   <div id="routeStatusBar" class="route-status-bar">
     <span id="routeStatusIcon">🟢</span>
     <span id="routeStatusText">Мій шлях: Чисто</span>
     <span class="status-drag-hint">✥</span>
   </div>
 
-  <!-- СЕКРЕТНЕ МЕНЮ -->
+  <!-- СЕКРЕТНОЕ МЕНЮ -->
   <div id="neonPanel" class="neon-panel">
     <div id="neonHeader" class="neon-title">
       <span>⚙️ Секретне меню ✥</span>
       <span style="cursor:pointer; font-size:16px; padding: 0 4px;" onclick="closeNeonPanel()">✕</span>
     </div>
 
-    <!-- ТУМБЛЕР РЯДКА СТАТУСУ -->
+    <!-- ТУМБЛЕР СТРОКИ СТАТУСА -->
     <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🛣️ Інформер дороги:</div>
     <label class="sector-item" style="margin-bottom:10px;">
       <input type="checkbox" id="chkRouteStatusBar" onchange="toggleRouteStatusBarVisible()" checked>
@@ -385,7 +384,6 @@
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
-    const FIREBASE_KB_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/knowledge_base.json";
 
     const LIFETIME_MS = 40 * 60 * 1000;
     const FRESH_THRESHOLD_MS = 10 * 60 * 1000;
@@ -398,7 +396,33 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // МАРШРУТНІ СВІТЛОФОРИ
+    // ХРАНИЛИЩЕ РУЧНЫХ КОРРЕКТИРОВОК СВЕТОФОРОВ
+    let manualOverrides = {};
+    try {
+      manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}");
+    } catch(e) {}
+
+    // ФУНКЦИЯ УПРАВЛЕНИЯ СВЕТОФОРОМ В 1 КЛИК
+    window.setTrafficLightManual = function(cpId, status) {
+      if (status === 'auto') {
+        delete manualOverrides[cpId];
+        showToast("🔄 Авто-режим повернено!");
+      } else {
+        manualOverrides[cpId] = { status: status, time: Date.now() };
+        if (status === 'green') showToast("🟢 Примусово чисто!");
+        else if (status === 'red') showToast("🔴 Примусово увага (БП)!");
+        else if (status === 'off') showToast("⚪ Світлофор погашено!");
+      }
+      localStorage.setItem("radar_tl_overrides", JSON.stringify(manualOverrides));
+      renderTrafficLights();
+      updateRouteStatus();
+
+      // Автоматически обновляем открытый попап
+      if (trafficMarkersMap[cpId] && trafficMarkersMap[cpId].isPopupOpen()) {
+        trafficMarkersMap[cpId].openPopup();
+      }
+    };
+
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -410,7 +434,6 @@
       { id: "stan_550", name: "Стан 550 / Набережна Заводська", lat: 48.4865, lng: 34.9850, keys: ["стан 550", "стан"] }
     ];
 
-    // РАЙОНИ
     let activeSectors = ['s1'];
     try {
       const stored = localStorage.getItem("radar_active_sectors");
@@ -531,7 +554,7 @@
       });
     }
 
-    // --- ОНОВЛЕННЯ РЯДКА СТАТУСУ ДОРОГИ ---
+    // ОБНОВЛЕНИЕ ПЛАВАЮЩЕЙ СТРОКИ СТАТУСА
     const routeStatusBar = document.getElementById("routeStatusBar");
     const routeStatusIcon = document.getElementById("routeStatusIcon");
     const routeStatusText = document.getElementById("routeStatusText");
@@ -550,13 +573,22 @@
     function updateRouteStatus() {
       if (!routeStatusBar || !showRouteStatusBar) return;
       const now = Date.now();
-      const routeCheckpoints = checkpoints;
-
-      // Рахуємо скільки червоних точок зафіксовано на контрольних точках маршруту
       let dangerCount = 0;
       let detectedStreets = [];
 
-      routeCheckpoints.forEach(cp => {
+      checkpoints.forEach(cp => {
+        const override = manualOverrides[cp.id];
+
+        // 1. Ручной режим приоритетнее
+        if (override && (now - override.time < LIFETIME_MS)) {
+          if (override.status === 'red') {
+            dangerCount++;
+            detectedStreets.push(cp.name);
+          }
+          return;
+        }
+
+        // 2. Автоматический подсчёт
         const matched = allPoints.filter(p => {
           const diff = now - (p.time || p.timestamp || 0);
           if (diff > LIFETIME_MS) return false;
@@ -586,7 +618,7 @@
       }
     }
 
-    // --- СЕКРЕТНЕ МЕНЮ ТА НЕОН ---
+    // СЕКРЕТНОЕ МЕНЮ
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -761,7 +793,7 @@
       });
     }
 
-    // --- СВІТЛОФОРИ ---
+    // РЕНДЕР СВЕТОФОРОВ + КОМПАКТНЫЙ МИКРО-ПУЛЬТ В POPUP
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -846,6 +878,7 @@
 
     function renderTrafficLights() {
       if (!showTrafficLights) return;
+      const now = Date.now();
 
       checkpoints.forEach(cp => {
         const cpPointLike = { lat: cp.lat, lng: cp.lng, address: cp.name, raw_text: cp.name };
@@ -859,9 +892,13 @@
           return cp.keys.some(k => text.includes(k));
         });
         matched.sort((a, b) => (b.time || 0) - (a.time || 0));
-        const latest = matched[0];
+        let latest = matched[0];
 
-        if (!latest && !isEditMode) {
+        // ПРОВЕРКА РУЧНОЙ КОРРЕКЦИИ
+        const override = manualOverrides[cp.id];
+        const isOverrideActive = override && (now - override.time < LIFETIME_MS);
+
+        if (!latest && !isEditMode && !isOverrideActive) {
           if (trafficMarkersMap[cp.id]) {
             trafficLightLayer.removeLayer(trafficMarkersMap[cp.id]);
             delete trafficMarkersMap[cp.id];
@@ -870,7 +907,17 @@
         }
 
         let redClass = "tl-lamp off", greenClass = "tl-lamp off", statusTitle = "⚪ Очікування";
-        if (latest) {
+
+        if (isOverrideActive) {
+          if (override.status === 'green') {
+            redClass = "tl-lamp red-dim"; greenClass = "tl-lamp green-active"; statusTitle = "🟢 ЧИСТО (Вручну)";
+          } else if (override.status === 'red') {
+            redClass = "tl-lamp red-active"; greenClass = "tl-lamp green-dim"; statusTitle = "🔴 УВАГА (Вручну)";
+          } else if (override.status === 'off') {
+            redClass = "tl-lamp off"; greenClass = "tl-lamp off"; statusTitle = "⚪ ПОГАШЕНО (Вручну)";
+            latest = null;
+          }
+        } else if (latest) {
           if (isCleanPoint(latest)) {
             redClass = "tl-lamp red-dim"; greenClass = "tl-lamp green-active"; statusTitle = "🟢 ЧИСТО";
           } else {
@@ -881,9 +928,23 @@
         const iconHtml = `<div class="traffic-pill ${isEditMode ? 'draggable-mode' : ''}"><div class="${redClass}"></div><div class="${greenClass}"></div></div>`;
         const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
 
-        let popupContent = `<div style="padding:4px;"><div style="font-weight:700; color:#0284c7;">🚦 ${cp.name}</div><div style="font-size:12px; font-weight:700; margin:4px 0;">${statusTitle}</div>`;
-        if (latest) popupContent += `<div style="font-size:12px;">${latest.text || ""}</div>`;
-        popupContent += `</div>`;
+        // КОМПАКТНЫЙ POPUP С МИКРО-ПУЛЬТОМ КОРРЕКТИРОВКИ
+        const overrideBadge = isOverrideActive ? `<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>` : "";
+        
+        let popupContent = `
+          <div style="padding:2px; min-width:175px;">
+            <div style="font-weight:800; font-size:12px; color:#38bdf8;">🚦 ${cp.name} ${overrideBadge}</div>
+            <div style="font-size:11px; font-weight:700; margin:3px 0;">${statusTitle}</div>
+            ${latest && (!isOverrideActive || override.status !== 'off') ? `<div style="font-size:10px; color:#cbd5e1; max-height:45px; overflow-y:auto; margin-bottom:6px; line-height:1.2;">«\${latest.text || ""}»</div>` : ''}
+            <div style="font-size:9px; color:#94a3b8; margin-bottom:3px; font-weight:700;">КЕРУВАННЯ СВІТЛОФОРОМ:</div>
+            <div style="display:flex; gap:3px; flex-wrap:wrap;">
+              <button onclick="setTrafficLightManual('${cp.id}', 'green')" style="background:#065f46; border:1px solid #10b981; color:#fff; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">🟢 Чисто</button>
+              <button onclick="setTrafficLightManual('${cp.id}', 'red')" style="background:#7f1d1d; border:1px solid #ef4444; color:#fff; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">🔴 БП</button>
+              <button onclick="setTrafficLightManual('${cp.id}', 'off')" style="background:#1e293b; border:1px solid #64748b; color:#cbd5e1; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">⚪ Погасити</button>
+              ${isOverrideActive ? `<button onclick="setTrafficLightManual('\${cp.id}', 'auto')" style="background:#0f172a; border:1px solid #0284c7; color:#38bdf8; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">🔄 Авто</button>` : ''}
+            </div>
+          </div>
+        `;
 
         if (trafficMarkersMap[cp.id]) {
           trafficMarkersMap[cp.id].setIcon(tlIcon);
@@ -904,7 +965,7 @@
       });
     }
 
-    // --- КЕРУВАННЯ СЕРВЕРОМ GITHUB ---
+    // УПРАВЛЕНИЕ СЕРВЕРОМ GITHUB ACTIONS
     function toggleServerDropdown() {
       const drop = document.getElementById("serverDropdown");
       const arrow = document.getElementById("serverDropdownArrow");
@@ -977,7 +1038,7 @@
     window.addEventListener('click', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
-    // ШАПКА ТА ПЕРЕМІЩЕННЯ ЕЛЕМЕНТІВ
+    // ШАПКА И ПЕРЕМЕЩЕНИЕ ЭЛЕМЕНТОВ
     const dashPanel = document.getElementById("dashPanel");
     const neonPanel = document.getElementById("neonPanel");
     const btnToggle = document.getElementById("btnToggle");
@@ -994,7 +1055,6 @@
       localStorage.setItem("radar_dash_collapsed", isNowCollapsed ? "true" : "false");
     }
 
-    // ВІДНОВЛЕННЯ ЗБЕРЕЖЕНИХ ПОЗИЦІЙ
     const savedDashTop = localStorage.getItem("dash_pos_top");
     const savedDashLeft = localStorage.getItem("dash_pos_left");
     if (savedDashTop && savedDashLeft) {
@@ -1077,7 +1137,7 @@
     makeElementDraggable(neonPanel, document.getElementById("neonHeader"), "neon_pos");
     if (routeStatusBar) makeElementDraggable(routeStatusBar, routeStatusBar, "route_status_pos");
 
-    // ПОШУК ВУЛИЦЬ
+    // ПОИСК УЛИЦ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
     let searchDebounceTimer = null;
@@ -1128,7 +1188,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАВАНТАЖЕННЯ ТОЧОК
+    // ЗАГРУЗКА ТОЧЕК КАРТЫ
     async function loadPoints() {
       try {
         const res = await fetch(`${FIREBASE_POINTS_URL}?t=${Date.now()}`);
