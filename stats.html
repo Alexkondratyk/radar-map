@@ -8,11 +8,9 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #060913;
-      color: #e2e8f0;
+      background: #060913; color: #e2e8f0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 14px;
-      min-height: 100vh;
+      padding: 14px; min-height: 100vh;
     }
     .container { max-width: 980px; margin: 0 auto; }
     
@@ -32,7 +30,7 @@
     }
     .btn-back:hover { background: #0284c7; color: #fff; }
 
-    /* БЛОК ШІ-АНАЛІТИКА В СТАТИСТИЦІ */
+    /* БЛОК ШІ-АНАЛІТИКА */
     .ai-stats-card {
       background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00f3ff;
       border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
@@ -127,7 +125,7 @@
       background: #0284c7; border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
     }
 
-    /* ВКЛАДКИ-ТОЧКИ ДЛЯ ЛЕНТЫ СООБЩЕНИЙ */
+    /* ВКЛАДКИ ТОЧЕК */
     .feed-streets-tabs {
       display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; background: #070d1d;
       padding: 8px; border-radius: 9px; border: 1px solid #1e293b;
@@ -276,7 +274,6 @@
       background: #0284c7; border-color: #00f3ff; color: #fff; box-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
     }
 
-    /* ГОД */
     .year-nav-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
     .btn-year-tab {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
@@ -288,7 +285,6 @@
 
     .chart-canvas-wrap { position: relative; width: 100%; height: 280px; }
 
-    /* МОДАЛЬНОЕ ОКНО */
     .detail-modal-overlay {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(6, 9, 19, 0.85); backdrop-filter: blur(6px);
@@ -324,10 +320,10 @@
       <a href="index.html" class="btn-back">← До карти</a>
     </div>
 
-    <!-- ВНЕДРЕННЫЙ ШІ-АНАЛИТИК В СТАТИСТИКЕ -->
+    <!-- ВНЕДРЕННЫЙ ШІ-АНАЛИТИК -->
     <div class="ai-stats-card">
       <div class="ai-stats-header">
-        <span class="ai-stats-title">🤖 ШІ-Аналітик Gemini 2.0:</span>
+        <span class="ai-stats-title">🤖 ШІ-Аналітик Gemini:</span>
         <button class="btn-ai-stats-chip" style="background:#0284c7; color:#fff;" onclick="analyzeCurrentStatsTab()">
           ⚡ Швидкий аналіз вкладки
         </button>
@@ -507,7 +503,6 @@
     </div>
   </div>
 
-  <!-- МОДАЛЬНОЕ ОКНО ДЕТАЛЕЙ -->
   <div id="detailModal" class="detail-modal-overlay" onclick="closeDetailModal(event)">
     <div class="detail-modal-card" onclick="event.stopPropagation()">
       <span class="modal-close-btn" onclick="closeDetailModal()">✕</span>
@@ -570,9 +565,6 @@
       { name: "Лівий берег (Слобожанський, Сонячний)", regex: /(?:слобожанск|слобожанськ|правд|сонячн|солнечн|малиновськ|придніпров|ігрень)/i }
     ];
 
-    // ==========================================================================
-    // ЛОГИКА ШІ-АНАЛИТИКА В СТАТИСТИКЕ (GEMINI 2.0 FLASH)
-    // ==========================================================================
     function updateAiStatsSuggestedChips() {
       const container = document.getElementById("aiStatsSuggestedChips");
       if (!container) return;
@@ -580,17 +572,17 @@
 
       let chips = [];
       if (activeTabNum === 1) {
-        chips = ["🔥 Де найнебезпечніше сьогодні?", "🕒 Останні звіти з Павлова", "🟢 Які точки зараз чисті?"];
+        chips = ["🔥 Де найнебезпечніше зараз?", "🕒 Останні звіти з Павлова", "🟢 Які точки чисті?"];
       } else if (activeTabNum === 2) {
-        chips = ["⏱️ Скільки в середньому триває засада?", "🌙 Чи були нічні переходи?", "📈 Коли зазвичай знімаються?"];
+        chips = ["⏱️ Скільки в середньому стоять?", "🌙 Чи були нічні засади?", "📈 Коли зазвичай знімаються?"];
       } else if (activeTabNum === 3) {
-        chips = ["📊 Порівняй вчора і сьогодні", "⚠️ Топ-3 точки за 7 днів", "📉 Де активність спадає?"];
+        chips = ["📊 Порівняй вчора і сьогодні", "⚠️ Топ-3 точки за тиждень", "📉 Де активність спадає?"];
       } else if (activeTabNum === 4) {
-        chips = ["🕒 В які години безпечно їхати?", "⚡ Піковий час патрулів", "📅 Найактивніший день тижня"];
+        chips = ["🕒 В які години безпечно їхати?", "⚡ Піковий час патрулів", "📅 Найактивніший день"];
       } else if (activeTabNum === 5) {
-        chips = ["📅 Динаміка за місяцями", "📈 Прогноз на наступний місяць"];
+        chips = ["📅 Динаміка за місяцями", "📈 Прогноз на місяць"];
       } else {
-        chips = ["🌐 Загальний огляд по місту", "🚗 Де найбільше патрулів у Дніпрі?"];
+        chips = ["🌐 Загальний огляд міста", "🚗 Де найбільше патрулів?"];
       }
 
       chips.forEach(c => {
@@ -603,13 +595,13 @@
     }
 
     async function analyzeCurrentStatsTab() {
-      askAiStatsQuestion("Зроби чіткий короткий аналіз даних цієї вкладки для водія");
+      askAiStatsQuestion("Зроби стислий корисний аналіз поточної вкладки для водія");
     }
 
     async function askAiStatsQuestion(userQuestion) {
       const output = document.getElementById("aiStatsOutput");
       output.style.display = "block";
-      output.innerHTML = "🧠 Gemini 2.0 аналізує дані...";
+      output.innerHTML = "🧠 ШІ аналізує дані...";
 
       let apiKey = localStorage.getItem("gemini_api_key");
       if (!apiKey) {
@@ -618,11 +610,10 @@
         localStorage.setItem("gemini_api_key", apiKey.trim());
       }
 
-      // Собираем агрегированные данные
       let statsSnapshot = "";
       TARGET_CHECKPOINTS.forEach(t => {
         const sList = targetSessionsGlobal[t.id] || [];
-        statsSnapshot += `\n- ${t.fullName}: за 7 днів було ${sList.length} засад.`;
+        statsSnapshot += `\n- ${t.fullName}: за 7 днів ${sList.length} засад.`;
       });
 
       const promptText = `
@@ -636,38 +627,41 @@ ${statsSnapshot}
 Дай чітку, практичну відповідь українською мовою (максимум 2-3 коротких речення). Виділи конкретні години чи місця, дай практичну пораду для безпечної поїздки.
 `;
 
-      const models = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
-      let lastErr = null;
-      let replyText = null;
-
-      for (const m of models) {
+      try {
+        let endpointUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
         try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
-          const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ role: "user", parts: [{ text: promptText }] }],
-              generationConfig: { temperature: 0.2 }
-            })
-          });
-          if (res.ok) {
-            const data = await res.json();
-            replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-            break;
-          } else {
-            const errObj = await res.json().catch(() => ({}));
-            lastErr = errObj.error?.message || `HTTP ${res.status}`;
+          const resModels = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+          if (resModels.ok) {
+            const dataM = await resModels.json();
+            const valid = (dataM.models || []).filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"));
+            const chosen = valid.find(m => m.name.includes("gemini-3.5-flash-lite"))
+                        || valid.find(m => m.name.includes("gemini-3.8-flash"))
+                        || valid.find(m => m.name.includes("gemini-2.5-flash"))
+                        || valid.find(m => m.name.includes("gemini-2.0-flash") && !m.name.includes("lite"))
+                        || valid[0];
+            if (chosen) endpointUrl = `https://generativelanguage.googleapis.com/v1beta/${chosen.name}:generateContent?key=${apiKey}`;
           }
-        } catch(e) {
-          lastErr = e.message;
-        }
-      }
+        } catch(e) {}
 
-      if (replyText) {
+        const res = await fetch(endpointUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: promptText }] }],
+            generationConfig: { temperature: 0.2 }
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Аналіз завершено.";
         output.innerHTML = `<b>🤖 Висновок ШІ:</b><br>${replyText.replace(/\n/g, '<br>')}`;
-      } else {
-        output.innerHTML = `<span style="color:#ef4444;">⚠️ Помилка Gemini API: ${lastErr}</span>`;
+      } catch(err) {
+        output.innerHTML = `<span style="color:#ef4444;">⚠️ Помилка Gemini API: ${err.message}</span>`;
       }
     }
 
@@ -678,9 +672,7 @@ ${statsSnapshot}
           const data = await res.json();
           rawArchive = data ? Object.values(data).filter(x => x && x.time) : [];
         }
-      } catch (e) {
-        rawArchive = [];
-      }
+      } catch (e) { rawArchive = []; }
 
       const btnConfirmed = document.getElementById("btnFilterConfirmed");
       if (onlyConfirmedMode) {
@@ -1578,7 +1570,7 @@ ${statsSnapshot}
             reportsBox.innerHTML += `
               <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
                 <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt}, ${st}–${et})</div>
-                <div>${s.reports.map(r => `• ${r.text}`).join("<br>")}</div>
+                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
               </div>
             `;
           });
