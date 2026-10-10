@@ -7,7 +7,7 @@ import requests
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
 LIFETIME_MS = 40 * 60 * 1000  # 40 минут для живой карты
-WEEK_MS = 7 * 24 * 60 * 60 * 1000  # 7 дней для архива статистики
+ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 ДНЕЙ (БОЛЕЕ 1 ГОДА ДЛЯ ГОДОВОЙ СТАТИСТИКИ!)
 
 CHANNEL_URL = "https://t.me/s/dnepr_bez_tck"
 
@@ -71,7 +71,7 @@ def cleanup_old_points():
             if to_delete:
                 base_url = FIREBASE_URL.replace("/points.json", "")
                 requests.patch(f"{base_url}/points.json", json=to_delete, timeout=5)
-                log(f"🧹 Видалено застарілих міток: {len(to_delete)}")
+                log(f"🧹 Видалено застарілих міток карти: {len(to_delete)}")
     except Exception as e:
         log(f"Помилка очистки карти: {e}")
 
@@ -79,11 +79,11 @@ def cleanup_old_points():
         r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
         if r_arch.status_code == 200 and r_arch.json():
             arch_data = r_arch.json()
-            to_delete_arch = {k: None for k, v in arch_data.items() if isinstance(v, dict) and (now_ms - (v.get("time") or 0)) > WEEK_MS}
+            to_delete_arch = {k: None for k, v in arch_data.items() if isinstance(v, dict) and (now_ms - (v.get("time") or 0)) > ARCHIVE_RETENTION_MS}
             if to_delete_arch:
                 base_url = FIREBASE_URL.replace("/points.json", "")
                 requests.patch(f"{base_url}/stats_archive.json", json=to_delete_arch, timeout=5)
-                log(f"🧹 Очищено записів архіву: {len(to_delete_arch)}")
+                log(f"🧹 Очищено записів архіву старше 400 днів: {len(to_delete_arch)}")
     except Exception as e:
         log(f"Помилка очистки архіву: {e}")
 
@@ -135,11 +135,9 @@ def match_with_knowledge_base(post, kb_list):
             return item
     return None
 
-# ФИЛЬТР ВОПРОСОВ И ПУСТЫХ СЛУХОВ
 def is_question_or_pure_rumor(text):
     t = text.lower()
-    if "?" in t:
-        return True
+    if "?" in t: return True
     rumor_patterns = [
         r'\bпідкажіть\b', r'\bподскажите\b', r'\bчи\s+є\b', r'\bчи\s+стоят\b',
         r'\bчи\s+правда\b', r'\bхтось\s+знає\b', r'\bкто\s+знает\b',
@@ -245,7 +243,6 @@ def sync_cycle():
     ai_index_map = {}
 
     for idx, post in enumerate(new_posts):
-        # ОТСЕИВАЕМ ВОПРОСЫ И СЛУХИ
         if is_question_or_pure_rumor(post):
             log(f"  🔇 Пропущено питання/чутку: «{post[:45]}»")
             existing_records.add(post)
