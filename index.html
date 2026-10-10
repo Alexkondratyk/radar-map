@@ -9,6 +9,12 @@
   <meta name="color-scheme" content="light only">
   <title>Радар Дніпро</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script>
+    // Мгновенное применение свёрнутого состояния без мерцания
+    if (localStorage.getItem("radar_dash_collapsed") === "true") {
+      document.documentElement.classList.add("dash-collapsed");
+    }
+  </script>
   <style>
     :root {
       color-scheme: light only;
@@ -31,7 +37,7 @@
       background: #e2e8f0;
     }
 
-    /* ПЕРЕМЕЩАЕМАЯ ШАПКА */
+    /* ШАПКА КАРТЫ */
     .dashboard {
       position: absolute;
       top: 15px; left: 15px;
@@ -57,71 +63,51 @@
     
     .btn-toggle {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
-      width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; font-size: 10px;
+      width: 24px; height: 24px; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 11px;
+      touch-action: auto;
     }
 
     .collapsible-body { margin-top: 6px; }
+    html.dash-collapsed #collapsibleBody { display: none; }
+
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
 
-    /* ПОИСК УЛИЦ ПО ДНЕПРУ */
-    .search-box {
-      position: relative;
-      margin-bottom: 8px;
-    }
+    /* ПОИСК УЛИЦ */
+    .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
-      width: 100%;
-      background: #0b1120;
-      border: 1px solid #334155;
-      color: #fff;
-      padding: 7px 10px;
-      border-radius: 8px;
-      font-size: 11px;
-      outline: none;
+      width: 100%; background: #0b1120; border: 1px solid #334155; color: #fff;
+      padding: 7px 10px; border-radius: 8px; font-size: 11px; outline: none;
       transition: border-color 0.2s;
     }
     .search-input:focus { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
     .search-results {
-      position: absolute;
-      top: 100%; left: 0; width: 100%;
-      background: #0f172a;
-      border: 1px solid #38bdf8;
-      border-radius: 8px;
-      max-height: 160px;
-      overflow-y: auto;
-      z-index: 2000;
-      display: none;
-      margin-top: 4px;
+      position: absolute; top: 100%; left: 0; width: 100%;
+      background: #0f172a; border: 1px solid #38bdf8; border-radius: 8px;
+      max-height: 160px; overflow-y: auto; z-index: 2000; display: none; margin-top: 4px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
     .search-item {
-      padding: 6px 10px;
-      font-size: 11px;
-      color: #cbd5e1;
-      cursor: pointer;
+      padding: 6px 10px; font-size: 11px; color: #cbd5e1; cursor: pointer;
       border-bottom: 1px solid #1e293b;
     }
     .search-item:hover { background: #1e293b; color: #38bdf8; }
 
     .btn-secondary {
-      width: 100%;
-      background: #1e293b;
-      border: 1px solid #475569;
-      color: #cbd5e1;
-      padding: 6px 8px;
-      border-radius: 7px;
-      font-size: 11px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-bottom: 6px;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-      text-decoration: none;
-      transition: all 0.2s;
+      width: 100%; background: #1e293b; border: 1px solid #475569; color: #cbd5e1;
+      padding: 6px 8px; border-radius: 7px; font-size: 11px; cursor: pointer;
+      font-weight: 600; margin-bottom: 6px; display: flex; align-items: center;
+      justify-content: center; gap: 6px; text-decoration: none; transition: all 0.2s;
     }
     .btn-secondary:hover { background: #334155; color: #fff; }
 
-    /* КНОПКА СВЕТОФОРОВ С МЕНЮ */
-    .tl-menu-container { position: relative; margin-bottom: 6px; }
+    .btn-stats-link {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
+    }
+
+    /* МЕНЮ СВЕТОФОРОВ ВНИЗУ */
+    .tl-menu-container { position: relative; margin-bottom: 8px; }
     .btn-tl-main {
       width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
       padding: 6px 8px; border-radius: 7px; font-size: 11px; font-weight: 700;
@@ -137,11 +123,6 @@
       cursor: pointer; text-align: left; display: flex; align-items: center; gap: 6px;
     }
     .tl-dropdown-btn:hover { background: #334155; color: #fff; }
-
-    .btn-stats-link {
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
-    }
 
     .legend {
       display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #94a3b8;
@@ -192,7 +173,7 @@
       from { transform: scale(1.4); } to { transform: scale(1.6); }
     }
 
-    /* СВЕТОФОРЫ */
+    /* СВЕТОФОРЫ НА КАРТЕ */
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
       border-radius: 13px !important; padding: 3px 2px !important;
@@ -210,7 +191,7 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
-    /* ПЕРЕМЕЩАЕМОЕ СЕКРЕТНОЕ МЕНЮ */
+    /* СЕКРЕТНОЕ МЕНЮ */
     .neon-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
@@ -289,12 +270,12 @@
 <body>
   <div id="map"></div>
 
-  <!-- ШАПКА КАРТЫ (ДВИГАЕТСЯ ПАЛЬЦЕМ ЗА ЗАГОЛОВОК) -->
+  <!-- ШАПКА КАРТЫ С ЗАПОМИНАНИЕМ ПОЗИЦИИ И СОСТОЯНИЯ -->
   <div id="dashPanel" class="dashboard">
     <div id="dashHeader" class="dash-header">
       <div class="points-count" id="countText" onclick="handleSecretClick()">
         <span>Точок: 0</span>
-        <span class="drag-handle-hint">✥ (рухай)</span>
+        <span class="drag-handle-hint">✥</span>
       </div>
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()">▲</button>
     </div>
@@ -302,13 +283,23 @@
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
-      <!-- ПОИСК УЛИЦ ПО ДНЕПРУ -->
+      <!-- 1. ПОИСК УЛИЦ ПО ДНЕПРУ -->
       <div class="search-box">
         <input type="text" id="streetSearchInput" class="search-input" placeholder="🔍 Пошук вулиці у Дніпрі..." autocomplete="off">
         <div id="searchResults" class="search-results"></div>
       </div>
 
-      <!-- ЕДИНАЯ КНОПКА СВЕТОФОРОВ С ВЫПАДАЮЩИМ МЕНЮ -->
+      <!-- 2. ВЫБОР СЛОЯ КАРТЫ -->
+      <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
+        <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
+      </button>
+
+      <!-- 3. АНАЛИТИКА БЛОКПОСТОВ -->
+      <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
+        <span>📊</span><span>Аналітика блокпостів</span>
+      </a>
+
+      <!-- 4. СВЕТОФОРЫ ОПУЩЕНЫ В САМЫЙ НИЗ ШАПКИ -->
       <div class="tl-menu-container">
         <button class="btn-tl-main" onclick="toggleTlDropdown()">
           <span>🚦 Світлофори</span>
@@ -327,14 +318,7 @@
         </div>
       </div>
 
-      <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
-        <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
-      </button>
-
-      <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
-        <span>📊</span><span>Аналітика блокпостів</span>
-      </a>
-
+      <!-- 5. ЛЕГЕНДА -->
       <div class="legend">
         <div class="legend-row">
           <span class="shape dot-green"></span>
@@ -348,7 +332,7 @@
     </div>
   </div>
 
-  <!-- СЕКРЕТНОЕ МЕНЮ (ДВИГАЕТСЯ ПАЛЬЦЕМ ЗА ЗАГОЛОВОК) -->
+  <!-- СЕКРЕТНОЕ МЕНЮ С ЗАПОМИНАНИЕМ ПОЗИЦИИ -->
   <div id="neonPanel" class="neon-panel">
     <div id="neonHeader" class="neon-title">
       <span>⚙️ Секретне меню ✥</span>
@@ -405,7 +389,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // 1. ДВОЙНОЙ АНТИ-СОН ЭКРАНА (WAKE LOCK + ЧИСТЫЙ ТАКТ)
+    // 1. АНТИ-СОН ЭКРАНА
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
@@ -419,13 +403,51 @@
     window.addEventListener('touchstart', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
-    // 2. ДЕЛАЕМ ПАНЕЛИ СВОБОДНО ПЕРЕМЕЩАЕМЫМИ ПАЛЬЦЕМ
-    function makeElementDraggable(elmnt, handle) {
+    // 2. ВОССТАНОВЛЕНИЕ ПОЗИЦИЙ И СВОРАЧИВАНИЯ
+    const dashPanel = document.getElementById("dashPanel");
+    const neonPanel = document.getElementById("neonPanel");
+    const collapsibleBody = document.getElementById("collapsibleBody");
+    const btnToggle = document.getElementById("btnToggle");
+
+    // Инициализация кнопки с учетом сохраненного состояния
+    const isInitiallyCollapsed = localStorage.getItem("radar_dash_collapsed") === "true";
+    if (isInitiallyCollapsed) {
+      document.documentElement.classList.add("dash-collapsed");
+      btnToggle.innerText = "▼";
+    } else {
+      document.documentElement.classList.remove("dash-collapsed");
+      btnToggle.innerText = "▲";
+    }
+
+    function togglePanelCollapse(e) {
+      if (e) e.stopPropagation();
+      const isNowCollapsed = document.documentElement.classList.toggle("dash-collapsed");
+      btnToggle.innerText = isNowCollapsed ? "▼" : "▲";
+      localStorage.setItem("radar_dash_collapsed", isNowCollapsed ? "true" : "false");
+    }
+
+    // Восстановление позиций
+    const savedDashTop = localStorage.getItem("dash_pos_top");
+    const savedDashLeft = localStorage.getItem("dash_pos_left");
+    if (savedDashTop && savedDashLeft) {
+      dashPanel.style.top = savedDashTop;
+      dashPanel.style.left = savedDashLeft;
+    }
+
+    const savedNeonTop = localStorage.getItem("neon_pos_top");
+    const savedNeonLeft = localStorage.getItem("neon_pos_left");
+    if (savedNeonTop && savedNeonLeft) {
+      neonPanel.style.top = savedNeonTop;
+      neonPanel.style.left = savedNeonLeft;
+    }
+
+    function makeElementDraggable(elmnt, handle, storagePrefix) {
       let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
       handle.onmousedown = dragMouseDown;
       handle.ontouchstart = dragTouchStart;
 
       function dragMouseDown(e) {
+        if (e.target.closest('#btnToggle') || e.target.closest('button') || e.target.closest('input')) return;
         e.preventDefault();
         pos3 = e.clientX; pos4 = e.clientY;
         document.onmouseup = closeDragElement;
@@ -436,8 +458,12 @@
         e.preventDefault();
         pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
         pos3 = e.clientX; pos4 = e.clientY;
-        elmnt.style.top = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
-        elmnt.style.left = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+        const topVal = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
+        const leftVal = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+        elmnt.style.top = topVal;
+        elmnt.style.left = leftVal;
+        localStorage.setItem(storagePrefix + "_top", topVal);
+        localStorage.setItem(storagePrefix + "_left", leftVal);
       }
 
       function closeDragElement() {
@@ -445,6 +471,7 @@
       }
 
       function dragTouchStart(e) {
+        if (e.target.closest('#btnToggle') || e.target.closest('button') || e.target.closest('input')) return;
         const touch = e.touches[0];
         pos3 = touch.clientX; pos4 = touch.clientY;
         document.ontouchend = closeTouchDrag;
@@ -455,8 +482,12 @@
         const touch = e.touches[0];
         pos1 = pos3 - touch.clientX; pos2 = pos4 - touch.clientY;
         pos3 = touch.clientX; pos4 = touch.clientY;
-        elmnt.style.top = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
-        elmnt.style.left = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+        const topVal = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
+        const leftVal = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+        elmnt.style.top = topVal;
+        elmnt.style.left = leftVal;
+        localStorage.setItem(storagePrefix + "_top", topVal);
+        localStorage.setItem(storagePrefix + "_left", leftVal);
       }
 
       function closeTouchDrag() {
@@ -464,8 +495,8 @@
       }
     }
 
-    makeElementDraggable(document.getElementById("dashPanel"), document.getElementById("dashHeader"));
-    makeElementDraggable(document.getElementById("neonPanel"), document.getElementById("neonHeader"));
+    makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
+    makeElementDraggable(neonPanel, document.getElementById("neonHeader"), "neon_pos");
 
     // 3. БАЗА URL
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
@@ -480,7 +511,6 @@
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
     let currentMapType = localStorage.getItem("radar_map_type") || "google";
     
-    // КОНТРОЛЛЕР ПЕРЕНОСА ТОЧЕК БЕЗ ПОДСВЕТКИ И БЕЗ СМЕЩЕНИЯ ФОКУСА
     const dragController = {
       activeMarker: null,
       activePoint: null,
@@ -544,14 +574,6 @@
     function hardReload() {
       const cleanUrl = window.location.origin + window.location.pathname;
       window.location.href = cleanUrl + '?v=' + Date.now();
-    }
-
-    function togglePanelCollapse() {
-      const body = document.getElementById("collapsibleBody");
-      const btn = document.getElementById("btnToggle");
-      const isHidden = body.style.display === "none";
-      body.style.display = isHidden ? "block" : "none";
-      btn.innerText = isHidden ? "▲" : "▼";
     }
 
     const isMobile = window.innerWidth < 768;
@@ -670,7 +692,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ВЫПАДАЮЩЕЕ МЕНЮ СВЕТОФОРОВ
+    // МЕНЮ СВЕТОФОРОВ
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -721,7 +743,6 @@
       renderMarkers();
     }
 
-    // ТРЕКИНГ ПЕРЕМЕЩЕНИЯ КРУЖКА
     function onGlobalMove(clientX, clientY) {
       if (dragController.activeMarker && dragController.isDragging) {
         const container = map.getContainer();
@@ -755,7 +776,6 @@
       if (dragController.isDragging) dragController.isDragging = false;
     });
 
-    // КАСАНИЕ КАРТЫ СНИМАЕТ ВЫДЕЛЕНИЕ И ЗАВЕРШАЕТ ПЕРЕНОС
     map.on('click', function() {
       if (dragController.activeMarker) {
         const p = dragController.activePoint;
@@ -765,7 +785,6 @@
       }
     });
 
-    // ФИЛЬТР СЕКТОРОВ
     function syncSectorCheckboxesUI() {
       ["s1", "s2", "s3", "s4", "s5", "s6"].forEach(id => {
         const el = document.getElementById(`sec_${id}`);
@@ -825,7 +844,6 @@
       });
     }
 
-    // СВЕТОФОРЫ
     function toggleTrafficLights() {
       showTrafficLights = !showTrafficLights;
       localStorage.setItem("radar_tl_visible", showTrafficLights);
@@ -1180,7 +1198,6 @@
         const marker = L.marker([p.lat, p.lng], { icon: dotIcon, draggable: false, zIndexOffset: 50 });
         marker.bindPopup(popupContent);
 
-        // ЖЕСТ 0.4с ПЕРЕМЕЩЕНИЯ (БЕЗ ПОДСВЕТОК И БЕЗ СМЕЩЕНИЯ КАРТЫ)
         let timer = null;
         let startX = 0, startY = 0;
 
