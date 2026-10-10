@@ -31,7 +31,7 @@
 
     #map {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 1; background: #e2e8f0;
+      z-index: 1; background: #0b1120;
     }
 
     .dashboard {
@@ -203,7 +203,7 @@
       </div>
 
       <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
-        <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
+        <span id="btnMapLayerIcon">🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
       </button>
 
       <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
@@ -234,7 +234,7 @@
         </button>
         <div id="serverDropdown" class="server-dropdown">
           <button class="btn-trigger-action" onclick="triggerGitHubActions()">
-            <span>▶️ Запустити Радар 24/7</span>
+            <span>🔄 Перезапустити Радар 24/7</span>
             <span style="font-size:11px; opacity:0.85; padding-left:6px;" title="Змінити токен" onclick="changeGitHubToken(event)">⚙️</span>
           </button>
         </div>
@@ -269,7 +269,6 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // ТОЧКИ СВЕТОФОРОВ (МАРШРУТ)
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -284,15 +283,60 @@
     const isMobile = window.innerWidth < 768;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], isMobile ? 12 : 13);
 
+    // 1. Google Схема
     const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       subdomains: ['0', '1', '2', '3'], maxZoom: 20, attribution: 'Google Maps'
     });
+    // 2. Esri Вулична
     const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19, attribution: 'Esri World Street Map'
     });
+    // 3. Google Супутник (Гібрид: реальний супутник Earth + вулиці та підписи)
+    const satelliteLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      subdomains: ['0', '1', '2', '3'], maxZoom: 20, attribution: 'Google Satellite Hybrid'
+    });
 
     if (currentMapType === "osm") esriLayer.addTo(map);
+    else if (currentMapType === "satellite") satelliteLayer.addTo(map);
     else googleLayer.addTo(map);
+
+    function updateMapLayerBtnUI() {
+      const iconEl = document.getElementById("btnMapLayerIcon");
+      const textEl = document.getElementById("btnMapLayerText");
+      if (!textEl) return;
+      if (currentMapType === "google") {
+        if (iconEl) iconEl.innerText = "🗺️";
+        textEl.innerText = "Карта: Google (з вулицями)";
+      } else if (currentMapType === "osm") {
+        if (iconEl) iconEl.innerText = "🏙️";
+        textEl.innerText = "Карта: Вулична (Esri)";
+      } else if (currentMapType === "satellite") {
+        if (iconEl) iconEl.innerText = "🛰️";
+        textEl.innerText = "Карта: Google Супутник (3D)";
+      }
+    }
+    updateMapLayerBtnUI();
+
+    function toggleMapLayer() {
+      if (currentMapType === "google") {
+        if (map.hasLayer(googleLayer)) map.removeLayer(googleLayer);
+        esriLayer.addTo(map);
+        currentMapType = "osm";
+        showToast("🏙️ Вулична Карта (Esri) увімкнена!");
+      } else if (currentMapType === "osm") {
+        if (map.hasLayer(esriLayer)) map.removeLayer(esriLayer);
+        satelliteLayer.addTo(map);
+        currentMapType = "satellite";
+        showToast("🛰️ Google Супутник (3D/Гібрид) увімкнено!");
+      } else {
+        if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+        googleLayer.addTo(map);
+        currentMapType = "google";
+        showToast("🗺️ Google Карта увімкнена!");
+      }
+      localStorage.setItem("radar_map_type", currentMapType);
+      updateMapLayerBtnUI();
+    }
 
     const markersLayer = L.layerGroup().addTo(map);
     const trafficLightLayer = L.layerGroup().addTo(map);
@@ -315,7 +359,7 @@
       return t.includes("чисто") || t.includes("👍") || t.includes("пусто");
     }
 
-    // --- ФУНКЦИИ СВЕТОФОРОВ ---
+    // --- СВЕТОФОРЫ ---
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -604,17 +648,6 @@
     }
     makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
 
-    function toggleMapLayer() {
-      if (currentMapType === "google") {
-        map.removeLayer(googleLayer); esriLayer.addTo(map); currentMapType = "osm";
-      } else {
-        map.removeLayer(esriLayer); googleLayer.addTo(map); currentMapType = "google";
-      }
-      localStorage.setItem("radar_map_type", currentMapType);
-      document.getElementById("btnMapLayerText").innerText = currentMapType === "google" ? "Карта: Google (з вулицями)" : "Карта: Світова вулична (Esri)";
-      showToast(currentMapType === "google" ? "🗺️ Google Карта увімкнена!" : "🗺️ Вулична Карта (Esri) увімкнена!");
-    }
-
     // ПОИСК УЛИЦ ПО ДНЕПРУ
     const streetSearchInput = document.getElementById("streetSearchInput");
     const searchResults = document.getElementById("searchResults");
@@ -695,7 +728,7 @@
         if (diff > LIFETIME_MS) return;
 
         const isFresh = diff <= FRESH_THRESHOLD_MS;
-        const clean = isCleanPoint(p);
+        const clean = (p.color === "green" || p.status === "чисто");
         const colorClass = clean ? "color-green" : "color-red";
         const freshClass = isFresh ? "fresh" : "";
         const emoji = clean ? "🟢" : "🔴";
