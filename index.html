@@ -37,9 +37,7 @@
       z-index: 1; background: #0b1120;
     }
 
-    /* ==========================================================================
-       ЕДИНЫЙ СТИЛЬ ДЛЯ 4 ПЛАВАЮЩИХ ПРЯМОУГОЛЬНИКОВ (38px ВЫСОТА, 12px СКРУГЛЕНИЕ)
-       ========================================================================== */
+    /* 4 ПЛАВАЮЩИХ ПРЯМОУГОЛЬНИКА (38px ВЫСОТА, 12px СКРУГЛЕНИЕ) */
     .hud-pill {
       height: 38px;
       box-sizing: border-box;
@@ -90,7 +88,7 @@
 
     .collapsible-body { margin-top: 6px; }
 
-    /* КОГДА ШАПКА СВЕРНУТА: 38px ВЫСОТА */
+    /* ШАПКА В СВЁРНУТОМ ВИДЕ (38px) */
     html.dash-collapsed .dashboard {
       width: auto !important;
       height: 38px !important;
@@ -110,7 +108,7 @@
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    /* 2. БЛОК ИИ (СПРАВА ВВЕРХУ) */
+    /* 2. БЛОК GEMINI ШІ (СПРАВА ВВЕРХУ) */
     .ai-pill-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(10px);
@@ -130,7 +128,7 @@
     }
     .ai-pill-panel.compact .ai-pill-body { display: none; }
     .ai-pill-panel.expanded {
-      width: 270px !important;
+      width: 280px !important;
       height: auto !important;
       padding: 10px 12px !important;
       border-radius: 14px !important;
@@ -147,7 +145,7 @@
       display: flex; align-items: center; justify-content: space-between; width: 100%;
       cursor: move; user-select: none;
     }
-    .ai-title-badge {
+    .ai-titleBadge {
       font-size: 12px; font-weight: 800; color: #00f3ff; display: flex; align-items: center; gap: 5px;
       cursor: pointer;
     }
@@ -203,7 +201,7 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
-    /* ОБЩИЕ ЭЛЕМЕНТЫ ШАПКИ */
+    /* ОБЩИЕ ЭЛЕМЕНТЫ */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -428,7 +426,7 @@
     </div>
   </div>
 
-  <!-- 2. НОВЫЙ ЧЕТВЕРТЫЙ ПРЯМОУГОЛЬНИК: ШІ-КОРЕКТОР (СПРАВА ВВЕРХУ) -->
+  <!-- 2. БЛОК ШІ GEMINI (СПРАВА ВВЕРХУ) -->
   <div id="aiPillPanel" class="ai-pill-panel compact">
     <div id="aiPillHeader" class="ai-pill-compact-content" onclick="toggleAiPillExpand()">
       <div class="ai-titleBadge" style="display:flex; align-items:center; gap:5px;">
@@ -436,25 +434,28 @@
         <span id="aiPillLabel">ШІ</span>
         <span class="drag-handle-hint">✥</span>
       </div>
-      <button class="btn-toggle" id="btnAiPillToggle">▼</button>
+      <div style="display:flex; align-items:center; gap:3px;">
+        <span style="font-size:10px; color:#64748b; cursor:pointer; padding:2px;" title="Налаштування API Key" onclick="configureGeminiKey(event)">🔑</span>
+        <button class="btn-toggle" id="btnAiPillToggle">▼</button>
+      </div>
     </div>
 
     <div class="ai-pill-body" id="aiPillBody">
-      <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Зауваження або команда для ШІ..."></textarea>
+      <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Напишіть зауваження для ШІ..."></textarea>
       
       <div class="ai-chips-compact">
-        <span class="ai-mini-chip" onclick="setAiInlineText('РОВД чисто, виправ')">🟢 РОВД чисто</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('РОВД чисто, зніми червоний')">🟢 РОВД чисто</span>
         <span class="ai-mini-chip" onclick="setAiInlineText('На РОВД блокпост')">🔴 РОВД БП</span>
         <span class="ai-mini-chip" onclick="setAiInlineText('Павлова чисто')">🟢 Павлова</span>
         <span class="ai-mini-chip" onclick="setAiInlineText('Погасити Водолікарню')">⚪ Погасити</span>
       </div>
 
-      <button class="btn-ai-inline-submit" onclick="submitAiInlineCorrection()">⚡ Обробити ШІ</button>
+      <button class="btn-ai-inline-submit" onclick="submitAiInlineCorrection()">⚡ Запитати Gemini AI</button>
       <div id="aiInlineResult" class="ai-inline-res"></div>
     </div>
   </div>
 
-  <!-- 3. СТРОКА СТАТУСА МАРШРУТА (СПРАВА/СЛЕВА ВНИЗУ) -->
+  <!-- 3. СТРОКА СТАТУСА (СЛЕВА ВНИЗУ) -->
   <div id="routeStatusBar" class="route-status-bar">
     <span id="routeStatusIcon">🟢</span>
     <span id="routeStatusText">Мій шлях: Чисто</span>
@@ -555,7 +556,7 @@
     }, 10000);
     requestWakeLock();
 
-    // КОНТРОЛЕР ПЕРЕМІЩЕННЯ ТОЧОК ДЛЯ НАВЧАННЯ ШІ
+    // КОНТРОЛЕР ПЕРЕМІЩЕННЯ ТОЧОК
     const dragController = {
       activeMarker: null,
       activePoint: null,
@@ -632,7 +633,7 @@
     window.addEventListener('touchend', () => { if (dragController.isDragging) dragController.isDragging = false; });
     window.addEventListener('mouseup', () => { if (dragController.isDragging) dragController.isDragging = false; });
 
-    // РУЧНЫЕ КОРРЕКТИРОВКИ СВЕТОФОРОВ
+    // СВЕТОФОРЫ
     let manualOverrides = {};
     try {
       manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}");
@@ -858,7 +859,7 @@
     }
 
     // ==========================================================================
-    // ЛОГИКА ШИ-КОРЕКТОРА (НОВЫЙ ПРЯМОУГОЛЬНИК И КОНТЕКСТНЫЙ РЕЖИМ)
+    // ИНТЕГРАЦИЯ GOOGLE GEMINI API В БЛОК ИИ
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -866,7 +867,7 @@
     const btnAiPillToggle = document.getElementById("btnAiPillToggle");
 
     function toggleAiPillExpand(e) {
-      if (e && (e.target.closest('textarea') || e.target.closest('button.btn-ai-inline-submit') || e.target.closest('.ai-mini-chip'))) return;
+      if (e && (e.target.closest('textarea') || e.target.closest('button.btn-ai-inline-submit') || e.target.closest('.ai-mini-chip') || e.target.closest('span[title]'))) return;
       const isExpanded = aiPillPanel.classList.toggle("expanded");
       aiPillPanel.classList.toggle("compact", !isExpanded);
       btnAiPillToggle.innerText = isExpanded ? "▲" : "▼";
@@ -879,7 +880,16 @@
       aiInlineInput.value = txt;
     }
 
-    // Вызов ИИ для конкретной точки или светофора
+    function configureGeminiKey(e) {
+      if (e) e.stopPropagation();
+      const currentKey = localStorage.getItem("gemini_api_key") || "";
+      const newKey = prompt("Введіть ваш скопійований Google Gemini API Key:", currentKey);
+      if (newKey !== null) {
+        localStorage.setItem("gemini_api_key", newKey.trim());
+        showToast("🔑 Gemini API Key збережено!");
+      }
+    }
+
     window.openAiContext = function(type, id, name) {
       if (aiPillPanel.classList.contains("compact")) {
         aiPillPanel.classList.remove("compact");
@@ -900,60 +910,111 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
+    // ГЛАВНЫЙ ВЫЗОВ НЕЙРОСЕТИ GOOGLE GEMINI
     async function submitAiInlineCorrection() {
       const query = aiInlineInput.value.trim();
       if (!query) return;
 
-      aiInlineResult.style.display = "block";
-      aiInlineResult.innerHTML = "⏳ ШІ аналізує текст...";
-
-      const qLower = query.toLowerCase();
-      let matchedCp = checkpoints.find(cp => cp.keys.some(k => qLower.includes(k)));
-      let appliedAction = "Зауваження враховано ШІ";
-
-      if (matchedCp) {
-        if (qLower.includes("чист") || qLower.includes("зелен") || qLower.includes("вільно")) {
-          setTrafficLightManual(matchedCp.id, 'green');
-          appliedAction = `Світлофор «${matchedCp.name}» ➔ 🟢 ЧИСТО`;
-        } else if (qLower.includes("бп") || qLower.includes("червон") || qLower.includes("блокпост") || qLower.includes("увага") || qLower.includes("стоять")) {
-          setTrafficLightManual(matchedCp.id, 'red');
-          appliedAction = `Світлофор «${matchedCp.name}» ➔ 🔴 УВАГА (БП)`;
-        } else if (qLower.includes("погас") || qLower.includes("вимкн") || qLower.includes("потуш")) {
-          setTrafficLightManual(matchedCp.id, 'off');
-          appliedAction = `Світлофор «${matchedCp.name}» ➔ ⚪ ПОГАШЕНО`;
-        }
+      let apiKey = localStorage.getItem("gemini_api_key");
+      if (!apiKey) {
+        apiKey = prompt("Введіть ваш скопійований Google Gemini API Key для роботи ШІ:");
+        if (!apiKey) return;
+        apiKey = apiKey.trim();
+        localStorage.setItem("gemini_api_key", apiKey);
       }
 
+      aiInlineResult.style.display = "block";
+      aiInlineResult.innerHTML = "🧠 Gemini AI думає та аналізує...";
+
+      const systemPrompt = `
+Ти — високоточний аналітик дорожнього руху у місті Дніпро для водія.
+Твоє завдання — проаналізувати текст водія/очевидця і визначити:
+1. Про який з 8 контрольних пунктів йде мова (якщо зазначено):
+Контрольні пункти:
+- "kaidak_rovd" (РОВД / Кайдацький з'їзд)
+- "vodolechebnitsa" (Водолікарня / пр. Свободи)
+- "kombainoviy" (Комбайновий / Белелюбського)
+- "krasnozavodska" (Краснозаводська / ДТРЗ)
+- "pavlova" (вул. Академіка Павлова)
+- "rechport" (Річпорт / Набережна Заводська)
+- "vodokachka" (Водокачка / Набережна Заводська)
+- "stan_550" (Стан 550 / Набережна Заводська)
+
+2. Яка дія потрібна для світлофора:
+- "green": якщо там чисто, вільно, проїзд спокійний, знялися, нема нікого, або якщо користувач просить зняти червоний бо там чисто.
+- "red": якщо там блокпост, патруль, зупиняють, перевіряють, сині, хмари, дощ, небезпека.
+- "off": якщо просять погасити/вимкнути світлофор або повідомлення застаріло/помилкове.
+- "none": якщо повідомлення не стосується жодного з 8 світлофорів.
+
+Відповідай СТРОГО у форматі валідного JSON без зайвих слів:
+{
+  "checkpoint_id": "id або null",
+  "action": "green" | "red" | "off" | "none",
+  "explanation": "Коротке пояснення українською (1 речення)"
+}
+`;
+
       try {
-        await fetch(FIREBASE_AI_URL, {
-          method: "POST", headers: { "Content-Type": "application/json" },
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            text: query,
-            matched_point: matchedCp ? matchedCp.name : "Загальне",
-            action: appliedAction,
-            time: Date.now()
+            contents: [
+              { role: "user", parts: [{ text: systemPrompt + "\n\nПовідомлення користувача:\n" + query }] }
+            ],
+            generationConfig: {
+              temperature: 0.1,
+              responseMimeType: "application/json"
+            }
           })
         });
 
-        if (matchedCp) {
-          await fetch(FIREBASE_KB_URL, {
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error?.message || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = JSON.parse(rawReply);
+
+        let actionResultText = parsed.explanation || "Оброблено";
+
+        if (parsed.checkpoint_id && parsed.action !== 'none') {
+          const cp = checkpoints.find(c => c.id === parsed.checkpoint_id);
+          if (cp) {
+            setTrafficLightManual(cp.id, parsed.action);
+            const statusIcon = parsed.action === 'green' ? '🟢 ЧИСТО' : (parsed.action === 'red' ? '🔴 УВАГА' : '⚪ ПОГАШЕНО');
+            actionResultText = `Світлофор «${cp.name}» ➔ ${statusIcon}. (${parsed.explanation})`;
+          }
+        }
+
+        // Запись в базу знаний Firebase
+        try {
+          await fetch(FIREBASE_AI_URL, {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              phrase: query.slice(0, 45),
-              address: matchedCp.name,
-              lat: matchedCp.lat,
-              lng: matchedCp.lng,
-              updated_at: Date.now()
+              text: query,
+              ai_decision: parsed,
+              time: Date.now()
             })
           });
-        }
-      } catch (err) {}
+        } catch(e) {}
 
-      aiInlineResult.innerHTML = `
-        <div style="color:#00f3ff; font-weight:800;">🤖 Результат:</div>
-        <div style="color:#e2e8f0;">✅ ${appliedAction}.</div>
-      `;
-      showToast("🤖 Зауваження збережено ШІ!");
+        aiInlineResult.innerHTML = `
+          <div style="color:#00f3ff; font-weight:800;">🤖 Gemini AI:</div>
+          <div style="color:#e2e8f0;">${actionResultText}</div>
+        `;
+        showToast("🤖 Рішення Gemini застосовано!");
+
+      } catch (err) {
+        aiInlineResult.innerHTML = `
+          <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
+          <div style="color:#cbd5e1; font-size:10px;">${err.message}</div>
+          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть тут для зміни ключа</div>
+        `;
+      }
     }
 
     // СЕКРЕТНОЕ МЕНЮ
@@ -1319,7 +1380,6 @@
 
         const overrideBadge = isOverrideActive ? '<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>' : "";
 
-        // ДОБАВЛЕНА КНОПКА КОНТЕКСТНОГО ИИ
         const standardPopupContent = 
           '<div style="padding:2px; min-width:180px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#0f172a;">' +
             '<div style="font-weight:800; font-size:12px; color:#0284c7; display:flex; align-items:center; justify-content:space-between;">' +
@@ -1330,7 +1390,7 @@
             '</div>' +
             messageBlock +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:4px;">' +
-              '<span>💡 Затисніть 0.5с</span>' +
+              '<span>💡 Затисніть на 0.5с</span>' +
               '<span onclick="openAiContext(\'traffic_light\', \'' + cp.id + '\', \'' + cp.name + '\')" style="color:#0284c7; font-weight:800; cursor:pointer;">🤖 Зауваження для ШІ</span>' +
             '</div>' +
           '</div>';
@@ -1475,7 +1535,7 @@
     }
 
     // ==========================================================================
-    // ПЕРЕМЕЩЕНИЕ И ЗАПОМИНАНИЕ ПОЗИЦИЙ ДЛЯ ВСЕХ 4 ПРЯМОУГОЛЬНИКОВ
+    // ПЕРЕМЕЩЕНИЕ И СОХРАНЕНИЕ ПОЗИЦИЙ ДЛЯ ВСЕХ 4 ПРЯМОУГОЛЬНИКОВ
     // ==========================================================================
     const dashPanel = document.getElementById("dashPanel");
     const aiPillPanelEl = document.getElementById("aiPillPanel");
@@ -1496,7 +1556,6 @@
       localStorage.setItem("radar_dash_collapsed", isNowCollapsed ? "true" : "false");
     }
 
-    // Восстановление координат для всех 4 прямоугольников
     const savedDashTop = localStorage.getItem("dash_pos_top");
     const savedDashLeft = localStorage.getItem("dash_pos_left");
     if (savedDashTop && savedDashLeft) { dashPanel.style.top = savedDashTop; dashPanel.style.left = savedDashLeft; }
@@ -1582,7 +1641,6 @@
       }
     }
 
-    // Подключаем перемещение для всех 4 прямоугольников
     makeElementDraggable(dashPanel, document.getElementById("dashHeader"), "dash_pos");
     makeElementDraggable(aiPillPanelEl, document.getElementById("aiPillHeader"), "ai_pos");
     if (routeStatusBarEl) makeElementDraggable(routeStatusBarEl, routeStatusBarEl, "route_status_pos");
@@ -1640,7 +1698,7 @@
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА И ОТРИСОВКА КРУЖОЧКОВ
+    // ЗАГРУЗКА ТОЧЕК КАРТЫ
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
