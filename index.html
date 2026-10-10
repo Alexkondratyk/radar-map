@@ -250,7 +250,6 @@
       padding: 5px 8px; border-radius: 7px; font-size: 10px; font-weight: 700;
       cursor: pointer; display: flex; align-items: center; justify-content: space-between;
     }
-    .btn-server-main:hover { border-color: #64748b; color: #cbd5e1; }
     .server-dropdown {
       background: #0b1120; border: 1px solid #334155; border-radius: 8px;
       padding: 6px; margin-top: 4px; display: none; flex-direction: column; gap: 4px;
@@ -281,6 +280,12 @@
       border-radius: 50%; border: 2px solid var(--color-red); animation: ripple-ring 1.8s infinite ease-out; pointer-events: none;
     }
     @keyframes ripple-ring { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(2.4); opacity: 0; } }
+
+    .radar-circle.active-dragging-target {
+      transform: scale(1.6) !important; box-shadow: 0 0 0 4px #00f3ff, 0 0 25px 8px #00f3ff !important;
+      cursor: grab !important; z-index: 9999 !important; animation: target-pulse 0.7s infinite alternate !important;
+    }
+    @keyframes target-pulse { from { transform: scale(1.4); } to { transform: scale(1.7); } }
 
     .traffic-pill {
       background: #0f172a !important; border: 1.5px solid #ffffff !important;
@@ -413,12 +418,12 @@
     <div class="ai-pill-body" id="aiPillBody">
       <div id="aiChatBox" class="ai-chat-box">
         <div class="ai-msg bot">
-          👋 Вітаю! Я ваш ШІ-штурман. Керую картою, кольорами точок та районами. Наприклад: «Скрий зелені», «Відключи Лівий берег» або «Підсвіти Робочу»!
+          👋 Вітаю! Я ваш ШІ-штурман. Керую картою, показом точок, світлофорами та районами. Скажіть: «Скрий зелені», «Вимкни всі точки» або «Підсвіти Робочу»!
         </div>
       </div>
 
       <div class="ai-chips-compact">
-        <span class="ai-mini-chip" onclick="sendAiQuick('Скрий зелені точки')">🟢 Сховати зелені</span>
+        <span class="ai-mini-chip" onclick="sendAiQuick('Скрий зелені точки')">🟢 Без зелених</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Покажи всі точки')">🌐 Всі точки</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Відключи Лівий берег від моніторингу')">🌉 Без Лівого</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Світлофор Річпорт переключи на авто режим')">🔄 Річпорт авто</span>
@@ -506,7 +511,7 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // ФИЛЬТРЫ ВИДИМОСТИ ЦВЕТОВ МЕТОК (ЗЕЛЕНЫЕ / КРАСНЫЕ)
+    // ФИЛЬТРЫ ВИДИМОСТИ ЦВЕТОВ
     let filterShowGreen = true;
     let filterShowRed = true;
 
@@ -930,7 +935,6 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
-    // ФУНКЦИЯ УПРАВЛЕНИЯ СЕКТОРАМИ ГОРОДА ЧЕРЕЗ ШІ
     function setSectorState(sectorKey, enable) {
       let changed = false;
       let targetIds = [];
@@ -964,12 +968,28 @@
       }
     }
 
-    // МГНОВЕННЫЙ ЛОКАЛЬНЫЙ ПЕРЕХВАТ КОМАНД СВЕТОФОРОВ, ЦВЕТОВ И РАЙОНОВ
+    // МГНОВЕННЫЙ ЛОКАЛЬНЫЙ ПЕРЕХВАТ
     function detectAndExecuteLocalCommands(text) {
       const t = text.toLowerCase();
 
-      // 1. УПРАВЛЕНИЕ ВИДИМОСТЬЮ ЦВЕТОВ (ЗЕЛЕНЫЕ / КРАСНЫЕ / ВСЕ)
-      if (/(?:сховай|скрой|удали|прибери|вимкни)\s+(?:всі\s+|все\s+)?зелен/i.test(t)) {
+      // ОТКЛЮЧИТЬ / ВКЛЮЧИТЬ ВСЕ ТОЧКИ
+      if (/(?:сховай|скрой|удали|прибери|вимкни|отключи|відключи)\s+(?:всі\s+|все\s+)?точки/i.test(t)) {
+        filterShowGreen = false;
+        filterShowRed = false;
+        renderMarkers();
+        showToast("🙈 Всі точки приховано з карти!");
+        return { handled: true, reply: "🙈 Всі точки на карті тимчасово вимкнено. Щоб повернути їх, скажіть «Покажи всі точки»." };
+      }
+      if (/(?:покажи|верни|увімкни|включи)\s+(?:всі\s+|все\s+)?точки/i.test(t)) {
+        filterShowGreen = true;
+        filterShowRed = true;
+        renderMarkers();
+        showToast("🌐 Всі точки відображено!");
+        return { handled: true, reply: "🌐 Відображаю всі активні мітки на карті (зелені та червоні)." };
+      }
+
+      // СКРЫТЬ / ВЕРНУТЬ ЗЕЛЕНЫЕ
+      if (/(?:сховай|скрой|удали|прибери|вимкни|отключи)\s+(?:всі\s+|все\s+)?зелен/i.test(t)) {
         filterShowGreen = false;
         renderMarkers();
         showToast("🙈 Зелені точки приховано з карти!");
@@ -981,21 +1001,16 @@
         showToast("👁️ Зелені точки повернено!");
         return { handled: true, reply: "🟢 Зелені мітки повернено на карту." };
       }
-      if (/(?:сховай|скрой|прибери|вимкни)\s+(?:всі\s+|все\s+)?червон/i.test(t)) {
+
+      // СКРЫТЬ / ВЕРНУТЬ КРАСНЫЕ
+      if (/(?:сховай|скрой|прибери|вимкни|отключи)\s+(?:всі\s+|все\s+)?червон/i.test(t)) {
         filterShowRed = false;
         renderMarkers();
         showToast("🙈 Червоні точки приховано!");
         return { handled: true, reply: "🔴 Червоні мітки приховано." };
       }
-      if (/(?:покажи|верни|увімкни|включи)\s+(?:всі\s+|все\s+)?(?:червон|точки)/i.test(t)) {
-        filterShowGreen = true;
-        filterShowRed = true;
-        renderMarkers();
-        showToast("🌐 Всі точки відображено!");
-        return { handled: true, reply: "🌐 Відображаю всі активні мітки на карті (зелені та червоні)." };
-      }
 
-      // 2. УПРАВЛЕНИЕ РАЙОНАМИ (ЛЕВЫЙ БЕРЕГ / ТОПОЛЬ И Т.Д.)
+      // УПРАВЛЕНИЕ РАЙОНАМИ
       if (/(?:відключи|отключи|вимкни|прибери|сховай)\s+(?:моніторинг\s+)?(?:лівий\s*берег|левый\s*берег)/i.test(t)) {
         setSectorState("left_bank", false);
         return { handled: true, reply: "🌉 Лівий берег відключено від моніторингу." };
@@ -1013,7 +1028,7 @@
         return { handled: true, reply: "🚗 Сектор Тополя / 12 Квартал увімкнено!" };
       }
 
-      // 3. УПРАВЛЕНИЕ СВЕТОФОРАМИ
+      // СВЕТОФОРЫ
       let targetId = null;
       if (t.includes("речпорт") || t.includes("річпорт") || t.includes("репорт")) targetId = "rechport";
       else if (t.includes("ровд") || t.includes("кайдак")) targetId = "kaidak_rovd";
@@ -1100,8 +1115,9 @@
       showToast(`🎯 Метку змінено на ${isClean ? '🟢 ЗЕЛЕНИЙ' : '🔴 ЧЕРВОНИЙ'}!`);
     }
 
+    // ТОЛЬКО АКТУАЛЬНЫЕ МОДЕЛИ (1.5, 2.0, 2.5 ПОЛНОСТЬЮ УДАЛЕНЫ)
     async function executeGeminiRequest(promptPayload, apiKey) {
-      const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+      const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
       let lastErr = null;
 
       for (const m of models) {
@@ -1152,7 +1168,7 @@
       aiChatBox.appendChild(loadingBubble);
       aiChatBox.scrollTop = aiChatBox.scrollHeight;
 
-      // МГНОВЕННАЯ ОБРАБОТКА КОМАНД ЦВЕТОВ, РАЙОНОВ, АНАЛИТИКИ И СВЕТОФОРОВ
+      // Мгновенная обработка локальных команд
       const localResult = detectAndExecuteLocalCommands(query);
       if (localResult && localResult.handled) {
         geminiChatHistory.push({ role: "user", parts: [{ text: query }] });
@@ -1163,7 +1179,6 @@
         return;
       }
 
-      // Запрос перехода в аналитику
       if (/(?:перейди|відкрий|покажи|зайди|открой|перейти|показать)\s+(?:в\s+)?(?:аналітик|статистик)/i.test(query)) {
         window.open('stats.html', '_blank');
         loadingBubble.className = "ai-msg bot";
@@ -1723,7 +1738,7 @@ ${allLiveReportsText || "Повідомлень немає"}
               if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
-            el.addEventListener('touchend', () => {
+            el.addEventListener('touchend', (e) => {
               if (isLongPress) {
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
@@ -1974,7 +1989,7 @@ ${allLiveReportsText || "Повідомлень немає"}
       if (!e.target.closest(".search-box")) searchResults.style.display = "none";
     });
 
-    // ЗАГРУЗКА ТОЧЕК КАРТЫ С УЧЕТОМ ЦВЕТОВОГО ФИЛЬТРА (filterShowGreen / filterShowRed)
+    // ЗАГРУЗКА ТОЧЕК
     async function loadPoints() {
       if (dragController.activeMarker) return;
       try {
@@ -2007,7 +2022,6 @@ ${allLiveReportsText || "Повідомлень немає"}
 
         const clean = isCleanPoint(p);
 
-        // ФИЗИЧЕСКИЙ ФИЛЬТР ЦВЕТОВ: ЕСЛИ СКРЫТЫ ЗЕЛЕНЫЕ ИЛИ КРАСНЫЕ — НЕ РИСУЕМ
         if (clean && !filterShowGreen) return;
         if (!clean && !filterShowRed) return;
 
