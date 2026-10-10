@@ -87,7 +87,7 @@
     }
     html.dash-collapsed #collapsibleBody { display: none; }
 
-    /* 2. БЛОК ШІ (ДИАЛОГОВЫЙ ЧАТ) */
+    /* 2. БЛОК ШІ */
     .ai-pill-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
@@ -162,7 +162,7 @@
       cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
-    /* АНИМАЦИЯ МИГАНИЯ НЕОНОВОЙ УЛИЦЫ (10 РАЗ) */
+    /* АНИМАЦИЯ МИГАНИЯ НЕОНА (10 РАЗ) */
     @keyframes neonStreetBlink {
       0%, 100% { opacity: 1; stroke-width: 9px; filter: drop-shadow(0 0 12px #00f3ff); }
       50% { opacity: 0.15; stroke-width: 5px; filter: none; }
@@ -200,6 +200,7 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
+    /* СТИЛИ */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -401,7 +402,7 @@
     </div>
   </div>
 
-  <!-- 2. БЛОК ШІ GEMINI (ДИАЛОГОВЫЙ МЕССЕНДЖЕР) -->
+  <!-- 2. БЛОК ШІ GEMINI (ДИАЛОГОВЫЙ ЧАТ) -->
   <div id="aiPillPanel" class="ai-pill-panel compact">
     <div id="aiPillHeader" class="ai-pill-compact-content" onclick="toggleAiPillExpand()">
       <div class="ai-titleBadge">
@@ -419,20 +420,20 @@
     <div class="ai-pill-body" id="aiPillBody">
       <div id="aiChatBox" class="ai-chat-box">
         <div class="ai-msg bot">
-          👋 Вітаю! Я ваш ШІ-штурман. Бачу всю карту, повідомлення та світлофори. Якщо якась мітка помилкова — скажіть мені, я виправлю її колір і запам'ятаю!
+          👋 Вітаю! Я ваш ШІ-штурман. Бачу всю карту, світлофори та повідомлення. Якщо повідомлення не відповідає дійсності — скажіть, я видалю його або виправлю колір!
         </div>
       </div>
 
       <div class="ai-chips-compact">
+        <span class="ai-mini-chip" onclick="sendAiQuick('Відкрий аналітику')">📊 Аналітика</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Підсвіти на карті вулицю Робочу')">✨ Підсвіти Робочу</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Де зараз блокпости? На яких вулицях?')">📍 Де блокпости?</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Сховай всі світлофори')">🙈 Сховати світлофори</span>
         <span class="ai-mini-chip" onclick="sendAiQuick('Увімкни неонову підсвітку')">⚡ Неон</span>
-        <span class="ai-mini-chip" onclick="sendAiQuick('Відкрий секретне меню')">⚙️ Меню</span>
       </div>
 
       <div class="ai-chat-input-row">
-        <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Напишіть повідомлення... (Enter)"></textarea>
+        <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Напишіть повідомлення чи команду... (Enter)"></textarea>
         <button class="btn-ai-send" onclick="submitAiChatMessage()" id="btnAiSend">➤</button>
       </div>
     </div>
@@ -512,7 +513,7 @@
     let trafficMarkersMap = {};
     let allPoints = [];
 
-    // ПАМЯТЬ ОБУЧЕННЫХ ПРАВИЛ И СЛОВАРЬ СЛЕНГА ДНЕПРА
+    // ПАМЯТЬ ОБУЧЕННЫХ ПРАВИЛ
     let learnedRules = [];
     try {
       const storedRules = localStorage.getItem("radar_learned_rules");
@@ -540,7 +541,7 @@
     }, 10000);
     requestWakeLock();
 
-    // КОНТРОЛЕР ПЕРЕМІЩЕННЯ ТОЧОК
+    // ПЕРЕМЕЩЕНИЕ ТОЧЕК
     const dragController = {
       activeMarker: null, activePoint: null, isDragging: false,
       reset: function() {
@@ -608,7 +609,7 @@
     window.addEventListener('touchend', () => { if (dragController.isDragging) dragController.isDragging = false; });
     window.addEventListener('mouseup', () => { if (dragController.isDragging) dragController.isDragging = false; });
 
-    // СВІТЛОФОРИ
+    // СВЕТОФОРЫ
     let manualOverrides = {};
     try { manualOverrides = JSON.parse(localStorage.getItem("radar_tl_overrides") || "{}"); } catch(e) {}
 
@@ -628,6 +629,7 @@
       if (trafficMarkersMap[cpId] && trafficMarkersMap[cpId].isPopupOpen()) trafficMarkersMap[cpId].closePopup();
     };
 
+    // ФИКС КЛЮЧЕЙ: ИСКЛЮЧЕНО СЛОВО "СТАН" (ОСТАВЛЕНО СТРОГО "СТАН 550")
     let checkpoints = [
       { id: "kaidak_rovd", name: "РОВД / Кайдацький з'їзд", lat: 48.4925, lng: 34.9625, keys: ["кайдак", "ровд", "з'їзд з кайдак"] },
       { id: "vodolechebnitsa", name: "Водолікарня (пр. Свободи)", lat: 48.4848, lng: 34.9735, keys: ["водолечеб", "водолікарн", "пр свободи"] },
@@ -733,21 +735,18 @@
 
     function hardReload() { window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now(); }
 
-    // УЛУЧШЕННЫЙ ОПРЕДЕЛИТЕЛЬ ЦВЕТА С УЧЕТОМ ПАМЯТИ И СЛЕНГА
     function isCleanPoint(p) {
       if (p.is_clean === true || p.color === "green" || p.status === "чисто") return true;
       if (p.is_clean === false && (p.color === "red" || p.status === "опасно")) return false;
 
       const fullStr = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
 
-      // Проверка по обученным правилам из памяти
       for (const rule of learnedRules) {
         if (rule && rule.phrase && fullStr.includes(rule.phrase.toLowerCase())) {
           return rule.is_clean;
         }
       }
 
-      // Сленг и эмодзи чистоты: сонечко, 🌞, ясно, сухо и т.д.
       if (/(?:🌞|☀️|🌤️|чисто|чистенько|пусто|вільно|спокійно|проїзд|без\s+бп|сонце|сонечко|солнечно|солнце|ясно|сухо|пролітайте|знялися)/i.test(fullStr) && !/(?:не\s+чисто|не\s+пусто)/i.test(fullStr)) {
         return true;
       }
@@ -768,67 +767,26 @@
       });
     }
 
-    const routeStatusBar = document.getElementById("routeStatusBar");
-    const routeStatusIcon = document.getElementById("routeStatusIcon");
-    const routeStatusText = document.getElementById("routeStatusText");
-    const chkRouteStatusBar = document.getElementById("chkRouteStatusBar");
+    // ==========================================================================
+    // ФУНКЦИЯ ФИЗИЧЕСКОГО УДАЛЕНИЯ ТОЧКИ/СООБЩЕНИЯ С КАРТЫ И ИЗ FIREBASE
+    // ==========================================================================
+    window.deleteSinglePoint = async function(fbKey, pointText) {
+      if (!confirm("Видалити це повідомлення як невідповідне/хибне?")) return;
+      showToast("⏳ Видаляю повідомлення з сервера...");
 
-    if (chkRouteStatusBar) chkRouteStatusBar.checked = showRouteStatusBar;
-    if (routeStatusBar) routeStatusBar.style.display = showRouteStatusBar ? "flex" : "none";
-
-    function toggleRouteStatusBarVisible() {
-      showRouteStatusBar = chkRouteStatusBar.checked;
-      localStorage.setItem("radar_show_route_status", showRouteStatusBar);
-      routeStatusBar.style.display = showRouteStatusBar ? "flex" : "none";
-      showToast(showRouteStatusBar ? "🛣️ Інформер дороги увімкнено!" : "🙈 Інформер дороги приховано!");
-    }
-
-    function updateRouteStatus() {
-      if (!routeStatusBar || !showRouteStatusBar) return;
-      const now = Date.now();
-      let dangerCount = 0;
-      let detectedStreets = [];
-
-      checkpoints.forEach(cp => {
-        const matched = allPoints.filter(p => {
-          const diff = now - (p.time || p.timestamp || 0);
-          if (diff > LIFETIME_MS) return false;
-          const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
-          return cp.keys.some(k => text.includes(k));
-        });
-        matched.sort((a, b) => (b.time || 0) - (a.time || 0));
-        const latest = matched[0];
-
-        const override = manualOverrides[cp.id];
-        const hasFresherDanger = latest && !isCleanPoint(latest) && override && (latest.time > override.time);
-        const isOverrideActive = override && (now - override.time < LIFETIME_MS) && !hasFresherDanger;
-
-        if (isOverrideActive) {
-          if (override.status === 'red') { dangerCount++; detectedStreets.push(cp.name); }
-          return;
-        }
-
-        if (latest && !isCleanPoint(latest)) {
-          dangerCount++;
-          detectedStreets.push(cp.name);
-        }
-      });
-
-      if (dangerCount === 0) {
-        routeStatusBar.classList.remove("danger");
-        routeStatusIcon.innerText = "🟢";
-        routeStatusText.innerText = "Мій шлях: Чисто";
-      } else if (dangerCount === 1) {
-        routeStatusBar.classList.add("danger");
-        routeStatusIcon.innerText = "🔴";
-        const cleanName = detectedStreets[0].replace(/^вул\.\s*/i, '').replace(/^пр\.\s*/i, '').split(' ')[0].replace(/[^а-яА-Яіїєґ]/gi, '');
-        routeStatusText.innerText = `Мій шлях: Блокпост (${cleanName})`;
-      } else {
-        routeStatusBar.classList.add("danger");
-        routeStatusIcon.innerText = "🔴";
-        routeStatusText.innerText = `Мій шлях: Є ${dangerCount} блокпости!`;
+      if (fbKey) {
+        try {
+          await fetch(FIREBASE_POINTS_URL.replace(".json", `/${fbKey}.json`), { method: "DELETE" });
+        } catch(e) {}
       }
-    }
+
+      allPoints = allPoints.filter(p => p._fbKey !== fbKey && p.text !== pointText && p.raw_text !== pointText);
+
+      renderMarkers();
+      renderTrafficLights();
+      updateRouteStatus();
+      showToast("🗑️ Повідомлення успішно видалено!");
+    };
 
     // ==========================================================================
     // ПОДСВЕТКА УЛИЦ С МИГАНИЕМ 10 РАЗ
@@ -915,7 +873,7 @@
     }
 
     // ==========================================================================
-    // ДИАЛОГОВЫЙ ЧАТ ШІ + ДЕЙСТВИЕ ПЕРЕКРАШИВАНИЯ ТОЧКИ НА КАРТЕ
+    // ДИАЛОГОВЫЙ ЧАТ ШІ
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -944,7 +902,7 @@
       targetedPointContext = null;
       aiChatBox.innerHTML = `
         <div class="ai-msg bot">
-          🧹 Діалог очищено. Готовий до нових питань чи виправлень!
+          🧹 Діалог очищено. Готовий до нових запитань!
         </div>
       `;
       showToast("💬 Діалог очищено!");
@@ -972,17 +930,21 @@
       }
     }
 
-    window.openAiContext = function(type, id, name) {
+    window.openAiContext = function(type, id, name, extraData = {}) {
       if (aiPillPanel.classList.contains("compact")) {
         aiPillPanel.classList.remove("compact");
         aiPillPanel.classList.add("expanded");
         btnAiPillToggle.innerText = "▲";
       }
-      targetedPointContext = { type: type, id: id, name: name };
+      targetedPointContext = { type: type, id: id, name: name, ...extraData };
 
-      if (type === 'traffic_light') aiInlineInput.value = `Світлофор "${name}": `;
-      else if (type === 'point') aiInlineInput.value = `Точка "${name}": це чисто чи небезпека? `;
-      else aiInlineInput.value = "";
+      if (type === 'traffic_light') {
+        aiInlineInput.value = `Світлофор "${name}": `;
+      } else if (type === 'point') {
+        aiInlineInput.value = `Точка "${name}": `;
+      } else {
+        aiInlineInput.value = "";
+      }
 
       setTimeout(() => {
         aiInlineInput.focus();
@@ -991,12 +953,10 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
-    // ФУНКЦИЯ ДИНАМИЧЕСКОГО ИЗМЕНЕНИЯ ЦВЕТА ТОЧКИ И СОХРАНЕНИЯ В ПАМЯТЬ
     async function applyFixPointColor(targetQuery, newColor, learnedKeyword) {
       const isClean = (newColor === 'green');
       let matchedCount = 0;
 
-      // 1. Находим точку в массиве точек карты
       allPoints.forEach(p => {
         const fullStr = ((p.text || p.raw_text || "") + " " + (p.address || "")).toLowerCase();
         let isHit = false;
@@ -1013,7 +973,6 @@
           p.status = isClean ? "чисто" : "опасно";
           matchedCount++;
 
-          // 2. Отправляем исправление в Firebase
           if (p._fbKey) {
             fetch(FIREBASE_POINTS_URL.replace(".json", `/${p._fbKey}.json`), {
               method: "PATCH",
@@ -1024,7 +983,6 @@
         }
       });
 
-      // 3. Сохраняем правило в базу знаний на будущее
       if (learnedKeyword) {
         const ruleObj = { phrase: learnedKeyword.trim(), is_clean: isClean, updated_at: Date.now() };
         learnedRules = learnedRules.filter(r => r.phrase.toLowerCase() !== ruleObj.phrase.toLowerCase());
@@ -1038,17 +996,16 @@
         }).catch(() => {});
       }
 
-      // 4. Мгновенно перерисовываем все маркеры и светофоры
       renderMarkers();
       renderTrafficLights();
       updateRouteStatus();
       targetedPointContext = null;
 
-      showToast(`🎯 Метку перефарбовано в ${isClean ? '🟢 ЗЕЛЕНИЙ' : '🔴 ЧЕРВОНИЙ'}! Правило запам'ятовано.`);
+      showToast(`🎯 Метку змінено на ${isClean ? '🟢 ЗЕЛЕНИЙ' : '🔴 ЧЕРВОНИЙ'}!`);
     }
 
     async function executeGeminiRequest(promptPayload, apiKey) {
-      const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-3.5-flash'];
+      const models = ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.5-flash'];
       let lastErr = null;
 
       for (const m of models) {
@@ -1099,6 +1056,15 @@
       aiChatBox.appendChild(loadingBubble);
       aiChatBox.scrollTop = aiChatBox.scrollHeight;
 
+      // Быстрая проверка запроса перехода в аналитику на клиенте
+      if (/(?:перейди|відкрий|покажи|зайди|открой|перейти|показать)\s+(?:в\s+)?(?:аналітик|статистик)/i.test(query)) {
+        window.open('stats.html', '_blank');
+        loadingBubble.className = "ai-msg bot";
+        loadingBubble.innerText = "📊 Відкриваю вкладку аналітики блокпостів!";
+        aiChatBox.scrollTop = aiChatBox.scrollHeight;
+        return;
+      }
+
       const now = Date.now();
       const allLiveReportsText = allPoints.map((p, idx) => {
         const diffMin = Math.round((now - (p.time || p.timestamp || 0)) / 60000);
@@ -1116,10 +1082,13 @@
         let state = "Очікування";
         if (override) state = override.status === 'green' ? 'Зелений (ручний)' : (override.status === 'red' ? 'Червоний (ручний)' : 'Погашено');
         else if (latest) state = isCleanPoint(latest) ? 'Зелений (чисто)' : 'Червоний (увага/БП)';
-        return `• ${cp.name} (id: "${cp.id}"): стан ${state}.`;
+        return `• ${cp.name} (id: "${cp.id}"): стан ${state}. Останнє прив'язане повідомлення: "${latest ? (latest.text || latest.raw_text) : 'немає'}". Key: "${latest ? (latest._fbKey || '') : ''}".`;
       }).join('\n');
 
-      const targetedContextText = targetedPointContext ? `КОРИСТУВАЧ ЗАРАЗ ВКАЗУЄ НА: ${targetedPointContext.type} "${targetedPointContext.name}" (ID: ${targetedPointContext.id})` : "Немає прямого кліку";
+      let targetedContextText = "Немає прямого кліку";
+      if (targetedPointContext) {
+        targetedContextText = `КОРИСТУВАЧ ЗАРАЗ ДИВИТЬСЯ НА: ${targetedPointContext.type} "${targetedPointContext.name}" (ID: ${targetedPointContext.id}). Прив'язане повідомлення: "${targetedPointContext.latest_msg || ''}", key: "${targetedPointContext.latest_fbKey || ''}"`;
+      }
 
       const systemInstructionText = `
 Ти — високоінтелектуальний військово-дорожній ШІ-штурман у місті Дніпро для водія.
@@ -1139,17 +1108,17 @@ ${tlStatusText}
 УСІ ТОЧКИ НА КАРТІ (${allPoints.length} шт.):
 ${allLiveReportsText || "Повідомлень немає"}
 
-НАДВАЖЛИВО — КОМАНДИ КЕРУВАННЯ ТА ЗМІНИ КОЛЬОРУ МІТОК:
-Якщо водій повідомляє, що точка помилкова / це чисто / просить змінити колір мітки на зелений або червоний / просить запам'ятати:
-Обов'язково підтверди це у відповіді і в самий кінець повідомлення додай тег:
-<<<ACTION:{"cmd":"fix_point","target":"назва точки/вулиці чи текст","color":"green"|"red","keyword":"слово або емодзі для запам'ятовування (наприклад '🌞' чи 'сонечко' чи 'чисто')"}>>>
-
-Інші команди:
-- Підсвітити вулицю: <<<ACTION:{"cmd":"highlight_street","street":"Назва"}>>>
-- Сховати/показати світлофори: <<<ACTION:{"cmd":"toggle_tl","val":"hide"|"show"}>>>
-- Увімкнути/вимкнути неон: <<<ACTION:{"cmd":"toggle_neon","val":"show"|"hide"}>>>
-- Відкрити/закрити секретне меню: <<<ACTION:{"cmd":"open_secret","val":"show"|"hide"}>>>
-- Змінити світлофор: <<<ACTION:{"cmd":"set_tl","id":"id","val":"green"|"red"|"off"}>>>
+КОМАНДИ КЕРУВАННЯ (обов'язково додай відповідний тег у самий кінець повідомлення):
+1. Відкрити аналітику / статистику: <<<ACTION:{"cmd":"open_stats"}>>>
+2. Видалити повідомлення / точку з карти (якщо воно не відповідає дійсності, не звідси, або користувач просить прибрати):
+<<<ACTION:{"cmd":"delete_point","key":"fbKey_якщо_відомий","target":"текст або вулиця повідомлення"}>>>
+3. Виправити колір мітки (чисто / бп):
+<<<ACTION:{"cmd":"fix_point","target":"назва чи текст","color":"green"|"red","keyword":"слово"}>>>
+4. Підсвітити вулицю: <<<ACTION:{"cmd":"highlight_street","street":"Назва"}>>>
+5. Сховати/показати світлофори: <<<ACTION:{"cmd":"toggle_tl","val":"hide"|"show"}>>>
+6. Увімкнути/вимкнути неон: <<<ACTION:{"cmd":"toggle_neon","val":"show"|"hide"}>>>
+7. Відкрити/закрити секретне меню: <<<ACTION:{"cmd":"open_secret","val":"show"|"hide"}>>>
+8. Змінити світлофор: <<<ACTION:{"cmd":"set_tl","id":"id","val":"green"|"red"|"off"}>>>
 `;
 
       geminiChatHistory.push({ role: "user", parts: [{ text: query }] });
@@ -1160,16 +1129,6 @@ ${allLiveReportsText || "Повідомлень немає"}
       ];
       for (let i = 1; i < geminiChatHistory.length; i++) {
         contentsPayload.push(geminiChatHistory[i]);
-      }
-
-      // Страховка на клиенте: быстрое изменение цвета если в тексте есть явное указание
-      if (/(?:зелен|чисто|зніми червон|це не блокпост|не бп|сонечко|солн|🌞|☀️)/i.test(query)) {
-        let tWord = (targetedPointContext && targetedPointContext.name) ? targetedPointContext.name : "";
-        if (!tWord) {
-          const m = query.match(/(?:точка|вулиц[яі]|вул\.|на)\s+["«]?([а-яА-Яіїєґ\w\s\-]+)["»]?/i);
-          if (m) tWord = m[1].trim();
-        }
-        if (tWord) applyFixPointColor(tWord, 'green', '🌞');
       }
 
       try {
@@ -1184,7 +1143,27 @@ ${allLiveReportsText || "Повідомлень немає"}
         if (actionMatch) {
           try {
             const act = JSON.parse(actionMatch[1]);
-            if (act.cmd === 'fix_point') {
+            if (act.cmd === 'open_stats') {
+              window.open('stats.html', '_blank');
+            } else if (act.cmd === 'delete_point') {
+              const targetKey = act.key || (targetedPointContext ? targetedPointContext.latest_fbKey : null);
+              const targetTxt = act.target || (targetedPointContext ? targetedPointContext.latest_msg : "");
+              
+              if (targetKey || targetTxt) {
+                // Удаляем локально и в Firebase
+                let foundP = allPoints.find(p => (targetKey && p._fbKey === targetKey) || (targetTxt && ((p.text||"") + (p.raw_text||"")).includes(targetTxt)));
+                if (foundP) {
+                  if (foundP._fbKey) {
+                    fetch(FIREBASE_POINTS_URL.replace(".json", `/${foundP._fbKey}.json`), { method: "DELETE" }).catch(()=>{});
+                  }
+                  allPoints = allPoints.filter(p => p !== foundP);
+                  renderMarkers();
+                  renderTrafficLights();
+                  updateRouteStatus();
+                  showToast("🗑️ Повідомлення видалено з карти!");
+                }
+              }
+            } else if (act.cmd === 'fix_point') {
               applyFixPointColor(act.target || "", act.color || "green", act.keyword || "");
             } else if (act.cmd === 'highlight_street' && act.street) {
               highlightStreetOnMap(act.street);
@@ -1218,7 +1197,7 @@ ${allLiveReportsText || "Повідомлень немає"}
       }
     }
 
-    // СЕКРЕТНЕ МЕНЮ
+    // СЕКРЕТНОЕ МЕНЮ
     let secretClickCount = 0;
     let secretClickTimer = null;
     let neonLines = [];
@@ -1477,10 +1456,19 @@ ${allLiveReportsText || "Повідомлень немає"}
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
             checkpoints = data;
-            localStorage.setItem("dnepr_radar_checkpoints_v2", JSON.stringify(data));
           }
         }
       } catch (e) {}
+
+      // ОЧИЩАЕМ КЛЮЧИ: УДАЛЯЕМ ОДИНОЧНОЕ СЛОВО "СТАН"
+      checkpoints.forEach(cp => {
+        if (cp.id === "stan_550") {
+          cp.keys = ["стан 550", "стан550"];
+        } else {
+          cp.keys = cp.keys.filter(k => k !== "стан");
+        }
+      });
+      localStorage.setItem("dnepr_radar_checkpoints_v2", JSON.stringify(checkpoints));
     }
 
     function openTrafficLightControl(cpId) {
@@ -1518,7 +1506,10 @@ ${allLiveReportsText || "Повідомлень немає"}
 
         const matched = allPoints.filter(p => {
           const text = ((p.raw_text || p.text || "") + " " + (p.address || "")).toLowerCase();
-          return cp.keys.some(k => text.includes(k));
+          return cp.keys.some(k => {
+            if (k === "стан") return /\bстан\b/i.test(text) && !/остановил/i.test(text);
+            return text.includes(k);
+          });
         });
         matched.sort((a, b) => (b.time || 0) - (a.time || 0));
         let latest = matched[0];
@@ -1558,25 +1549,34 @@ ${allLiveReportsText || "Повідомлень немає"}
         const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
 
         let messageBlock = "";
+        let deleteBtnHtml = "";
         if (latest && (!isOverrideActive || (override && override.status !== 'off'))) {
           const rawText = latest.text || latest.raw_text || "";
           let timeVal = latest.time || latest.timestamp || 0;
           let timeStr = "";
           if (timeVal) {
             const d = new Date(timeVal);
-            const hh = String(d.getHours()).padStart(2, '0');
-            const mm = String(d.getMinutes()).padStart(2, '0');
-            timeStr = hh + ":" + mm;
+            timeStr = String(d.getHours()).padStart(2, '0') + ":" + String(d.getMinutes()).padStart(2, '0');
           }
+          const cleanEscapedText = rawText.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          const fbKeySafe = latest._fbKey || "";
+
+          deleteBtnHtml = `<div style="text-align:right; margin-top:3px;"><span onclick="deleteSinglePoint('${fbKeySafe}', '${cleanEscapedText}')" style="color:#ef4444; font-size:10px; font-weight:800; cursor:pointer;" title="Видалити помилкове повідомлення">🗑️ Видалити це повідомлення</span></div>`;
+
           if (rawText) {
             messageBlock = '<div style="font-size:11px; color:#0f172a; margin:5px 0 3px; line-height:1.35; background:#f8fafc; padding:6px 8px; border-radius:7px; border:1px solid #cbd5e1; word-break:break-word;">'
               + '«' + rawText + '»'
               + (timeStr ? '<div style="font-size:10px; color:#475569; margin-top:3px; text-align:right; font-weight:700;">🕒 ' + timeStr + '</div>' : '')
+              + deleteBtnHtml
               + '</div>';
           }
         }
 
         const overrideBadge = isOverrideActive ? '<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>' : "";
+
+        const cleanSafeCpName = cp.name.replace(/'/g, "\\'");
+        const latestMsgSafe = latest ? (latest.text || latest.raw_text || "").replace(/'/g, "\\'").replace(/"/g, '') : "";
+        const latestKeySafe = latest ? (latest._fbKey || "") : "";
 
         const standardPopupContent = 
           '<div style="padding:2px; min-width:180px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; color:#0f172a;">' +
@@ -1589,7 +1589,7 @@ ${allLiveReportsText || "Повідомлень немає"}
             messageBlock +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:4px;">' +
               '<span>💡 Затисніть на 0.5с</span>' +
-              '<span onclick="openAiContext(\'traffic_light\', \'' + cp.id + '\', \'' + cp.name + '\')" style="color:#0284c7; font-weight:800; cursor:pointer;">🤖 Зауваження для ШІ</span>' +
+              '<span onclick="openAiContext(\'traffic_light\', \'' + cp.id + '\', \'' + cleanSafeCpName + '\', {latest_msg:\'' + latestMsgSafe + '\', latest_fbKey:\'' + latestKeySafe + '\'})" style="color:#0284c7; font-weight:800; cursor:pointer;">🤖 Зауваження для ШІ</span>' +
             '</div>' +
           '</div>';
 
@@ -1640,7 +1640,7 @@ ${allLiveReportsText || "Повідомлень немає"}
               if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
-            el.addEventListener('touchend', () => {
+            el.addEventListener('touchend', (e) => {
               if (isLongPress) {
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
@@ -1938,6 +1938,7 @@ ${allLiveReportsText || "Повідомлень немає"}
         const remMinutes = Math.floor(Math.max(0, LIFETIME_MS - diff) / 60000);
         const dateStr = new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const cleanTextSafe = (p.text || "").replace(/'/g, "\\'");
+        const fbKeySafe = p._fbKey || "";
 
         const popupContent = `
           <div style="padding:4px; font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif; min-width:160px;">
@@ -1945,8 +1946,9 @@ ${allLiveReportsText || "Повідомлень немає"}
             <div style="font-size:11px; color:#64748b; margin-top:4px;">⏳ Зникне через: ${remMinutes} хв</div>
             <div style="font-size:11px; color:#64748b;">🕒 Додано: ${dateStr}</div>
             <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Затисніть 0.4с для переміщення</div>
-            <div style="text-align:right; margin-top:6px; border-top:1px solid #e2e8f0; padding-top:4px;">
-              <span onclick="openAiContext('point', '${p._fbKey || ''}', '${cleanTextSafe}')" style="color:#0284c7; font-weight:800; font-size:10px; cursor:pointer;">🤖 Повідомити ШІ</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; border-top:1px solid #e2e8f0; padding-top:4px;">
+              <span onclick="deleteSinglePoint('${fbKeySafe}', '${cleanTextSafe}')" style="color:#ef4444; font-weight:800; font-size:10px; cursor:pointer;" title="Видалити помилкову мітку">🗑️ Видалити</span>
+              <span onclick="openAiContext('point', '${fbKeySafe}', '${cleanTextSafe}')" style="color:#0284c7; font-weight:800; font-size:10px; cursor:pointer;">🤖 Повідомити ШІ</span>
             </div>
           </div>
         `;
