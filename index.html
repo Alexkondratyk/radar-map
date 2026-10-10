@@ -201,7 +201,7 @@
       user-select: none; touch-action: none; white-space: nowrap;
     }
 
-    /* СТИЛІ ІНТЕРФЕЙСУ */
+    /* СТИЛІ КАРТИ ТА ЕЛЕМЕНТІВ */
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
     .search-box { position: relative; margin-bottom: 8px; }
     .search-input {
@@ -441,13 +441,13 @@
     </div>
 
     <div class="ai-pill-body" id="aiPillBody">
-      <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Напишіть зауваження для ШІ..."></textarea>
+      <textarea id="aiInlineInput" class="ai-inline-textarea" placeholder="Команда або запитання до ШІ..."></textarea>
       
       <div class="ai-chips-compact">
+        <span class="ai-mini-chip" onclick="setAiInlineText('Сховай світлофори')">🙈 Сховати світлофори</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('Покажи світлофори')">🚦 Показати світлофори</span>
         <span class="ai-mini-chip" onclick="setAiInlineText('РОВД чисто, зніми червоний')">🟢 РОВД чисто</span>
-        <span class="ai-mini-chip" onclick="setAiInlineText('На РОВД блокпост')">🔴 РОВД БП</span>
-        <span class="ai-mini-chip" onclick="setAiInlineText('Павлова чисто')">🟢 Павлова</span>
-        <span class="ai-mini-chip" onclick="setAiInlineText('Погасити Водолікарню')">⚪ Погасити</span>
+        <span class="ai-mini-chip" onclick="setAiInlineText('Чому на Набережній червоний?')">❓ Чому червоний?</span>
       </div>
 
       <button class="btn-ai-inline-submit" onclick="submitAiInlineCorrection()">⚡ Запитати Gemini AI</button>
@@ -737,19 +737,26 @@
     }
     updateMapLayerBtnUI();
 
-    function toggleMapLayer() {
-      if (currentMapType === "google") {
+    function toggleMapLayer(forcedType = null) {
+      if (forcedType) {
         if (map.hasLayer(googleLayer)) map.removeLayer(googleLayer);
-        esriLayer.addTo(map); currentMapType = "osm";
-        showToast("🏙️ Вулична Карта (Esri) увімкнена!");
-      } else if (currentMapType === "osm") {
         if (map.hasLayer(esriLayer)) map.removeLayer(esriLayer);
-        satelliteLayer.addTo(map); currentMapType = "satellite";
-        showToast("🛰️ Google Супутник (3D/Гібрид) увімкнено!");
-      } else {
         if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
-        googleLayer.addTo(map); currentMapType = "google";
-        showToast("🗺️ Google Карта увімкнена!");
+        currentMapType = forcedType;
+        if (forcedType === 'osm') esriLayer.addTo(map);
+        else if (forcedType === 'satellite') satelliteLayer.addTo(map);
+        else googleLayer.addTo(map);
+      } else {
+        if (currentMapType === "google") {
+          if (map.hasLayer(googleLayer)) map.removeLayer(googleLayer);
+          esriLayer.addTo(map); currentMapType = "osm";
+        } else if (currentMapType === "osm") {
+          if (map.hasLayer(esriLayer)) map.removeLayer(esriLayer);
+          satelliteLayer.addTo(map); currentMapType = "satellite";
+        } else {
+          if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+          googleLayer.addTo(map); currentMapType = "google";
+        }
       }
       localStorage.setItem("radar_map_type", currentMapType);
       updateMapLayerBtnUI();
@@ -860,7 +867,7 @@
     }
 
     // ==========================================================================
-    // РОЗУМНИЙ БЛОК ШІ (GEMINI API З АВТОПОШУКОМ МОДЕЛЕЙ ТА КОНТЕКСТОМ КАРТИ)
+    // ШІ-КОРЕКТОР (GEMINI 2.0 FLASH + КЕРУВАННЯ КАРТОЮ + ВІДПОВІДІ НА ПИТАННЯ)
     // ==========================================================================
     const aiPillPanel = document.getElementById("aiPillPanel");
     const aiInlineInput = document.getElementById("aiInlineInput");
@@ -911,37 +918,38 @@
       showToast("🤖 Введіть зауваження для ШІ!");
     };
 
-    // АВТОМАТИЧНИЙ ПОШУК ПРАЦЮЮЧОЇ МОДЕЛІ ДЛЯ ВАШОГО КЛЮЧА
-    async function getActiveGeminiEndpoint(apiKey) {
-      for (const ver of ['v1beta', 'v1']) {
+    async function callGeminiApi(promptText, apiKey) {
+      const modelsToTry = [
+        'gemini-2.0-flash',
+        'gemini-2.5-flash',
+        'gemini-2.0-flash-lite'
+      ];
+
+      let lastError = null;
+      for (const m of modelsToTry) {
         try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/${ver}/models?key=${apiKey}`);
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: promptText }] }],
+              generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+            })
+          });
+
           if (res.ok) {
             const data = await res.json();
-            if (data.models && data.models.length > 0) {
-              const genModels = data.models.filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes('generateContent'));
-              const pref = genModels.find(m => m.name.includes('gemini-2.0-flash'))
-                        || genModels.find(m => m.name.includes('gemini-2.5-flash'))
-                        || genModels.find(m => m.name.includes('gemini-1.5-flash'))
-                        || genModels.find(m => m.name.includes('flash'))
-                        || genModels[0];
-              if (pref) {
-                return {
-                  ver: ver,
-                  model: pref.name.replace('models/', ''),
-                  url: `https://generativelanguage.googleapis.com/${ver}/${pref.name}:generateContent?key=${apiKey}`
-                };
-              }
-            }
+            return { model: m, data: data };
+          } else {
+            const err = await res.json().catch(() => ({}));
+            lastError = err.error?.message || `HTTP ${res.status}`;
           }
-        } catch(e) {}
+        } catch(e) {
+          lastError = e.message;
+        }
       }
-      // Запасний варіант
-      return {
-        ver: 'v1beta',
-        model: 'gemini-2.0-flash',
-        url: `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
-      };
+      throw new Error(lastError || "Усі моделі Gemini недоступні");
     }
 
     async function submitAiInlineCorrection() {
@@ -957,95 +965,84 @@
       }
 
       aiInlineResult.style.display = "block";
-      aiInlineResult.innerHTML = "🧠 Gemini AI думає та аналізує...";
+      aiInlineResult.innerHTML = "🧠 Gemini 2.0 AI аналізує...";
 
-      // Формуємо контекст поточної карти для ШІ
+      // Формуємо поточний зріз карти
       const mapContext = checkpoints.map(cp => {
         const matched = allPoints.filter(p => cp.keys.some(k => ((p.raw_text || p.text || '') + ' ' + (p.address || '')).toLowerCase().includes(k)));
         matched.sort((a,b) => (b.time||0) - (a.time||0));
         const latest = matched[0];
         const override = manualOverrides[cp.id];
         let state = "Очікування";
-        if (override) state = override.status === 'green' ? 'Зелений (вручну)' : (override.status === 'red' ? 'Червоний (вручну)' : 'Погашено');
-        else if (latest) state = isCleanPoint(latest) ? 'Зелений (чисто)' : 'Червоний (небезпека)';
-        return `• ${cp.name} (id: "${cp.id}"): зараз горить ${state}. Останнє повідомлення: "${latest ? (latest.text || latest.raw_text) : 'немає'}".`;
+        if (override) state = override.status === 'green' ? 'Зелений (ручний)' : (override.status === 'red' ? 'Червоний (ручний)' : 'Погашено');
+        else if (latest) state = isCleanPoint(latest) ? 'Зелений (чисто)' : 'Червоний (увага/БП)';
+        return `- ${cp.name} (id: "${cp.id}"): зараз ${state}. Останній звіт: "${latest ? (latest.text || latest.raw_text) : 'немає'}".`;
       }).join('\n');
 
-      const systemPrompt = `
-Ти — інтелектуальний штурман-помічник для водія в місті Дніпро.
-Тобі надано реальний стан 8 контрольних світлофорів на дорозі:
+      const fullPrompt = `
+Ти — розумний штурман карти авто-радара у місті Дніпро.
+Поточний стан світлофорів на карті:
 ${mapContext}
+Поточний стан показу світлофорів: ${showTrafficLights ? "увімкнено (видно)" : "вимкнено (приховано)"}.
+Поточний шар карти: ${currentMapType}.
 
-Якщо водій ставить питання (наприклад "чому горить червоний на Набережній?"), ПОЯСНИ йому причину простою людською мовою, посилаючись на повідомлення вище.
-Якщо водій дає команду/зауваження змінити стан світлофора (наприклад "РОВД чисто", "на Павлова бп", "погаси світлофор"):
-- "green": якщо там чисто, вільно, проїзд спокійний, знялися, або просять зняти червоний.
-- "red": якщо там блокпост, патруль, зупиняють, сині, хмари, дощ, небезпека.
-- "off": якщо просять вимкнути або повідомлення помилкове.
-- "none": якщо це просто питання або відповідь.
+Користувач написав: "${query}"
 
-Відповідай СТРОГО валідним JSON без markdown-форматування:
+Твоє завдання — повернути СТРОГО валідний JSON без будь-яких markdown-лапок:
 {
-  "checkpoint_id": "id або null",
-  "action": "green" | "red" | "off" | "none",
-  "explanation": "Коротка, зрозуміла та корисна відповідь водію українською мовою"
+  "command": "toggle_tl" | "set_tl" | "set_layer" | "set_sector" | "info",
+  "target_id": "id світлофора або null",
+  "target_val": "green" | "red" | "off" | "auto" | "hide" | "show" | "google" | "satellite" | "osm" | "route" | "all" | null,
+  "reply": "Зрозуміла, ввічлива відповідь водію українською мовою (1-2 речення)"
 }
+
+Правила команд:
+- Якщо просять сховати/приховати/прибрати світлофори: command="toggle_tl", target_val="hide".
+- Якщо просять показати/увімкнути світлофори: command="toggle_tl", target_val="show".
+- Якщо повідомляють що на точці чисто, або просять зняти червоний: command="set_tl", target_id=id, target_val="green".
+- Якщо повідомляють про блокпост/хмари/патруль: command="set_tl", target_id=id, target_val="red".
+- Якщо запитують чому горить червоний на точці: command="info", поясни на основі останнього звіту в контексті.
 `;
 
       try {
-        const ep = await getActiveGeminiEndpoint(apiKey);
-        const response = await fetch(ep.url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              { role: "user", parts: [{ text: systemPrompt + "\n\nПовідомлення водія:\n" + query }] }
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: "application/json"
-            }
-          })
-        });
-
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error?.message || `HTTP ${response.status}`);
-        }
-
-        const data = await response.json();
-        let rawReply = data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+        const result = await callGeminiApi(fullPrompt, apiKey);
+        let rawReply = result.data.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         rawReply = rawReply.replace(/```json/gi, '').replace(/```/g, '').trim();
         const parsed = JSON.parse(rawReply);
 
-        let actionResultText = parsed.explanation || "Оброблено";
+        let replyMsg = parsed.reply || "Готово!";
 
-        if (parsed.checkpoint_id && parsed.action !== 'none') {
-          const cp = checkpoints.find(c => c.id === parsed.checkpoint_id);
-          if (cp) {
-            setTrafficLightManual(cp.id, parsed.action);
-            const statusIcon = parsed.action === 'green' ? '🟢 ЧИСТО' : (parsed.action === 'red' ? '🔴 УВАГА' : '⚪ ПОГАШЕНО');
-            actionResultText = `Світлофор «${cp.name}» ➔ ${statusIcon}. ${parsed.explanation}`;
-          }
+        // Виконання дій на карті
+        if (parsed.command === 'toggle_tl') {
+          if (parsed.target_val === 'hide' && showTrafficLights) toggleTrafficLights();
+          else if (parsed.target_val === 'show' && !showTrafficLights) toggleTrafficLights();
+        } else if (parsed.command === 'set_tl' && parsed.target_id) {
+          const cp = checkpoints.find(c => c.id === parsed.target_id);
+          if (cp && parsed.target_val) setTrafficLightManual(cp.id, parsed.target_val);
+        } else if (parsed.command === 'set_layer' && parsed.target_val) {
+          toggleMapLayer(parsed.target_val);
+        } else if (parsed.command === 'set_sector' && parsed.target_val) {
+          setSectorPreset(parsed.target_val);
         }
 
         try {
           await fetch(FIREBASE_AI_URL, {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: query, ai_decision: parsed, time: Date.now() })
+            body: JSON.stringify({ text: query, ai_decision: parsed, model: result.model, time: Date.now() })
           });
         } catch(e) {}
 
         aiInlineResult.innerHTML = `
-          <div style="color:#00f3ff; font-weight:800;">🤖 Gemini AI (${ep.model}):</div>
-          <div style="color:#e2e8f0;">${actionResultText}</div>
+          <div style="color:#00f3ff; font-weight:800;">🤖 Gemini (${result.model}):</div>
+          <div style="color:#e2e8f0;">${replyMsg}</div>
         `;
-        showToast("🤖 Відповідь Gemini отримана!");
+        showToast("🤖 Команду виконано ШІ!");
 
       } catch (err) {
         aiInlineResult.innerHTML = `
           <div style="color:#ef4444; font-weight:800;">⚠️ Помилка Gemini API:</div>
           <div style="color:#cbd5e1; font-size:10px;">${err.message}</div>
-          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для перевірки ключа</div>
+          <div style="color:#38bdf8; font-size:10px; cursor:pointer; margin-top:3px;" onclick="configureGeminiKey()">🔑 Натисніть для зміни ключа</div>
         `;
       }
     }
@@ -1423,7 +1420,7 @@ ${mapContext}
             '</div>' +
             messageBlock +
             '<div style="display:flex; justify-content:space-between; align-items:center; font-size:9px; color:#94a3b8; margin-top:5px; border-top:1px solid #e2e8f0; padding-top:4px;">' +
-              '<span>💡 Затисніть 0.5с</span>' +
+              '<span>💡 Затисніть на 0.5с</span>' +
               '<span onclick="openAiContext(\'traffic_light\', \'' + cp.id + '\', \'' + cp.name + '\')" style="color:#0284c7; font-weight:800; cursor:pointer;">🤖 Зауваження для ШІ</span>' +
             '</div>' +
           '</div>';
@@ -1475,7 +1472,7 @@ ${mapContext}
               if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) cancelPress();
             }, { passive: true });
 
-            el.addEventListener('touchend', (e) => {
+            el.addEventListener('touchend', () => {
               if (isLongPress) {
                 if (e.cancelable) e.preventDefault();
                 e.stopPropagation();
