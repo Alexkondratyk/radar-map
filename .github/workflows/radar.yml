@@ -1,31 +1,32 @@
 name: Radar 24/7 Sync
 
 on:
+  workflow_dispatch: # Запуск вручну та за запитом кнопки з веб-карти
   schedule:
-    # Запуск круглосуточно каждые 5 часов (7 дней в неделю):
-    # 00:00, 05:00, 10:00, 15:00, 20:00 UTC
-    - cron: '0 0,5,10,15,20 * * *'
-  workflow_dispatch:
+    - cron: '0 */5 * * *' # Автоматичний перезапуск кожні 5 годин 24/7 (за часом UTC)
 
 concurrency:
-  group: radar-sync
-  cancel-in-progress: true
+  group: radar-runner
+  cancel-in-progress: true # Якщо ви натиснете кнопку на карті, попередній завислий процес завершиться на користь нового
 
 jobs:
   run-radar:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 360 # Максимальний ліміт GitHub Actions (6 годин)
+
     steps:
-      - name: Клонирование репозитория
+      - name: Клонування репозиторію
         uses: actions/checkout@v4
 
-      - name: Установка Python
+      - name: Налаштування Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Установка зависимостей
-        run: pip install requests
+      - name: Встановлення бібліотек
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
       - name: Запуск радара
         env:
