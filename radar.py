@@ -7,8 +7,8 @@ import requests
 
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
-LIFETIME_MS = 40 * 60 * 1000  # 40 минут жизни метки на живой карте
-ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 дней хранения в архиве статистики
+LIFETIME_MS = 40 * 60 * 1000  # 40 минут для меток на карте
+ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 дней для аналитики
 
 CHANNEL_URL = "https://t.me/s/dnepr_bez_tck"
 
@@ -21,13 +21,16 @@ STATS_ARCHIVE_URL = FIREBASE_URL.replace("/points.json", "/stats_archive.json") 
 def log(msg):
     print(msg, flush=True)
 
+# ГЛОБАЛЬНЫЙ КЭШ ОБРАБОТАННЫХ ТЕКСТОВ (ЧТОБЫ НЕ СПАМИТЬ В GEMINI)
+PROCESSED_CACHE = set()
+
 # ==============================================================================
-# АВТОПОИСК АКТУАЛЬНОЙ МОДЕЛИ GOOGLE GEMINI
+# ТОЛЬКО АКТУАЛЬНЫЕ МОДЕЛИ (1.5, 2.0, 2.5 УДАЛЕНЫ)
 # ==============================================================================
 def find_working_model():
     if not GEMINI_KEY:
         log("⚠️ GEMINI_KEY не знайдено!")
-        return "models/gemini-2.5-flash"
+        return "models/gemini-3.8-flash"
 
     list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_KEY}"
     try:
@@ -41,13 +44,10 @@ def find_working_model():
                 if "generateContent" in methods and name:
                     valid_candidates.append(name)
 
-            # Приоритет актуальных быстрых моделей
             preferred_order = [
-                "gemini-3.5-flash-lite",
                 "gemini-3.8-flash",
-                "gemini-2.5-flash",
-                "gemini-2.0-flash",
-                "gemini-1.5-flash"
+                "gemini-3.5-flash-lite",
+                "gemini-3.5-flash"
             ]
 
             def sort_key(name):
@@ -68,15 +68,15 @@ def find_working_model():
                         timeout=8
                     )
                     if test_r.status_code == 200:
-                        log(f"🎯 Обрано модель: {cand}")
+                        log(f"🎯 Обрано робочу модель: {cand}")
                         return cand
                 except Exception:
                     continue
     except Exception as e:
         log(f"⚠️ Помилка автовизначення моделі: {e}")
 
-    fallback = "models/gemini-2.5-flash"
-    log(f"🎯 Обрано запасну модель: {fallback}")
+    fallback = "models/gemini-3.8-flash"
+    log(f"🎯 За замовчуванням: {fallback}")
     return fallback
 
 WORKING_MODEL = find_working_model()
@@ -100,7 +100,7 @@ def is_message_clean(text):
     return False
 
 # ==============================================================================
-# БАЗА ЗНАНИЙ (С БЕЗОПАСНЫМ ЧТЕНИЕМ КООРДИНАТ)
+# БАЗА ЗНАНИЙ
 # ==============================================================================
 def get_knowledge_base():
     if not KNOWLEDGE_BASE_URL:
@@ -114,14 +114,10 @@ def get_knowledge_base():
             elif isinstance(data, list):
                 return [x for x in data if isinstance(x, dict)]
     except Exception as e:
-        log(f"⚠️ Помилка завантаження бази знань: {e}")
+        log(f"⚠️ Помилка бази знань: {e}")
     return []
 
 def match_knowledge_base(text, kb_list):
-    """
-    Ищет запись в базе знаний.
-    Возвращает объект только если в нём ЕСТЬ корректные координаты.
-    """
     t = text.lower()
     for item in kb_list:
         phrase = item.get("phrase", "").strip().lower()
@@ -171,17 +167,16 @@ def cleanup_old_points():
                 }
                 if to_delete_arch:
                     requests.patch(f"{base_url}/stats_archive.json", json=to_delete_arch, timeout=8)
-                    log(f"🧹 Очищено записів архіву старше 400 днів: {len(to_delete_arch)}")
-    except Exception as e:
-        log(f"⚠️ Помилка очистки архіву: {e}")
+    except Exception:
+        pass
 
 # ==============================================================================
-# ПОЛУЧЕНИЕ УЖЕ ОБРАБОТАННЫХ СООБЩЕНИЙ
+# ЗАГРУЗКА БАЗОВЫХ СУЩЕСТВУЮЩИХ ЗАПИСЕЙ ИЗ FIREBASE
 # ==============================================================================
-def get_existing_records():
-    records = set()
+def load_initial_cache():
+    global PROCESSED_CACHE
     if not FIREBASE_URL:
-        return records
+        return
 
     try:
         r = requests.get(FIREBASE_URL, timeout=8)
@@ -190,7 +185,7 @@ def get_existing_records():
                 if isinstance(v, dict):
                     raw = (v.get("raw_text") or v.get("text") or "").replace(" (чисто)", "").strip()
                     if raw:
-                        records.add(raw.lower())
+                        PROCESSED_CACHE.add(raw.lower())
     except Exception:
         pass
 
@@ -200,17 +195,15 @@ def get_existing_records():
             r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
             if r_arch.status_code == 200 and r_arch.json():
                 for v in r_arch.json().values():
-                    if isinstance(v, dict) and (now_ms - (v.get("time") or 0) < 2 * 3600 * 1000):
+                    if isinstance(v, dict) and (now_ms - (v.get("time") or 0) < 3 * 3600 * 1000):
                         raw = (v.get("text") or v.get("raw_text") or "").replace(" (чисто)", "").strip()
                         if raw:
-                            records.add(raw.lower())
+                            PROCESSED_CACHE.add(raw.lower())
     except Exception:
         pass
 
-    return records
-
 # ==============================================================================
-# ПАРСИНГ СООБЩЕНИЙ ИЗ TELEGRAM
+# ПАРСИНГ TELEGRAM
 # ==============================================================================
 def fetch_channel_messages():
     headers = {
@@ -219,7 +212,6 @@ def fetch_channel_messages():
     try:
         r = requests.get(CHANNEL_URL, headers=headers, timeout=12)
         if r.status_code != 200:
-            log(f"⚠️ Не вдалося відкрити канал: HTTP {r.status_code}")
             return []
 
         pattern = re.compile(r'<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', re.DOTALL)
@@ -248,7 +240,7 @@ def parse_with_gemini(text):
 
     prompt = f"""
 Ти — високоточний аналітик геолокації у місті Дніпро (Україна).
-Проаналізуй дорожнє повідомлення з Telegram-каналу:
+Проаналізуй повідомлення з каналу:
 "{text}"
 
 Твоє завдання:
@@ -258,7 +250,7 @@ def parse_with_gemini(text):
    - "чисто": якщо вільно, проїзд спокійний, сонце, 🌞, чисто, знялися, нема нікого.
    - "опасно": якщо блокпост, патруль, зупиняють, сині, хмари, роздають, перевірка.
 
-Відповідай СТРОГО валідним JSON без будь-яких коментарів та без лапок:
+Відповідай СТРОГО валідним JSON без будь-яких лапок markdown:
 {{"found": true, "address": "вул. Робоча", "lat": 48.4501, "lng": 35.0082, "status": "чисто"}}
 Якщо локація у Дніпрі відсутня:
 {{"found": false}}
@@ -296,9 +288,9 @@ def parse_with_gemini(text):
 # ОСНОВНОЙ ЦИКЛ СИНХРОНИЗАЦИИ
 # ==============================================================================
 def sync_cycle():
+    global PROCESSED_CACHE
     cleanup_old_points()
 
-    existing_records = get_existing_records()
     kb_list = get_knowledge_base()
     messages = fetch_channel_messages()
 
@@ -306,7 +298,8 @@ def sync_cycle():
         return
 
     recent_messages = messages[-25:]
-    new_messages = [m for m in recent_messages if m.lower() not in existing_records]
+    # ФИЛЬТРУЕМ СТРОГО ЧЕРЕЗ ГЛОБАЛЬНЫЙ КЭШ ПАМЯТИ
+    new_messages = [m for m in recent_messages if m.lower() not in PROCESSED_CACHE]
 
     log(f"📢 В каналі: {len(recent_messages)} | Нових: {len(new_messages)} | В базі знань: {len(kb_list)}")
 
@@ -316,10 +309,11 @@ def sync_cycle():
     now_ms = int(time.time() * 1000)
 
     for msg in new_messages:
-        existing_records.add(msg.lower())
+        # СРАЗУ ПОМЕЧАЕМ КАК ОБРАБОТАННОЕ, ЧТОБЫ БОЛЬШЕ НЕ СПАМИТЬ В GEMINI
+        PROCESSED_CACHE.add(msg.lower())
         is_clean = is_message_clean(msg)
 
-        # 1. Поиск в базе знаний (безопасное получение координат)
+        # 1. Проверяем базу знаний
         matched_kb = match_knowledge_base(msg, kb_list)
         parsed_result = None
 
@@ -335,16 +329,17 @@ def sync_cycle():
                         "status": "чисто" if is_clean else "опасно"
                     }
                     log(f"🎯 [БАЗА ЗНАНЬ]: '{matched_kb.get('phrase')}' -> {parsed_result['address']}")
-                except (ValueError, TypeError):
+                except Exception:
                     parsed_result = None
 
-        # 2. Если в базе знаний координаты не найдены — распознаём через Gemini
+        # 2. Если в базе знаний нет — отправляем в Gemini с паузой 1.5 сек
         if not parsed_result:
+            time.sleep(1.5)
             parsed_result = parse_with_gemini(msg)
             if parsed_result:
                 log(f"🤖 [GEMINI AI]: '{msg[:40]}...' -> {parsed_result['address']} ({parsed_result['lat']}, {parsed_result['lng']})")
 
-        # 3. Сохранение точки в Firebase
+        # 3. Сохранение точки
         if parsed_result:
             status_clean = (parsed_result["status"] == "чисто" or is_clean)
             color = "green" if status_clean else "red"
@@ -389,6 +384,7 @@ def sync_cycle():
 # ==============================================================================
 if __name__ == "__main__":
     log("🚀 Запуск безперервної зміни радара 24/7...")
+    load_initial_cache()
     start_time = time.time()
     MAX_RUNTIME_SEC = 5 * 3600 + 40 * 60  # Работает до 5 часов 40 минут
 
