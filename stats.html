@@ -32,6 +32,27 @@
     }
     .btn-back:hover { background: #0284c7; color: #fff; }
 
+    /* БЛОК ШІ-АНАЛІТИКА В СТАТИСТИЦІ */
+    .ai-stats-card {
+      background: rgba(15, 23, 42, 0.95); border: 1.5px solid #00f3ff;
+      border-radius: 12px; padding: 12px 14px; margin-bottom: 16px;
+      box-shadow: 0 0 20px rgba(0, 243, 255, 0.25);
+    }
+    .ai-stats-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .ai-stats-title { font-size: 13px; font-weight: 900; color: #00f3ff; display: flex; align-items: center; gap: 6px; }
+    .ai-stats-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .btn-ai-stats-chip {
+      background: #0b1120; border: 1px solid #0284c7; color: #38bdf8;
+      padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer;
+    }
+    .btn-ai-stats-chip:hover { background: #0284c7; color: #fff; }
+    .ai-stats-output {
+      background: #060913; border: 1px solid #1e293b; border-radius: 8px;
+      padding: 8px 12px; font-size: 11px; line-height: 1.45; color: #f1f5f9; display: none;
+    }
+
     /* ФИЛЬТР */
     .filter-bar {
       display: flex; justify-content: space-between; align-items: center;
@@ -93,7 +114,7 @@
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;
     }
 
-    /* ПЕРЕКЛЮЧАТЕЛЬ ПЕРИОДОВ ДЛЯ СООБЩЕНИЙ */
+    /* ПЕРЕКЛЮЧАТЕЛЬ ПЕРИОДОВ */
     .period-switch-row {
       display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;
     }
@@ -106,7 +127,7 @@
       background: #0284c7; border-color: #00f3ff; color: #fff; box-shadow: 0 0 10px rgba(0, 243, 255, 0.4);
     }
 
-    /* ВКЛАДКИ-ТОЧКИ ДЛЯ ЛЕНТЫ СООБЩЕНИЙ (ТАБ 1) */
+    /* ВКЛАДКИ-ТОЧКИ ДЛЯ ЛЕНТЫ СООБЩЕНИЙ */
     .feed-streets-tabs {
       display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; background: #070d1d;
       padding: 8px; border-radius: 9px; border: 1px solid #1e293b;
@@ -140,7 +161,7 @@
     .feed-badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
     .feed-badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
 
-    /* ХРОНОМЕТРАЖ (ТАБ 2) */
+    /* ХРОНОМЕТРАЖ */
     .timeline-day-switch { display: flex; gap: 6px; align-items: center; }
     .timeline-day-btn {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
@@ -184,7 +205,7 @@
       padding: 2px 5px; border-radius: 4px; font-size: 9px; font-weight: 800; margin-left: 6px;
     }
 
-    /* СТОЛБИКИ ПО ДНЯМ (ТАБ 3) */
+    /* СТОЛБИКИ ПО ДНЯМ */
     .street-control-toolbar {
       background: #070d1d; border: 1px solid #1e293b; border-radius: 10px;
       padding: 10px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px;
@@ -233,7 +254,7 @@
     .st-badge.before { border-color: #a855f7; color: #a855f7; }
     .st-badge.week { border-color: #ec4899; color: #ec4899; }
 
-    /* ПЕРЕКЛЮЧАТЕЛИ НЕДЕЛЬ (ТАБ 4) */
+    /* ПЕРЕКЛЮЧАТЕЛИ НЕДЕЛЬ */
     .week-nav-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: #0f172a; border: 1px solid #1e293b; border-radius: 8px;
@@ -255,7 +276,7 @@
       background: #0284c7; border-color: #00f3ff; color: #fff; box-shadow: 0 0 8px rgba(0, 243, 255, 0.4);
     }
 
-    /* ГОД (ТАБ 5) */
+    /* ГОД */
     .year-nav-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
     .btn-year-tab {
       background: #1e293b; border: 1px solid #334155; color: #94a3b8;
@@ -303,6 +324,18 @@
       <a href="index.html" class="btn-back">← До карти</a>
     </div>
 
+    <!-- ВНЕДРЕННЫЙ ШІ-АНАЛИТИК В СТАТИСТИКЕ -->
+    <div class="ai-stats-card">
+      <div class="ai-stats-header">
+        <span class="ai-stats-title">🤖 ШІ-Аналітик Gemini 2.0:</span>
+        <button class="btn-ai-stats-chip" style="background:#0284c7; color:#fff;" onclick="analyzeCurrentStatsTab()">
+          ⚡ Швидкий аналіз вкладки
+        </button>
+      </div>
+      <div class="ai-stats-chips" id="aiStatsSuggestedChips"></div>
+      <div id="aiStatsOutput" class="ai-stats-output"></div>
+    </div>
+
     <!-- ФИЛЬТР -->
     <div class="filter-bar">
       <div class="filter-label">РЕЖИМ ПЕРЕВІРКИ:</div>
@@ -341,7 +374,7 @@
       <button id="tabBtn6" class="tab-btn" onclick="setTab(6)">🌐 Інші місця Дніпра</button>
     </div>
 
-    <!-- ТАБ 1: ТЕКСТЫ СООБЩЕНИЙ ПО УЛИЦАМ (С ВКЛАДКАМИ ДЛЯ КАЖДОЙ ТОЧКИ) -->
+    <!-- ТАБ 1: ТЕКСТЫ СООБЩЕНИЙ -->
     <div id="tabContent1" class="hud-card">
       <div class="hud-card-title">
         <span>💬 Повідомлення з Telegram-каналу:</span>
@@ -354,9 +387,7 @@
         <button id="btnFeedPeriod_week" class="btn-period-pill" onclick="setFeedPeriod('week')">🗓️ За 7 днів (все)</button>
       </div>
 
-      <!-- ВЫБОР ТОЧКИ ВО ВКЛАДКАХ (БЕЗ ПРОКРУТКИ) -->
       <div class="feed-streets-tabs" id="feedStreetPills"></div>
-
       <div id="streetFeedContainer"></div>
     </div>
 
@@ -490,7 +521,6 @@
     const FIREBASE_ARCHIVE_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/stats_archive.json";
     let rawArchive = [];
     
-    // ВОССТАНОВЛЕНИЕ ВСЕХ ПАРАМЕТРОВ
     let activeTabNum = parseInt(localStorage.getItem("stats_active_tab") || "1");
     let feedPeriod = localStorage.getItem("stats_feed_period") || "today";
     let selectedFeedStreet = localStorage.getItem("stats_feed_street") || "all";
@@ -539,6 +569,107 @@
       { name: "Лівий берег (Калинова, Донецьке шосе, Караван)", regex: /(?:донецк.*шоссе|донецьк.*шосе|караван|левобереж|лівобереж|калинов|янтарн|клочко|березинк)/i },
       { name: "Лівий берег (Слобожанський, Сонячний)", regex: /(?:слобожанск|слобожанськ|правд|сонячн|солнечн|малиновськ|придніпров|ігрень)/i }
     ];
+
+    // ==========================================================================
+    // ЛОГИКА ШІ-АНАЛИТИКА В СТАТИСТИКЕ (GEMINI 2.0 FLASH)
+    // ==========================================================================
+    function updateAiStatsSuggestedChips() {
+      const container = document.getElementById("aiStatsSuggestedChips");
+      if (!container) return;
+      container.innerHTML = "";
+
+      let chips = [];
+      if (activeTabNum === 1) {
+        chips = ["🔥 Де найнебезпечніше сьогодні?", "🕒 Останні звіти з Павлова", "🟢 Які точки зараз чисті?"];
+      } else if (activeTabNum === 2) {
+        chips = ["⏱️ Скільки в середньому триває засада?", "🌙 Чи були нічні переходи?", "📈 Коли зазвичай знімаються?"];
+      } else if (activeTabNum === 3) {
+        chips = ["📊 Порівняй вчора і сьогодні", "⚠️ Топ-3 точки за 7 днів", "📉 Де активність спадає?"];
+      } else if (activeTabNum === 4) {
+        chips = ["🕒 В які години безпечно їхати?", "⚡ Піковий час патрулів", "📅 Найактивніший день тижня"];
+      } else if (activeTabNum === 5) {
+        chips = ["📅 Динаміка за місяцями", "📈 Прогноз на наступний місяць"];
+      } else {
+        chips = ["🌐 Загальний огляд по місту", "🚗 Де найбільше патрулів у Дніпрі?"];
+      }
+
+      chips.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className = "btn-ai-stats-chip";
+        btn.innerText = c;
+        btn.onclick = () => askAiStatsQuestion(c);
+        container.appendChild(btn);
+      });
+    }
+
+    async function analyzeCurrentStatsTab() {
+      askAiStatsQuestion("Зроби чіткий короткий аналіз даних цієї вкладки для водія");
+    }
+
+    async function askAiStatsQuestion(userQuestion) {
+      const output = document.getElementById("aiStatsOutput");
+      output.style.display = "block";
+      output.innerHTML = "🧠 Gemini 2.0 аналізує дані...";
+
+      let apiKey = localStorage.getItem("gemini_api_key");
+      if (!apiKey) {
+        apiKey = prompt("Введіть ваш Google Gemini API Key:");
+        if (!apiKey) return;
+        localStorage.setItem("gemini_api_key", apiKey.trim());
+      }
+
+      // Собираем агрегированные данные
+      let statsSnapshot = "";
+      TARGET_CHECKPOINTS.forEach(t => {
+        const sList = targetSessionsGlobal[t.id] || [];
+        statsSnapshot += `\n- ${t.fullName}: за 7 днів було ${sList.length} засад.`;
+      });
+
+      const promptText = `
+Ти — військово-дорожній аналітик для водія у Дніпрі.
+Поточні показники за 7 днів по маршруту:
+${statsSnapshot}
+Поточна активна вкладка: №${activeTabNum}.
+
+Запитання водія: "${userQuestion}"
+
+Дай чітку, практичну відповідь українською мовою (максимум 2-3 коротких речення). Виділи конкретні години чи місця, дай практичну пораду для безпечної поїздки.
+`;
+
+      const models = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.0-flash-lite'];
+      let lastErr = null;
+      let replyText = null;
+
+      for (const m of models) {
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ role: "user", parts: [{ text: promptText }] }],
+              generationConfig: { temperature: 0.2 }
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            replyText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            break;
+          } else {
+            const errObj = await res.json().catch(() => ({}));
+            lastErr = errObj.error?.message || `HTTP ${res.status}`;
+          }
+        } catch(e) {
+          lastErr = e.message;
+        }
+      }
+
+      if (replyText) {
+        output.innerHTML = `<b>🤖 Висновок ШІ:</b><br>${replyText.replace(/\n/g, '<br>')}`;
+      } else {
+        output.innerHTML = `<span style="color:#ef4444;">⚠️ Помилка Gemini API: ${lastErr}</span>`;
+      }
+    }
 
     async function loadStats() {
       try {
@@ -602,7 +733,6 @@
       renderFeedTab();
     }
 
-    // ОТРИСОВКА ВКЛАДОК-УЛИЦ ДЛЯ ЛЕНТЫ
     function renderFeedStreetPills() {
       const container = document.getElementById("feedStreetPills");
       if (!container) return;
@@ -809,6 +939,9 @@
         if (btn) btn.classList.toggle('active', i === num);
       }
 
+      updateAiStatsSuggestedChips();
+      document.getElementById("aiStatsOutput").style.display = "none";
+
       if (num === 1) renderFeedTab();
       if (num === 3 && streetDaysChartInstance) streetDaysChartInstance.resize();
       if (num === 4) {
@@ -860,7 +993,6 @@
       renderOtherSectors();
     }
 
-    // ТАБ 1: ТЕКСТЫ СООБЩЕНИЙ ПО УЛИЦАМ (С ФИЛЬТРОМ ВКЛАДОК)
     function renderFeedTab() {
       const container = document.getElementById("streetFeedContainer");
       if (!container) return;
@@ -922,7 +1054,6 @@
       });
     }
 
-    // ТАБ 2: ХРОНОМЕТРАЖ
     function renderTimeline(targetSessionsMap, now, todayStart, yesterdayStart, ACTIVE_THRESHOLD_MS) {
       const timelineListEl = document.getElementById("timelineList");
       timelineListEl.innerHTML = "";
@@ -1025,7 +1156,6 @@
       });
     }
 
-    // ТАБ 3: СТОЛБИКИ ПО ДНЯМ
     function renderStreetDaysChart(targetSessionsMap, todayStart, yesterdayStart, beforeYesterdayStart, weekStart) {
       const f = streetFilters.tab3;
       const isAll = f.selected.has('all');
@@ -1114,7 +1244,6 @@
       });
     }
 
-    // ТАБ 4: ЧАСЫ И ДНИ
     function renderRouteTimeCharts(targetSessionsMap, todayStart) {
       const f = streetFilters.tab4;
       const isAll = f.selected.has('all');
@@ -1293,7 +1422,6 @@
       });
     }
 
-    // ТАБ 5: ПО МЕСЯЦАМ
     function renderYearlyTab() {
       const f = streetFilters.tab5;
       const isAll = f.selected.has('all');
@@ -1400,7 +1528,6 @@
       });
     }
 
-    // ТАБ 6: ДРУГИЕ МЕСТА ДНЕПРА
     function renderOtherSectors() {
       const otherListEl = document.getElementById("otherSectorsList");
       otherListEl.innerHTML = "";
@@ -1427,7 +1554,6 @@
       });
     }
 
-    // МОДАЛЬНЫЕ ОКНА
     function openMonthlyDetailModal(year, monthIndex, monthName) {
       document.getElementById("modalTitle").innerText = `Місяць: ${monthName} ${year} року`;
       document.getElementById("modalSub").innerText = `Блокпости по ваших 7 місцях за цей місяць`;
@@ -1452,7 +1578,7 @@
             reportsBox.innerHTML += `
               <div class="modal-report-item" style="border-left: 3px solid ${t.color};">
                 <div class="modal-report-time" style="color:${t.color};">${t.fullName} (${dt}, ${st}–${et})</div>
-                <div>${s.reports.map(r => `• \${r.text}`).join("<br>")}</div>
+                <div>${s.reports.map(r => `• ${r.text}`).join("<br>")}</div>
               </div>
             `;
           });
