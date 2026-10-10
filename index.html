@@ -31,83 +31,117 @@
       background: #e2e8f0;
     }
 
+    /* ПЕРЕМЕЩАЕМАЯ ШАПКА */
     .dashboard {
       position: absolute;
       top: 15px; left: 15px;
       z-index: 1000;
-      background: rgba(15, 23, 42, 0.94);
+      background: rgba(15, 23, 42, 0.95);
       backdrop-filter: blur(8px);
       padding: 10px 12px;
-      border-radius: 12px;
+      border-radius: 14px;
       color: #fff;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-      width: 220px;
-      transition: all 0.25s ease;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.45);
+      width: 235px;
+      border: 1px solid #334155;
+      touch-action: none;
     }
     .dash-header { 
-      display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; 
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+      cursor: move; user-select: none; padding-bottom: 4px; border-bottom: 1px solid #1e293b;
     }
     .points-count { 
-      font-size: 14px; font-weight: 700; color: #fff; cursor: pointer; user-select: none; 
+      font-size: 14px; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 5px;
     }
+    .drag-handle-hint { font-size: 10px; color: #64748b; margin-left: 4px; }
     
     .btn-toggle {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #94a3b8;
-      width: 22px; height: 22px;
-      border-radius: 5px;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px;
+      background: #1e293b; border: 1px solid #334155; color: #94a3b8;
+      width: 22px; height: 22px; border-radius: 6px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; font-size: 10px;
     }
 
     .collapsible-body { margin-top: 6px; }
     .subtitle { font-size: 10px; color: #94a3b8; margin-bottom: 8px; }
 
-    .btn-setup {
+    /* ПОИСК УЛИЦ ПО ДНЕПРУ */
+    .search-box {
+      position: relative;
+      margin-bottom: 8px;
+    }
+    .search-input {
       width: 100%;
-      background: #1e293b;
-      border: 1px dashed #38bdf8;
-      color: #38bdf8;
-      padding: 6px 8px;
-      border-radius: 6px;
+      background: #0b1120;
+      border: 1px solid #334155;
+      color: #fff;
+      padding: 7px 10px;
+      border-radius: 8px;
       font-size: 11px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: #38bdf8; box-shadow: 0 0 8px rgba(56, 189, 248, 0.3); }
+    .search-results {
+      position: absolute;
+      top: 100%; left: 0; width: 100%;
+      background: #0f172a;
+      border: 1px solid #38bdf8;
+      border-radius: 8px;
+      max-height: 160px;
+      overflow-y: auto;
+      z-index: 2000;
+      display: none;
+      margin-top: 4px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+    .search-item {
+      padding: 6px 10px;
+      font-size: 11px;
+      color: #cbd5e1;
       cursor: pointer;
-      font-weight: 600;
-      margin-bottom: 6px;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
+      border-bottom: 1px solid #1e293b;
     }
-    .btn-setup.editing {
-      background: #15803d;
-      border: 1px solid var(--color-green);
-      color: #ffffff;
-    }
+    .search-item:hover { background: #1e293b; color: #38bdf8; }
 
     .btn-secondary {
       width: 100%;
       background: #1e293b;
       border: 1px solid #475569;
       color: #cbd5e1;
-      padding: 5px 8px;
-      border-radius: 6px;
+      padding: 6px 8px;
+      border-radius: 7px;
       font-size: 11px;
       cursor: pointer;
-      font-weight: 500;
+      font-weight: 600;
       margin-bottom: 6px;
-      display: flex; align-items: center; justify-content: center; gap: 5px;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
       text-decoration: none;
+      transition: all 0.2s;
     }
     .btn-secondary:hover { background: #334155; color: #fff; }
 
+    /* КНОПКА СВЕТОФОРОВ С МЕНЮ */
+    .tl-menu-container { position: relative; margin-bottom: 6px; }
+    .btn-tl-main {
+      width: 100%; background: #1e293b; border: 1px solid #0284c7; color: #38bdf8;
+      padding: 6px 8px; border-radius: 7px; font-size: 11px; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    }
+    .tl-dropdown {
+      background: #0f172a; border: 1px solid #0284c7; border-radius: 8px;
+      padding: 6px; margin-top: 4px; display: none; flex-direction: column; gap: 4px;
+    }
+    .tl-dropdown-btn {
+      background: #1e293b; border: 1px solid #334155; color: #cbd5e1;
+      padding: 5px 8px; border-radius: 6px; font-size: 10px; font-weight: 600;
+      cursor: pointer; text-align: left; display: flex; align-items: center; gap: 6px;
+    }
+    .tl-dropdown-btn:hover { background: #334155; color: #fff; }
+
     .btn-stats-link {
       background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
-      border: 1px solid #6366f1;
-      color: #a5b4fc;
-      font-weight: 700;
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.3);
+      border: 1px solid #6366f1; color: #a5b4fc; font-weight: 700;
     }
-    .btn-stats-link:hover { background: #4338ca; color: #fff; }
 
     .legend {
       display: flex; flex-direction: column; gap: 5px; font-size: 10px; color: #94a3b8;
@@ -118,27 +152,17 @@
     .dot-green { background: var(--color-green); }
     .dot-red { background: var(--color-red); }
 
-    .custom-dot-marker {
-      background: transparent !important;
-      border: none !important;
-    }
+    .custom-dot-marker { background: transparent !important; border: none !important; }
     .radar-circle {
-      width: 18px; height: 18px;
-      border-radius: 50%;
-      cursor: pointer;
-      position: relative;
-      touch-action: none;
-      transition: transform 0.15s ease;
+      width: 18px; height: 18px; border-radius: 50%; cursor: pointer; position: relative; touch-action: none;
     }
     .radar-circle.color-green {
       background: var(--color-green) !important;
-      background-image: linear-gradient(var(--color-green), var(--color-green)) !important;
       border: var(--border-green-size) solid var(--border-green-color) !important;
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 2px 5px rgba(0,0,0,0.3) !important;
     }
     .radar-circle.color-red {
       background: var(--color-red) !important;
-      background-image: linear-gradient(var(--color-red), var(--color-red)) !important;
       border: var(--border-red-size) solid var(--border-red-color) !important;
       box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 2px 5px rgba(0,0,0,0.3) !important;
     }
@@ -168,29 +192,13 @@
       from { transform: scale(1.4); } to { transform: scale(1.6); }
     }
 
-    .street-highlight-polyline {
-      stroke: #00f3ff !important;
-      stroke-width: 9px !important;
-      stroke-opacity: 0.95 !important;
-      stroke-dasharray: 8, 8 !important;
-      animation: dashMove 0.8s linear infinite !important;
-      filter: drop-shadow(0 0 10px #00f3ff) drop-shadow(0 0 25px #0284c7) !important;
-      pointer-events: none !important;
-    }
-    @keyframes dashMove {
-      from { stroke-dashoffset: 0; } to { stroke-dashoffset: 16; }
-    }
-
+    /* СВЕТОФОРЫ */
     .traffic-pill {
-      background: #0f172a !important;
-      border: 1.5px solid #ffffff !important;
-      border-radius: 13px !important;
-      padding: 3px 2px !important;
+      background: #0f172a !important; border: 1.5px solid #ffffff !important;
+      border-radius: 13px !important; padding: 3px 2px !important;
       display: flex !important; flex-direction: column !important;
       align-items: center !important; gap: 3px !important;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.45) !important;
-      width: 20px !important; height: 36px !important;
-      user-select: none !important;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.45) !important; width: 20px !important; height: 36px !important;
     }
     .traffic-pill.draggable-mode { cursor: grab; border-color: #38bdf8 !important; box-shadow: 0 0 14px 4px #38bdf8 !important; }
     .traffic-pill.standby-mode { background: rgba(15, 23, 42, 0.45) !important; border: 1.5px dashed #94a3b8 !important; opacity: 0.7; }
@@ -202,13 +210,18 @@
     .tl-lamp.off { background: #334155 !important; opacity: 0.4; }
     .traffic-marker-icon { background: transparent !important; border: none !important; }
 
+    /* ПЕРЕМЕЩАЕМОЕ СЕКРЕТНОЕ МЕНЮ */
     .neon-panel {
       position: absolute; top: 15px; right: 15px; z-index: 1500;
       background: rgba(15, 23, 42, 0.96); border: 1px solid #00f3ff;
-      border-radius: 12px; padding: 12px 14px; color: #fff; width: 260px;
-      max-height: 85vh; overflow-y: auto; display: none;
+      border-radius: 14px; padding: 12px 14px; color: #fff; width: 260px;
+      max-height: 85vh; overflow-y: auto; display: none; box-shadow: 0 6px 25px rgba(0,0,0,0.5);
+      touch-action: none;
     }
-    .neon-title { font-size: 13px; font-weight: 700; color: #00f3ff; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .neon-title {
+      font-size: 13px; font-weight: 800; color: #00f3ff; margin-bottom: 8px;
+      display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;
+    }
     .neon-colors { display: flex; gap: 6px; margin-bottom: 8px; }
     .btn-color { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #334155; cursor: pointer; }
     .btn-color.active { border-color: #fff; box-shadow: 0 0 8px #fff; }
@@ -276,34 +289,51 @@
 <body>
   <div id="map"></div>
 
-  <div class="dashboard">
-    <div class="dash-header">
-      <div class="points-count" id="countText" onclick="handleSecretClick()">Точок: 0</div>
+  <!-- ШАПКА КАРТЫ (ДВИГАЕТСЯ ПАЛЬЦЕМ ЗА ЗАГОЛОВОК) -->
+  <div id="dashPanel" class="dashboard">
+    <div id="dashHeader" class="dash-header">
+      <div class="points-count" id="countText" onclick="handleSecretClick()">
+        <span>Точок: 0</span>
+        <span class="drag-handle-hint">✥ (рухай)</span>
+      </div>
       <button class="btn-toggle" id="btnToggle" onclick="togglePanelCollapse()">▲</button>
     </div>
 
     <div id="collapsibleBody" class="collapsible-body">
       <div class="subtitle" id="sectorSubtitle">📍 Режим: Мій маршрут</div>
 
-      <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
-        <span>📊</span><span>Аналітика блокпостів</span>
-      </a>
+      <!-- ПОИСК УЛИЦ ПО ДНЕПРУ -->
+      <div class="search-box">
+        <input type="text" id="streetSearchInput" class="search-input" placeholder="🔍 Пошук вулиці у Дніпрі..." autocomplete="off">
+        <div id="searchResults" class="search-results"></div>
+      </div>
+
+      <!-- ЕДИНАЯ КНОПКА СВЕТОФОРОВ С ВЫПАДАЮЩИМ МЕНЮ -->
+      <div class="tl-menu-container">
+        <button class="btn-tl-main" onclick="toggleTlDropdown()">
+          <span>🚦 Світлофори</span>
+          <span id="tlDropdownArrow">▾</span>
+        </button>
+        <div id="tlDropdown" class="tl-dropdown">
+          <button id="btnToggleTl" class="tl-dropdown-btn" onclick="toggleTrafficLights()">
+            <span id="btnToggleTlIcon">👁️</span><span id="btnToggleTlText">Сховати світлофори</span>
+          </button>
+          <button id="btnSetup" class="tl-dropdown-btn" onclick="toggleEditMode()">
+            <span>📍</span><span id="btnSetupText">Розставити (рухати)</span>
+          </button>
+          <button class="tl-dropdown-btn" onclick="openAddModal()">
+            <span>➕</span><span>Додати новий</span>
+          </button>
+        </div>
+      </div>
 
       <button id="btnMapLayer" class="btn-secondary" onclick="toggleMapLayer()">
         <span>🗺️</span><span id="btnMapLayerText">Карта: Google (з вулицями)</span>
       </button>
 
-      <button id="btnSetup" class="btn-setup" onclick="toggleEditMode()">
-        <span>📍</span><span id="btnSetupText">Розставити світлофори</span>
-      </button>
-
-      <button id="btnToggleTl" class="btn-secondary" onclick="toggleTrafficLights()">
-        <span id="btnToggleTlIcon">👁️</span><span id="btnToggleTlText">Сховати світлофори</span>
-      </button>
-
-      <button class="btn-secondary" onclick="openAddModal()">
-        <span>➕</span><span>Додати світлофор</span>
-      </button>
+      <a href="stats.html" class="btn-secondary btn-stats-link" target="_blank">
+        <span>📊</span><span>Аналітика блокпостів</span>
+      </a>
 
       <div class="legend">
         <div class="legend-row">
@@ -314,18 +344,15 @@
           <span class="shape dot-red"></span>
           <span>Увага / Блокпост / Патруль</span>
         </div>
-        <div class="legend-row" style="margin-top: 2px;">
-          <span style="font-size: 11px;">🚦</span>
-          <span id="tlLegendCount">Світлофори (активні)</span>
-        </div>
       </div>
     </div>
   </div>
 
+  <!-- СЕКРЕТНОЕ МЕНЮ (ДВИГАЕТСЯ ПАЛЬЦЕМ ЗА ЗАГОЛОВОК) -->
   <div id="neonPanel" class="neon-panel">
-    <div class="neon-title">
-      <span>⚙️ Секретне меню</span>
-      <span style="cursor:pointer; font-size:14px;" onclick="closeNeonPanel()">✕</span>
+    <div id="neonHeader" class="neon-title">
+      <span>⚙️ Секретне меню ✥</span>
+      <span style="cursor:pointer; font-size:16px; padding: 0 4px;" onclick="closeNeonPanel()">✕</span>
     </div>
 
     <div style="font-size:11px; font-weight:700; color:#38bdf8; margin-bottom:5px;">🏙️ Фільтр районів міста:</div>
@@ -378,6 +405,7 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // 1. ДВОЙНОЙ АНТИ-СОН ЭКРАНА (WAKE LOCK + ЧИСТЫЙ ТАКТ)
     let screenWakeLock = null;
     async function requestScreenWakeLock() {
       try {
@@ -388,8 +416,58 @@
       if (document.visibilityState === 'visible') requestScreenWakeLock();
     });
     window.addEventListener('click', requestScreenWakeLock, { once: true });
+    window.addEventListener('touchstart', requestScreenWakeLock, { once: true });
     requestScreenWakeLock();
 
+    // 2. ДЕЛАЕМ ПАНЕЛИ СВОБОДНО ПЕРЕМЕЩАЕМЫМИ ПАЛЬЦЕМ
+    function makeElementDraggable(elmnt, handle) {
+      let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+      handle.onmousedown = dragMouseDown;
+      handle.ontouchstart = dragTouchStart;
+
+      function dragMouseDown(e) {
+        e.preventDefault();
+        pos3 = e.clientX; pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        e.preventDefault();
+        pos1 = pos3 - e.clientX; pos2 = pos4 - e.clientY;
+        pos3 = e.clientX; pos4 = e.clientY;
+        elmnt.style.top = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
+        elmnt.style.left = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+      }
+
+      function closeDragElement() {
+        document.onmouseup = null; document.onmousemove = null;
+      }
+
+      function dragTouchStart(e) {
+        const touch = e.touches[0];
+        pos3 = touch.clientX; pos4 = touch.clientY;
+        document.ontouchend = closeTouchDrag;
+        document.ontouchmove = elementTouchDrag;
+      }
+
+      function elementTouchDrag(e) {
+        const touch = e.touches[0];
+        pos1 = pos3 - touch.clientX; pos2 = pos4 - touch.clientY;
+        pos3 = touch.clientX; pos4 = touch.clientY;
+        elmnt.style.top = Math.max(10, Math.min(window.innerHeight - 80, elmnt.offsetTop - pos2)) + "px";
+        elmnt.style.left = Math.max(10, Math.min(window.innerWidth - 80, elmnt.offsetLeft - pos1)) + "px";
+      }
+
+      function closeTouchDrag() {
+        document.ontouchend = null; document.ontouchmove = null;
+      }
+    }
+
+    makeElementDraggable(document.getElementById("dashPanel"), document.getElementById("dashHeader"));
+    makeElementDraggable(document.getElementById("neonPanel"), document.getElementById("neonHeader"));
+
+    // 3. БАЗА URL
     const FIREBASE_POINTS_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/points.json";
     const FIREBASE_CONFIG_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/traffic_lights.json";
     const FIREBASE_NEON_URL = "https://dnepr-radar-2026-alexx-default-rtdb.europe-west1.firebasedatabase.app/config/neon_lines.json";
@@ -402,7 +480,7 @@
     let showNeonLines = localStorage.getItem("radar_neon_visible") !== "false";
     let currentMapType = localStorage.getItem("radar_map_type") || "google";
     
-    // НАДЁЖНЫЙ КОНТРОЛЛЕР ЖЕСТОВ
+    // КОНТРОЛЛЕР ПЕРЕНОСА ТОЧЕК БЕЗ ПОДСВЕТКИ И БЕЗ СМЕЩЕНИЯ ФОКУСА
     const dragController = {
       activeMarker: null,
       activePoint: null,
@@ -416,7 +494,6 @@
         this.activeMarker = null;
         this.activePoint = null;
         this.isDragging = false;
-        streetHighlightGroup.clearLayers();
       }
     };
 
@@ -425,100 +502,6 @@
       const stored = localStorage.getItem("radar_active_sectors");
       if (stored) activeSectors = JSON.parse(stored);
     } catch(e) {}
-
-    // ТОЧНАЯ ГЕОМЕТРИЯ РЕАЛЬНЫХ УЛИЦ ДНЕПРА (РУССКИЙ + УКРАИНСКИЙ + СЛЕНГ)
-    const STREET_GEOMETRIES = [
-      {
-        name: "вул. Павлова",
-        regex: /(?:павлов|щепкин|щепкін|академика\s*павлова|академіка\s*павлова)/i,
-        points: [[48.4845, 35.0001], [48.4818, 35.0012], [48.4760, 35.0035], [48.4735, 35.0048], [48.4705, 35.0065]]
-      },
-      {
-        name: "Краснозаводська / Белелюбського / Комбайновий",
-        regex: /(?:белелюб|краснозавод|комбайн|дтрз|ударник|белелюбского|белелюбського|краснозаводская|краснозаводська)/i,
-        points: [[48.4818, 35.0012], [48.4812, 34.9940], [48.4795, 34.9845], [48.4805, 34.9780], [48.4828, 34.9725]]
-      },
-      {
-        name: "Водолікарня (пр. Свободи)",
-        regex: /(?:водолечеб|водолікарн|водогрязелечеб|водолечебка|водолечебниц)/i,
-        points: [[48.4870, 34.9700], [48.4848, 34.9735], [48.4820, 34.9780]]
-      },
-      {
-        name: "Водокачка",
-        regex: /(?:водокачк|водокачка|водокачки)/i,
-        points: [[48.4930, 34.9420], [48.4910, 34.9480], [48.4890, 34.9560]]
-      },
-      {
-        name: "Річпорт (Речной вокзал)",
-        regex: /(?:речпорт|річпорт|речной\s*вокзал|річковий\s*вокзал|десантник|десантников|десантників)/i,
-        points: [[48.4820, 35.0150], [48.4805, 35.0210], [48.4785, 35.0280], [48.4750, 35.0380]]
-      },
-      {
-        name: "Набережна Заводська (Стан 550, РОВД, Кайдаки)",
-        regex: /(?:набережн.*завод|набка.*завод|заводск.*набережн|стан\s*550|стан550|\bстан\b|кайдак|кайдаки|кайдакск|кайдацьк|ровд)/i,
-        points: [[48.4975, 34.9280], [48.4940, 34.9400], [48.4910, 34.9480], [48.4885, 34.9650], [48.4865, 34.9850], [48.4830, 35.0050], [48.4805, 35.0210], [48.4770, 35.0350]]
-      },
-      {
-        name: "проспект Свободи",
-        regex: /(?:проспект\s*свобод|пр\s*свобод|пр\.\s*свобод|свободы|свободи)/i,
-        points: [[48.4915, 34.9605], [48.4880, 34.9675], [48.4848, 34.9735], [48.4800, 34.9785], [48.4740, 34.9770], [48.4700, 34.9720]]
-      },
-      {
-        name: "вул. Робоча",
-        regex: /(?:робоч|рабоч|рабочая|робоча|криворож|криворізьк)/i,
-        points: [[48.4716, 34.9930], [48.4600, 34.9985], [48.4480, 35.0035], [48.4380, 35.0070]]
-      },
-      {
-        name: "вул. Канатна",
-        regex: /(?:канатн|канатная|канатна|философск|філософськ|савченко)/i,
-        points: [[48.4680, 35.0130], [48.4650, 35.0050], [48.4610, 34.9980]]
-      },
-      {
-        name: "пр. Нігояна",
-        regex: /(?:нигоян|нігоян|калинин|калінін)/i,
-        points: [[48.4770, 35.0110], [48.4716, 34.9892], [48.4690, 34.9760]]
-      },
-      {
-        name: "пр. Мазепи",
-        regex: /(?:мазеп|петровск|петровськ)/i,
-        points: [[48.4690, 34.9760], [48.4630, 34.9600], [48.4550, 34.9450]]
-      },
-      {
-        name: "Вокзали / Старомостова",
-        regex: /(?:вокзал|старомостов|островск|островськ|курчатов)/i,
-        points: [[48.4765, 35.0150], [48.4745, 35.0175], [48.4735, 35.0210]]
-      },
-      {
-        name: "Озерка / Шмідта",
-        regex: /(?:озерк|озёрк|шмидт|шмідт|бандера|бандери)/i,
-        points: [[48.4735, 35.0210], [48.4705, 35.0230], [48.4680, 35.0240], [48.4630, 35.0270]]
-      },
-      {
-        name: "пр. Слобожанський",
-        regex: /(?:слобожанск|слобожанськ|правд|правда|правды)/i,
-        points: [[48.4830, 35.0520], [48.4980, 35.0680], [48.5180, 35.0870], [48.5350, 35.1050]]
-      },
-      {
-        name: "вул. Калинова",
-        regex: /(?:калинов|калиновая|янтарн|янтарная|клочко)/i,
-        points: [[48.5130, 35.0580], [48.5150, 35.0750], [48.5170, 35.0950]]
-      },
-      {
-        name: "Донецьке шосе",
-        regex: /(?:донецк.*шоссе|донецьк.*шосе|караван|левобереж|лівобереж)/i,
-        points: [[48.4970, 34.9580], [48.5150, 34.9950], [48.5280, 35.0350]]
-      },
-      {
-        name: "пр. Поля",
-        regex: /(?:поля|киров|кіров)/i,
-        points: [[48.4620, 35.0280], [48.4500, 35.0230], [48.4350, 35.0180]]
-      },
-      {
-        name: "пр. Б. Хмельницького / 12 Квартал",
-        regex: /(?:хмельницк|хмельницьк|12.*квартал|квартал|сталинград|сталінград)/i,
-        points: [[48.4500, 35.0350], [48.4300, 35.0300], [48.4050, 35.0250]]
-      }
-    ];
 
     const SECTOR_DEFS = {
       s1: {
@@ -575,13 +558,10 @@
     const initialZoom = isMobile ? 12 : 13;
     const map = L.map('map', { zoomControl: false }).setView([48.484, 34.985], initialZoom);
 
-    // 1. Google Maps
     const googleLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
       subdomains: ['0', '1', '2', '3'],
       maxZoom: 20, attribution: 'Google Maps'
     });
-
-    // 2. Esri World Street Map (Официальный надежный слой без 403 и без API Key)
     const esriLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19, attribution: 'Esri World Street Map'
     });
@@ -610,10 +590,10 @@
       showToast(currentMapType === "google" ? "🗺️ Google Карта увімкнена!" : "🗺️ Вулична Карта (Esri) увімкнена!");
     }
 
-    const streetHighlightGroup = L.layerGroup().addTo(map);
     const neonLayer = L.layerGroup().addTo(map);
     const markersLayer = L.layerGroup().addTo(map);
     const trafficLightLayer = L.layerGroup().addTo(map);
+    let searchPinMarker = null;
 
     let allPoints = [];
     let isEditMode = false;
@@ -623,29 +603,80 @@
       const toast = document.getElementById("toast");
       toast.innerText = text;
       toast.style.display = "block";
-      setTimeout(() => { toast.style.display = "none"; }, 3500);
+      setTimeout(() => { toast.style.display = "none"; }, 3000);
     }
 
-    // ПОДСВЕТКА ТОЛЬКО РЕАЛЬНОЙ УЛИЦЫ
-    function highlightStreetForPoint(point) {
-      streetHighlightGroup.clearLayers();
-      const txt = ((point.raw_text || point.text || "") + " " + (point.address || "")).toLowerCase();
-      
-      let matched = null;
-      for (const item of STREET_GEOMETRIES) {
-        if (item.regex.test(txt)) {
-          matched = item;
-          break;
-        }
-      }
+    // ПОИСК УЛИЦ ПО ДНЕПРУ
+    const streetSearchInput = document.getElementById("streetSearchInput");
+    const searchResults = document.getElementById("searchResults");
+    let searchDebounceTimer = null;
 
-      if (matched) {
-        L.polyline(matched.points, { className: 'street-highlight-polyline' }).addTo(streetHighlightGroup);
-        map.fitBounds(L.latLngBounds(matched.points), { padding: [50, 50], maxZoom: 16, animate: true });
-        showToast(`📍 Підсвічено реальну дорогу: ${matched.name.toUpperCase()}!`);
-      } else {
-        showToast("🔍 Назву вулиці в тексті не розпізнано. Перетягніть мітку пальцем вручну.");
+    streetSearchInput.addEventListener("input", () => {
+      clearTimeout(searchDebounceTimer);
+      const query = streetSearchInput.value.trim();
+      if (query.length < 3) {
+        searchResults.style.display = "none";
+        return;
       }
+      searchDebounceTimer = setTimeout(() => executeStreetSearch(query), 400);
+    });
+
+    streetSearchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        clearTimeout(searchDebounceTimer);
+        executeStreetSearch(streetSearchInput.value.trim());
+      }
+    });
+
+    async function executeStreetSearch(query) {
+      if (!query) return;
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ", Дніпро")}&countrycodes=ua&limit=5`;
+        const res = await fetch(url);
+        const data = await res.json();
+        
+        searchResults.innerHTML = "";
+        if (data && data.length > 0) {
+          data.forEach(item => {
+            const div = document.createElement("div");
+            div.className = "search-item";
+            div.innerText = item.display_name.split(",")[0];
+            div.onclick = () => {
+              const lat = parseFloat(item.lat);
+              const lon = parseFloat(item.lon);
+              map.flyTo([lat, lon], 16, { animate: true, duration: 1 });
+              
+              if (searchPinMarker) map.removeLayer(searchPinMarker);
+              searchPinMarker = L.circleMarker([lat, lon], {
+                radius: 10, color: "#38bdf8", fillColor: "#00f3ff", fillOpacity: 0.8
+              }).addTo(map).bindPopup(`📍 ${item.display_name.split(",")[0]}`).openPopup();
+              
+              searchResults.style.display = "none";
+              streetSearchInput.value = item.display_name.split(",")[0];
+            };
+            searchResults.appendChild(div);
+          });
+          searchResults.style.display = "block";
+        } else {
+          searchResults.innerHTML = `<div class="search-item" style="color:#94a3b8;">Вулицю не знайдено</div>`;
+          searchResults.style.display = "block";
+        }
+      } catch (e) {
+        searchResults.style.display = "none";
+      }
+    }
+
+    document.addEventListener("click", (e) => {
+      if (!e.target.closest(".search-box")) searchResults.style.display = "none";
+    });
+
+    // ВЫПАДАЮЩЕЕ МЕНЮ СВЕТОФОРОВ
+    function toggleTlDropdown() {
+      const drop = document.getElementById("tlDropdown");
+      const arrow = document.getElementById("tlDropdownArrow");
+      const isVisible = drop.style.display === "flex";
+      drop.style.display = isVisible ? "none" : "flex";
+      arrow.innerText = isVisible ? "▾" : "▴";
     }
 
     // ОБУЧЕНИЕ ИИ ПРИ ЗАВЕРШЕНИИ ПЕРЕНОСА
@@ -653,7 +684,6 @@
       if (!point || !newLatLng) return;
       const newLat = Number(newLatLng.lat.toFixed(5));
       const newLng = Number(newLatLng.lng.toFixed(5));
-      streetHighlightGroup.clearLayers();
 
       let phrase = (point.address || "").toLowerCase().replace("дніпро", "").replace("вул.", "").replace("пр.", "").trim();
       if (!phrase || phrase.length < 3) {
@@ -687,11 +717,11 @@
         });
       } catch(e) {}
 
-      showToast(`🎯 Навчено! «${phrase}» надійно зафіксовано.`);
+      showToast(`🎯 Навчено! «${phrase}» зафіксовано.`);
       renderMarkers();
     }
 
-    // ГЛОБАЛЬНЫЙ ТРЕКИНГ ПАЛЬЦА / МЫШКИ (ЖЕЛЕЗНОЕ ПЕРЕТАСКИВАНИЕ)
+    // ТРЕКИНГ ПЕРЕМЕЩЕНИЯ КРУЖКА
     function onGlobalMove(clientX, clientY) {
       if (dragController.activeMarker && dragController.isDragging) {
         const container = map.getContainer();
@@ -718,15 +748,11 @@
     });
 
     window.addEventListener('touchend', () => {
-      if (dragController.isDragging) {
-        dragController.isDragging = false;
-      }
+      if (dragController.isDragging) dragController.isDragging = false;
     });
 
     window.addEventListener('mouseup', () => {
-      if (dragController.isDragging) {
-        dragController.isDragging = false;
-      }
+      if (dragController.isDragging) dragController.isDragging = false;
     });
 
     // КАСАНИЕ КАРТЫ СНИМАЕТ ВЫДЕЛЕНИЕ И ЗАВЕРШАЕТ ПЕРЕНОС
@@ -853,22 +879,18 @@
           }
         }
       } catch (e) {}
-      document.getElementById("tlLegendCount").innerText = `Світлофори (активні)`;
     }
 
     async function toggleEditMode() {
       if (!showTrafficLights) toggleTrafficLights();
       isEditMode = !isEditMode;
-      const btn = document.getElementById("btnSetup");
       const btnText = document.getElementById("btnSetupText");
 
       if (isEditMode) {
-        btn.classList.add("editing");
         btnText.innerText = "💾 Зафіксувати позиції";
-        showToast("📍 Перетягуйте світлофори мишкою.");
+        showToast("📍 Перетягуйте світлофори мишкою або пальцем.");
       } else {
-        btn.classList.remove("editing");
-        btnText.innerText = "📍 Розставити світлофори";
+        btnText.innerText = "📍 Розставити (рухати)";
         await syncCheckpointsToCloud();
         showToast("✅ Позиції збережено!");
       }
@@ -1151,14 +1173,14 @@
             <div class="popup-text">${emoji} ${p.text || ""}</div>
             <div class="popup-meta-row"><span>⏳ До зникнення:</span><span class="popup-badge">${remMinutes} хв</span></div>
             <div class="popup-meta-row"><span>🕒 Додано:</span><span>${dateStr}</span></div>
-            <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Утримуйте 0.4с для підсвітки вулиці та переносу</div>
+            <div style="font-size:10px; color:#f59e0b; margin-top:6px; font-weight:600;">💡 Затисніть 0.4с для переміщення</div>
           </div>
         `;
 
         const marker = L.marker([p.lat, p.lng], { icon: dotIcon, draggable: false, zIndexOffset: 50 });
         marker.bindPopup(popupContent);
 
-        // ЖЕСТ 0.4с С ПОЛНОЙ ЗАЩИТОЙ
+        // ЖЕСТ 0.4с ПЕРЕМЕЩЕНИЯ (БЕЗ ПОДСВЕТОК И БЕЗ СМЕЩЕНИЯ КАРТЫ)
         let timer = null;
         let startX = 0, startY = 0;
 
@@ -1187,8 +1209,6 @@
 
             const iconEl = marker.getElement()?.querySelector('.radar-circle');
             if (iconEl) iconEl.classList.add('active-dragging-target');
-
-            highlightStreetForPoint(p);
           }, 400);
         }
 
