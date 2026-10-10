@@ -8,9 +8,9 @@ import requests
 GEMINI_KEY = os.environ.get("GEMINI_KEY", "").strip()
 FIREBASE_URL = os.environ.get("FIREBASE_URL", "").strip()
 LIFETIME_MS = 40 * 60 * 1000  # 40 минут для меток на карте
-ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 дней для аналитики
+ARCHIVE_RETENTION_MS = 400 * 24 * 60 * 60 * 1000  # 400 дней для архива аналитики
 
-CHANNEL_URL = "https://t.me/s/dnepr_bez_tck"
+CHANNEL_BASE_URL = "https://t.me/s/dnepr_bez_tck"
 
 if FIREBASE_URL and not FIREBASE_URL.endswith(".json"):
     FIREBASE_URL = FIREBASE_URL.rstrip("/") + "/points.json"
@@ -21,11 +21,62 @@ STATS_ARCHIVE_URL = FIREBASE_URL.replace("/points.json", "/stats_archive.json") 
 def log(msg):
     print(msg, flush=True)
 
-# ГЛОБАЛЬНЫЙ КЭШ ОБРАБОТАННЫХ ТЕКСТОВ (ЧТОБЫ НЕ СПАМИТЬ В GEMINI)
-PROCESSED_CACHE = set()
+PROCESSED_POST_IDS = set()
 
 # ==============================================================================
-# ТОЛЬКО АКТУАЛЬНЫЕ МОДЕЛИ (1.5, 2.0, 2.5 УДАЛЕНЫ)
+# ВСТРОЕННЫЙ БЫСТРЫЙ ГЕОКОДЕР ДНЕПРА (МГНОВЕННЫЙ ЗАХВАТ БЕЗ ЗАДЕРЖЕК API)
+# ==============================================================================
+LOCAL_STREETS_DB = [
+    {"keys": ["космічн", "космическ"], "addr": "вул. Космічна", "lat": 48.4180, "lng": 35.0450},
+    {"keys": ["гагарін", "гагарин", "науки"], "addr": "просп. Науки (Гагаріна)", "lat": 48.4350, "lng": 35.0420},
+    {"keys": ["дафі", "дафи", "підстанці", "подстанци"], "addr": "ТРЦ Дафі / Підстанція", "lat": 48.4250, "lng": 35.0220},
+    {"keys": ["дну"], "addr": "ДНУ (просп. Науки)", "lat": 48.4340, "lng": 35.0430},
+    {"keys": ["сікорськ", "сикорск", "тельман"], "addr": "вул. Ігоря Сікорського", "lat": 48.4320, "lng": 35.0120},
+    {"keys": ["артем", "січових стрільц", "сечевых стрельц"], "addr": "вул. Січових Стрільців (Артема)", "lat": 48.4550, "lng": 35.0410},
+    {"keys": ["поля", "кіров", "киров"], "addr": "просп. Олександра Поля", "lat": 48.4520, "lng": 35.0250},
+    {"keys": ["павлов"], "addr": "вул. Академіка Павлова", "lat": 48.4818, "lng": 35.0012},
+    {"keys": ["стан 550", "стан550", " стан "], "addr": "Стан 550 (Набережна Заводська)", "lat": 48.4865, "lng": 34.9850},
+    {"keys": ["водокачк"], "addr": "Водокачка (Набережна Заводська)", "lat": 48.4910, "lng": 34.9480},
+    {"keys": ["водолікарн", "водолечеб"], "addr": "Водолікарня (просп. Свободи)", "lat": 48.4848, "lng": 34.9735},
+    {"keys": ["речпорт", "річпорт", "репорт"], "addr": "Річпорт (Набережна Заводська)", "lat": 48.4805, "lng": 35.0210},
+    {"keys": ["робоч", "рабоч"], "addr": "вул. Робоча", "lat": 48.4501, "lng": 35.0082},
+    {"keys": ["лесі українк", "леси украинки", "пушкін", "пушкин"], "addr": "просп. Лесі Українки", "lat": 48.4650, "lng": 35.0220},
+    {"keys": ["титов"], "addr": "вул. Титова", "lat": 48.4310, "lng": 35.0240},
+    {"keys": ["шкільн", "школьн"], "addr": "вул. Шкільна", "lat": 48.4410, "lng": 35.0240},
+    {"keys": ["слобожанськ", "правд"], "addr": "просп. Слобожанський", "lat": 48.4950, "lng": 35.0750},
+    {"keys": ["калинов"], "addr": "вул. Калинова", "lat": 48.5080, "lng": 35.0600},
+    {"keys": ["донецьк.*шосе", "донецк.*шоссе", "караван"], "addr": "Донецьке шосе / Караван", "lat": 48.5350, "lng": 34.9900},
+    {"keys": ["12.*квартал", "квартал"], "addr": "12 Квартал", "lat": 48.4050, "lng": 35.0200},
+    {"keys": ["топол"], "addr": "ж/м Тополя", "lat": 48.3900, "lng": 35.0350},
+    {"keys": ["перемог", "побед"], "addr": "ж/м Перемога", "lat": 48.4200, "lng": 35.0800},
+    {"keys": ["парус"], "addr": "ж/м Парус", "lat": 48.4850, "lng": 34.9200},
+    {"keys": ["покровськ", "комунар", "коммунар"], "addr": "ж/м Покровський", "lat": 48.4820, "lng": 34.9350},
+    {"keys": ["червон.*кам", "красн.*кам"], "addr": "ж/м Червоний Камінь", "lat": 48.4820, "lng": 34.9450},
+    {"keys": ["мазеп", "петровськ", "петровск"], "addr": "просп. Івана Мазепи", "lat": 48.4720, "lng": 34.9650},
+    {"keys": ["нігоян", "нигоян", "калінін", "калинин"], "addr": "просп. Сергія Нігояна", "lat": 48.4750, "lng": 34.9900},
+    {"keys": ["вокзал", "старомостов", "островськ", "островск"], "addr": "Залізничний Вокзал", "lat": 48.4750, "lng": 35.0180},
+    {"keys": ["озерк"], "addr": "Ринок Озерка", "lat": 48.4700, "lng": 35.0250},
+    {"keys": ["шмідт", "шмидт", "бандер"], "addr": "вул. Степана Бандери (Шмідта)", "lat": 48.4680, "lng": 35.0220},
+    {"keys": ["хмельницьк", "хмельницк"], "addr": "просп. Богдана Хмельницького", "lat": 48.4200, "lng": 35.0250},
+    {"keys": ["центр", "міст.*сіті", "мост.*сити"], "addr": "Центр / ТРК Міст-Сіті", "lat": 48.4660, "lng": 35.0500},
+    {"keys": ["європейськ", "европейск"], "addr": "Європейська площа", "lat": 48.4640, "lng": 35.0480},
+    {"keys": ["яворницьк"], "addr": "просп. Дмитра Яворницького", "lat": 48.4620, "lng": 35.0450},
+    {"keys": ["сонячн", "солнечн"], "addr": "ж/м Сонячний", "lat": 48.4750, "lng": 35.0650},
+    {"keys": ["придніпров", "приднепров"], "addr": "ж/м Придніпровськ", "lat": 48.4050, "lng": 35.1300},
+    {"keys": ["підгородн", "подгородн"], "addr": "м. Підгородне", "lat": 48.5750, "lng": 35.1050}
+]
+
+def geocode_local(text):
+    t = " " + text.lower() + " "
+    for item in LOCAL_STREETS_DB:
+        for k in item["keys"]:
+            pattern = re.compile(k, re.IGNORECASE)
+            if pattern.search(t):
+                return item["addr"], item["lat"], item["lng"]
+    return None, None, None
+
+# ==============================================================================
+# ТОЛЬКО АКТУАЛЬНЫЕ МОДЕЛИ GEMINI
 # ==============================================================================
 def find_working_model():
     if not GEMINI_KEY:
@@ -37,53 +88,23 @@ def find_working_model():
         r = requests.get(list_url, timeout=10)
         if r.status_code == 200:
             models_list = r.json().get("models", [])
-            valid_candidates = []
-            for m in models_list:
-                methods = m.get("supportedGenerationMethods", [])
-                name = m.get("name", "")
-                if "generateContent" in methods and name:
-                    valid_candidates.append(name)
-
-            preferred_order = [
-                "gemini-3.8-flash",
-                "gemini-3.5-flash-lite",
-                "gemini-3.5-flash"
+            valid = [
+                m.get("name") for m in models_list
+                if "generateContent" in m.get("supportedGenerationMethods", []) and m.get("name")
             ]
-
-            def sort_key(name):
-                clean = name.replace("models/", "")
-                for idx, pref in enumerate(preferred_order):
-                    if pref in clean:
-                        return idx
-                return 99
-
-            sorted_candidates = sorted(valid_candidates, key=sort_key)
-
-            for cand in sorted_candidates:
-                test_url = f"https://generativelanguage.googleapis.com/v1beta/{cand}:generateContent?key={GEMINI_KEY}"
-                try:
-                    test_r = requests.post(
-                        test_url,
-                        json={"contents": [{"role": "user", "parts": [{"text": "ping"}]}]},
-                        timeout=8
-                    )
-                    if test_r.status_code == 200:
-                        log(f"🎯 Обрано робочу модель: {cand}")
-                        return cand
-                except Exception:
-                    continue
+            preferred = ["gemini-3.8-flash", "gemini-3.5-flash-lite", "gemini-3.5-flash"]
+            for pref in preferred:
+                match = next((v for v in valid if pref in v), None)
+                if match:
+                    log(f"🎯 Обрано модель: {match}")
+                    return match
     except Exception as e:
-        log(f"⚠️ Помилка автовизначення моделі: {e}")
+        log(f"⚠️ Помилка пошуку моделей: {e}")
 
-    fallback = "models/gemini-3.8-flash"
-    log(f"🎯 За замовчуванням: {fallback}")
-    return fallback
+    return "models/gemini-3.8-flash"
 
 WORKING_MODEL = find_working_model()
 
-# ==============================================================================
-# СЛОВАРЬ СЛЕНГА ЧИСТОТЫ (ДНЕПР)
-# ==============================================================================
 CLEAN_KEYWORDS = [
     "чисто", "чистенько", "пусто", "вільно", "спокійно", "проїзд",
     "без бп", "сонечко", "солнечно", "солнце", "ясно", "сухо",
@@ -99,9 +120,6 @@ def is_message_clean(text):
             return True
     return False
 
-# ==============================================================================
-# БАЗА ЗНАНИЙ
-# ==============================================================================
 def get_knowledge_base():
     if not KNOWLEDGE_BASE_URL:
         return []
@@ -113,8 +131,8 @@ def get_knowledge_base():
                 return [v for v in data.values() if isinstance(v, dict)]
             elif isinstance(data, list):
                 return [x for x in data if isinstance(x, dict)]
-    except Exception as e:
-        log(f"⚠️ Помилка бази знань: {e}")
+    except Exception:
+        pass
     return []
 
 def match_knowledge_base(text, kb_list):
@@ -133,9 +151,6 @@ def match_knowledge_base(text, kb_list):
                     pass
     return None
 
-# ==============================================================================
-# ОЧИСТКА УСТАРЕВШИХ ТОЧЕК
-# ==============================================================================
 def cleanup_old_points():
     now_ms = int(time.time() * 1000)
     if not FIREBASE_URL:
@@ -152,108 +167,67 @@ def cleanup_old_points():
             }
             if to_delete:
                 requests.patch(f"{base_url}/points.json", json=to_delete, timeout=8)
-                log(f"🧹 Видалено застарілих міток карти: {len(to_delete)}")
-    except Exception as e:
-        log(f"⚠️ Помилка очистки карти: {e}")
-
-    try:
-        if STATS_ARCHIVE_URL:
-            r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
-            if r_arch.status_code == 200 and r_arch.json():
-                arch_data = r_arch.json()
-                to_delete_arch = {
-                    k: None for k, v in arch_data.items()
-                    if isinstance(v, dict) and (now_ms - (v.get("time") or 0)) > ARCHIVE_RETENTION_MS
-                }
-                if to_delete_arch:
-                    requests.patch(f"{base_url}/stats_archive.json", json=to_delete_arch, timeout=8)
+                log(f"🧹 Видалено застарілих міток: {len(to_delete)}")
     except Exception:
         pass
 
 # ==============================================================================
-# ЗАГРУЗКА БАЗОВЫХ СУЩЕСТВУЮЩИХ ЗАПИСЕЙ ИЗ FIREBASE
-# ==============================================================================
-def load_initial_cache():
-    global PROCESSED_CACHE
-    if not FIREBASE_URL:
-        return
-
-    try:
-        r = requests.get(FIREBASE_URL, timeout=8)
-        if r.status_code == 200 and r.json():
-            for v in r.json().values():
-                if isinstance(v, dict):
-                    raw = (v.get("raw_text") or v.get("text") or "").replace(" (чисто)", "").strip()
-                    if raw:
-                        PROCESSED_CACHE.add(raw.lower())
-    except Exception:
-        pass
-
-    try:
-        if STATS_ARCHIVE_URL:
-            now_ms = int(time.time() * 1000)
-            r_arch = requests.get(STATS_ARCHIVE_URL, timeout=8)
-            if r_arch.status_code == 200 and r_arch.json():
-                for v in r_arch.json().values():
-                    if isinstance(v, dict) and (now_ms - (v.get("time") or 0) < 3 * 3600 * 1000):
-                        raw = (v.get("text") or v.get("raw_text") or "").replace(" (чисто)", "").strip()
-                        if raw:
-                            PROCESSED_CACHE.add(raw.lower())
-    except Exception:
-        pass
-
-# ==============================================================================
-# ПАРСИНГ TELEGRAM
+# ПАРСИНГ ТЕЛЕГРАМ С ОБХОДОМ СЕРВЕРНОГО КЭША
 # ==============================================================================
 def fetch_channel_messages():
+    timestamp_param = int(time.time())
+    url = f"{CHANNEL_BASE_URL}?t={timestamp_param}"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
     }
+
     try:
-        r = requests.get(CHANNEL_URL, headers=headers, timeout=12)
+        r = requests.get(url, headers=headers, timeout=12)
         if r.status_code != 200:
             return []
 
-        pattern = re.compile(r'<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>', re.DOTALL)
-        raw_matches = pattern.findall(r.text)
+        pattern = re.compile(
+            r'data-post="[^/]+/(\d+)"[^>]*>.*?<div class="tgme_widget_message_text[^"]*"[^>]*>(.*?)</div>',
+            re.DOTALL
+        )
+        matches = pattern.findall(r.text)
 
-        messages = []
-        for m in raw_matches:
-            clean = re.sub(r'<br\s*/?>', ' ', m)
+        results = []
+        for post_id, raw_html in matches:
+            clean = re.sub(r'<br\s*/?>', '\n', raw_html)
             clean = re.sub(r'<[^>]+>', '', clean)
-            clean = clean.replace('&quot;', '"').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-            clean = ' '.join(clean.split()).strip()
-            if clean and len(clean) >= 4:
-                messages.append(clean)
+            clean = clean.replace('&quot;', '"').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').strip()
 
-        return messages
+            lines = [l.strip() for l in clean.split('\n') if len(l.strip()) >= 3]
+            for line in lines:
+                results.append((post_id, line))
+
+        return results
     except Exception as e:
-        log(f"⚠️ Помилка зчитування каналу: {e}")
+        log(f"⚠️ Помилка зчитування Telegram: {e}")
         return []
 
 # ==============================================================================
-# ГЕОКОДИНГ ЧЕРЕЗ GEMINI
+# РЕЗЕРВНЫЙ ГЕОКОДИНГ ЧЕРЕЗ GEMINI (ЕСЛИ УЛИЦЫ НЕТ В БАЗЕ)
 # ==============================================================================
 def parse_with_gemini(text):
     if not GEMINI_KEY:
         return None
 
     prompt = f"""
-Ти — високоточний аналітик геолокації у місті Дніпро (Україна).
-Проаналізуй повідомлення з каналу:
-"{text}"
+Ти — аналітик геолокації у місті Дніпро (Україна).
+Повідомлення: "{text}"
 
-Твоє завдання:
-1. Визначити, чи стосується повідомлення конкретного місця / вулиці / перехрестя / орієнтиру в місті Дніпро (або передмісті: Підгородне, Слобожанське, Новоолександрівка).
-2. Якщо місце знайдено: визнач точну назву адреси та координати (lat, lng) у Дніпрі (lat близько 48.35 - 48.60, lng близько 34.80 - 35.25).
-3. Визнач статус:
-   - "чисто": якщо вільно, проїзд спокійний, сонце, 🌞, чисто, знялися, нема нікого.
-   - "опасно": якщо блокпост, патруль, зупиняють, сині, хмари, роздають, перевірка.
+1. Визнач місце у Дніпрі (або передмісті: Підгородне, Слобожанське).
+2. Визнач координати (lat близько 48.35 - 48.60, lng близько 34.80 - 35.25).
+3. Визнач статус ("чисто" чи "опасно").
 
-Відповідай СТРОГО валідним JSON без будь-яких лапок markdown:
-{{"found": true, "address": "вул. Робоча", "lat": 48.4501, "lng": 35.0082, "status": "чисто"}}
-Якщо локація у Дніпрі відсутня:
-{{"found": false}}
+Відповідай ТІЛЬКИ JSON:
+{{"found": true, "address": "вул. ...", "lat": 48.45, "lng": 35.01, "status": "чисто"}}
+Якщо локації у Дніпрі немає: {{"found": false}}
 """
 
     url = f"https://generativelanguage.googleapis.com/v1beta/{WORKING_MODEL}:generateContent?key={GEMINI_KEY}"
@@ -264,12 +238,12 @@ def parse_with_gemini(text):
                 "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                 "generationConfig": {"temperature": 0.1, "responseMimeType": "application/json"}
             },
-            timeout=12
+            timeout=10
         )
         if r.status_code == 200:
-            raw_json = r.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-            raw_json = raw_json.replace("```json", "").replace("```", "").strip()
-            data = json.loads(raw_json)
+            raw = r.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+            raw = raw.replace("```json", "").replace("```", "").strip()
+            data = json.loads(raw)
             if data.get("found") and data.get("lat") and data.get("lng"):
                 lat = float(data["lat"])
                 lng = float(data["lng"])
@@ -280,66 +254,74 @@ def parse_with_gemini(text):
                         "lng": round(lng, 5),
                         "status": data.get("status", "опасно")
                     }
-    except Exception as e:
-        log(f"⚠️ Помилка виклику Gemini: {e}")
+    except Exception:
+        pass
     return None
 
 # ==============================================================================
-# ОСНОВНОЙ ЦИКЛ СИНХРОНИЗАЦИИ
+# ЦИКЛ СИНХРОНИЗАЦИИ
 # ==============================================================================
 def sync_cycle():
-    global PROCESSED_CACHE
+    global PROCESSED_POST_IDS
     cleanup_old_points()
 
     kb_list = get_knowledge_base()
-    messages = fetch_channel_messages()
+    items = fetch_channel_messages()
 
-    if not messages:
+    if not items:
         return
 
-    recent_messages = messages[-25:]
-    # ФИЛЬТРУЕМ СТРОГО ЧЕРЕЗ ГЛОБАЛЬНЫЙ КЭШ ПАМЯТИ
-    new_messages = [m for m in recent_messages if m.lower() not in PROCESSED_CACHE]
+    # Отбираем сообщения, которые ещё не обрабатывались
+    new_items = []
+    for post_id, text in items:
+        unique_key = f"{post_id}_{text.lower()}"
+        if unique_key not in PROCESSED_POST_IDS:
+            new_items.append((unique_key, text))
 
-    log(f"📢 В каналі: {len(recent_messages)} | Нових: {len(new_messages)} | В базі знань: {len(kb_list)}")
+    log(f"📢 В каналі: {len(items)} | Нових: {len(new_items)} | В базі знань: {len(kb_list)}")
 
-    if not new_messages:
+    if not new_items:
         return
 
     now_ms = int(time.time() * 1000)
 
-    for msg in new_messages:
-        # СРАЗУ ПОМЕЧАЕМ КАК ОБРАБОТАННОЕ, ЧТОБЫ БОЛЬШЕ НЕ СПАМИТЬ В GEMINI
-        PROCESSED_CACHE.add(msg.lower())
+    for unique_key, msg in new_items:
+        PROCESSED_POST_IDS.add(unique_key)
         is_clean = is_message_clean(msg)
 
-        # 1. Проверяем базу знаний
-        matched_kb = match_knowledge_base(msg, kb_list)
         parsed_result = None
 
-        if matched_kb:
-            lat_val = matched_kb.get("lat")
-            lng_val = matched_kb.get("lng")
-            if lat_val is not None and lng_val is not None:
-                try:
-                    parsed_result = {
-                        "address": matched_kb.get("address") or matched_kb.get("phrase") or "Дніпро",
-                        "lat": float(lat_val),
-                        "lng": float(lng_val),
-                        "status": "чисто" if is_clean else "опасно"
-                    }
-                    log(f"🎯 [БАЗА ЗНАНЬ]: '{matched_kb.get('phrase')}' -> {parsed_result['address']}")
-                except Exception:
-                    parsed_result = None
+        # 1. Сначала проверяем пользовательскую базу знаний
+        matched_kb = match_knowledge_base(msg, kb_list)
+        if matched_kb and matched_kb.get("lat") and matched_kb.get("lng"):
+            parsed_result = {
+                "address": matched_kb.get("address") or matched_kb.get("phrase"),
+                "lat": float(matched_kb["lat"]),
+                "lng": float(matched_kb["lng"]),
+                "status": "чисто" if is_clean else "опасно"
+            }
+            log(f"🎯 [БАЗА ЗНАНЬ]: '{matched_kb.get('phrase')}' ➔ {parsed_result['address']}")
 
-        # 2. Если в базе знаний нет — отправляем в Gemini с паузой 1.5 сек
+        # 2. Если нет в базе знаний — мгновенный локальный геокодер Днепра
         if not parsed_result:
-            time.sleep(1.5)
+            addr, lat, lng = geocode_local(msg)
+            if addr and lat and lng:
+                parsed_result = {
+                    "address": addr,
+                    "lat": lat,
+                    "lng": lng,
+                    "status": "чисто" if is_clean else "опасно"
+                }
+                log(f"⚡ [ЛОКАЛЬНО]: '{msg[:40]}' ➔ {addr}")
+
+        # 3. Если улица редкая — резервный запрос в Gemini
+        if not parsed_result:
+            time.sleep(1.0)
             parsed_result = parse_with_gemini(msg)
             if parsed_result:
-                log(f"🤖 [GEMINI AI]: '{msg[:40]}...' -> {parsed_result['address']} ({parsed_result['lat']}, {parsed_result['lng']})")
+                log(f"🤖 [GEMINI AI]: '{msg[:40]}' ➔ {parsed_result['address']}")
 
-        # 3. Сохранение точки
+        # 4. Сохранение точки в Firebase
         if parsed_result:
             status_clean = (parsed_result["status"] == "чисто" or is_clean)
             color = "green" if status_clean else "red"
@@ -363,7 +345,7 @@ def sync_cycle():
             try:
                 requests.post(FIREBASE_URL, json=point_data, timeout=8)
             except Exception as e:
-                log(f"⚠️ Помилка запису точки: {e}")
+                log(f"⚠️ Помилка Firebase: {e}")
 
             if STATS_ARCHIVE_URL:
                 try:
@@ -380,17 +362,16 @@ def sync_cycle():
                     pass
 
 # ==============================================================================
-# ТОЧКА ВХОДА (РАБОТА В GITHUB ACTIONS)
+# ТОЧКА ВХОДА (РАБОТА 24/7)
 # ==============================================================================
 if __name__ == "__main__":
     log("🚀 Запуск безперервної зміни радара 24/7...")
-    load_initial_cache()
     start_time = time.time()
-    MAX_RUNTIME_SEC = 5 * 3600 + 40 * 60  # Работает до 5 часов 40 минут
+    MAX_RUNTIME_SEC = 5 * 3600 + 40 * 60
 
     while (time.time() - start_time) < MAX_RUNTIME_SEC:
         try:
             sync_cycle()
         except Exception as e:
             log(f"⚠️ Помилка в циклі: {e}")
-        time.sleep(25)
+        time.sleep(20)
