@@ -177,6 +177,7 @@
       border-radius: 13px !important; padding: 3px 2px !important;
       display: flex !important; flex-direction: column !important; align-items: center !important; gap: 3px !important;
       box-shadow: 0 3px 12px rgba(0,0,0,0.45) !important; width: 20px !important; height: 36px !important;
+      cursor: pointer;
     }
     .traffic-pill.draggable-mode { cursor: grab; border-color: #38bdf8 !important; box-shadow: 0 0 14px 4px #38bdf8 !important; }
     .tl-lamp { width: 11px; height: 11px; border-radius: 50%; }
@@ -416,7 +417,7 @@
       updateRouteStatus();
 
       if (trafficMarkersMap[cpId] && trafficMarkersMap[cpId].isPopupOpen()) {
-        trafficMarkersMap[cpId].openPopup();
+        trafficMarkersMap[cpId].closePopup();
       }
     };
 
@@ -585,7 +586,6 @@
         const latestDanger = matched[0];
 
         const override = manualOverrides[cp.id];
-        // Ручной режим сбрасывается, если появился свежий отчет о БП ПОСЛЕ ручного клика!
         const hasFresherDanger = latestDanger && override && (latestDanger.time > override.time);
         const isOverrideActive = override && (now - override.time < LIFETIME_MS) && !hasFresherDanger;
 
@@ -610,7 +610,9 @@
       } else if (dangerCount === 1) {
         routeStatusBar.classList.add("danger");
         routeStatusIcon.innerText = "🔴";
-        routeStatusText.innerText = `Мій шлях: Є 1 блокпост (${detectedStreets[0].split(' ')[0]})`;
+        // Чистим префикс вул., чтобы не писало "(вул.)"
+        const cleanName = detectedStreets[0].replace(/^вул\.\s*/i, '').replace(/^пр\.\s*/i, '').split(' ')[0].replace(/[^а-яА-Яіїєґ]/gi, '');
+        routeStatusText.innerText = `Мій шлях: Блокпост (${cleanName})`;
       } else {
         routeStatusBar.classList.add("danger");
         routeStatusIcon.innerText = "🔴";
@@ -793,7 +795,7 @@
       });
     }
 
-    // РЕНДЕР СВЕТОФОРОВ (С АВТОСБРОСОМ ПРИ СВЕЖЕМ СООБЩЕНИИ)
+    // РЕНДЕР СВЕТОФОРОВ: ОБЫЧНЫЙ КЛИК = ИНФА, ДОЛГИЙ КЛИК = ПУЛЬТ КЕРУВАННЯ
     function toggleTlDropdown() {
       const drop = document.getElementById("tlDropdown");
       const arrow = document.getElementById("tlDropdownArrow");
@@ -876,6 +878,33 @@
       } catch (e) {}
     }
 
+    // ОТКРЫТИЕ МЕНЮ РУЧНОГО КЕРУВАННЯ (ПРИ ДОЛГОМ НАЖАТИИ)
+    function openTrafficLightControl(cpId) {
+      const cp = checkpoints.find(c => c.id === cpId);
+      const marker = trafficMarkersMap[cpId];
+      if (!cp || !marker) return;
+
+      const override = manualOverrides[cpId];
+      const isOverrideActive = override && (Date.now() - override.time < LIFETIME_MS);
+
+      const controlContent = `
+        <div style="padding:4px; min-width:180px;">
+          <div style="font-weight:800; font-size:12px; color:#38bdf8; margin-bottom:4px;">⚙️ Керування: ${cp.name}</div>
+          <div style="font-size:10px; color:#94a3b8; margin-bottom:8px;">Оберіть примусовий стан:</div>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:6px;">
+            <button onclick="setTrafficLightManual('${cp.id}', 'green')" style="background:#065f46; border:1px solid #10b981; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🟢 Чисто</button>
+            <button onclick="setTrafficLightManual('${cp.id}', 'red')" style="background:#7f1d1d; border:1px solid #ef4444; color:#fff; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🔴 БП</button>
+            <button onclick="setTrafficLightManual('${cp.id}', 'off')" style="background:#1e293b; border:1px solid #64748b; color:#cbd5e1; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">⚪ Погасити</button>
+            <button onclick="setTrafficLightManual('${cp.id}', 'auto')" style="background:#0f172a; border:1px solid #0284c7; color:#38bdf8; padding:6px; border-radius:5px; font-size:11px; font-weight:800; cursor:pointer;">🔄 Авто</button>
+          </div>
+          <div style="font-size:9px; color:#64748b; text-align:center;">При появі нового БП режим зніметься сам</div>
+        </div>
+      `;
+
+      marker.setPopupContent(controlContent);
+      marker.openPopup();
+    }
+
     function renderTrafficLights() {
       if (!showTrafficLights) return;
       const now = Date.now();
@@ -895,7 +924,6 @@
         let latest = matched[0];
 
         const override = manualOverrides[cp.id];
-        // Если пришло свежее сообщение о БП ПОСЛЕ того, как вы нажали кнопку — ручной режим аннулируется!
         const hasFresherDanger = latest && !isCleanPoint(latest) && override && (latest.time > override.time);
         const isOverrideActive = override && (now - override.time < LIFETIME_MS) && !hasFresherDanger;
 
@@ -929,36 +957,120 @@
         const iconHtml = `<div class="traffic-pill ${isEditMode ? 'draggable-mode' : ''}"><div class="${redClass}"></div><div class="${greenClass}"></div></div>`;
         const tlIcon = L.divIcon({ className: 'traffic-marker-icon', html: iconHtml, iconSize: [20, 36], iconAnchor: [10, 18] });
 
+        // ФОРМИРУЕМ ЧИСТЫЙ ТЕКСТ СООБЩЕНИЯ (БЕЗ ОШИБОК ШАБЛОНА)
+        let messageBlock = "";
+        if (latest && (!isOverrideActive || override.status !== 'off')) {
+          const rawText = latest.text || latest.raw_text || "";
+          const msgTime = (latest.time || latest.timestamp) ? new Date(latest.time || latest.timestamp).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' }) : "";
+          if (rawText) {
+            messageBlock = `
+              <div style="font-size:11px; color:#f1f5f9; margin-top:4px; line-height:1.35; background:#0b1120; padding:6px 8px; border-radius:6px; border:1px solid #1e293b;">
+                «${rawText}»
+                ${msgTime ? `<div style="font-size:9px; color:#64748b; margin-top:3px; text-align:right;">🕒 \${msgTime}</div>` : ''}
+              </div>
+            `;
+          }
+        }
+
         const overrideBadge = isOverrideActive ? `<span style="font-size:9px; background:#0284c7; color:#fff; padding:1px 4px; border-radius:3px; margin-left:4px;">РУЧНИЙ</span>` : "";
-        
-        let popupContent = `
-          <div style="padding:2px; min-width:175px;">
+
+        // СТАНДАРТНОЕ ОКНО ПРИ ОБЫЧНОМ КЛИКЕ (БЕЗ КНОПОК)
+        const standardPopupContent = `
+          <div style="padding:4px; min-width:170px;">
             <div style="font-weight:800; font-size:12px; color:#38bdf8;">🚦 ${cp.name} ${overrideBadge}</div>
-            <div style="font-size:11px; font-weight:700; margin:3px 0;">${statusTitle}</div>
-            ${latest && (!isOverrideActive || override.status !== 'off') ? `<div style="font-size:10px; color:#cbd5e1; max-height:45px; overflow-y:auto; margin-bottom:6px; line-height:1.2;">«\${latest.text || ""}»</div>` : ''}
-            <div style="font-size:9px; color:#94a3b8; margin-bottom:3px; font-weight:700;">КЕРУВАННЯ СВІТЛОФОРОМ:</div>
-            <div style="display:flex; gap:3px; flex-wrap:wrap;">
-              <button onclick="setTrafficLightManual('${cp.id}', 'green')" style="background:#065f46; border:1px solid #10b981; color:#fff; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">🟢 Чисто</button>
-              <button onclick="setTrafficLightManual('${cp.id}', 'red')" style="background:#7f1d1d; border:1px solid #ef4444; color:#fff; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">🔴 БП</button>
-              <button onclick="setTrafficLightManual('${cp.id}', 'off')" style="background:#1e293b; border:1px solid #64748b; color:#cbd5e1; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">⚪ Погасити</button>
-              ${isOverrideActive ? `<button onclick="setTrafficLightManual('\${cp.id}', 'auto')" style="background:#0f172a; border:1px solid #0284c7; color:#38bdf8; padding:3px 6px; border-radius:4px; font-size:10px; font-weight:700; cursor:pointer;">🔄 Авто</button>` : ''}
-            </div>
+            <div style="font-size:11px; font-weight:800; margin:4px 0;">${statusTitle}</div>
+            ${messageBlock}
+            <div style="font-size:9px; color:#64748b; margin-top:6px; border-top:1px solid #1e293b; padding-top:4px;">💡 Затисніть на 0.5с для керування</div>
           </div>
         `;
 
-        if (trafficMarkersMap[cp.id]) {
-          trafficMarkersMap[cp.id].setIcon(tlIcon);
-          trafficMarkersMap[cp.id].setPopupContent(popupContent);
-          if (isEditMode) trafficMarkersMap[cp.id].dragging.enable();
-          else trafficMarkersMap[cp.id].dragging.disable();
+        let marker = trafficMarkersMap[cp.id];
+
+        if (marker) {
+          marker.setIcon(tlIcon);
+          marker.setPopupContent(standardPopupContent);
+          if (isEditMode) marker.dragging.enable();
+          else marker.dragging.disable();
         } else {
-          const marker = L.marker([cp.lat, cp.lng], { icon: tlIcon, zIndexOffset: 1000, draggable: isEditMode });
+          marker = L.marker([cp.lat, cp.lng], { icon: tlIcon, zIndexOffset: 1000, draggable: isEditMode });
+          marker.bindPopup(standardPopupContent);
+
           marker.on('dragend', async (e) => {
             const pos = e.target.getLatLng();
             cp.lat = Number(pos.lat.toFixed(5)); cp.lng = Number(pos.lng.toFixed(5));
             await syncCheckpointsToCloud();
           });
-          marker.bindPopup(popupContent);
+
+          // СЛУШАТЕЛЬ ДОЛГОГО НАЖАТИЯ (0.5 сек) ДЛЯ ПУЛЬТА КЕРУВАННЯ
+          let pressTimer = null;
+          let isLongPress = false;
+          let startX = 0, startY = 0;
+
+          function startPress(clientX, clientY) {
+            isLongPress = false;
+            startX = clientX;
+            startY = clientY;
+            pressTimer = setTimeout(() => {
+              isLongPress = true;
+              if (navigator.vibrate) navigator.vibrate(60);
+              openTrafficLightControl(cp.id);
+            }, 500);
+          }
+
+          function cancelPress() {
+            if (pressTimer) {
+              clearTimeout(pressTimer);
+              pressTimer = null;
+            }
+          }
+
+          marker.on('add', () => {
+            const el = marker.getElement();
+            if (!el) return;
+
+            el.addEventListener('touchstart', (e) => {
+              startPress(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: true });
+
+            el.addEventListener('touchmove', (e) => {
+              if (pressTimer && Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 8) {
+                cancelPress();
+              }
+            }, { passive: true });
+
+            el.addEventListener('touchend', (e) => {
+              if (isLongPress) {
+                if (e.cancelable) e.preventDefault();
+                e.stopPropagation();
+              }
+              cancelPress();
+            });
+
+            el.addEventListener('mousedown', (e) => {
+              if (e.button === 0) startPress(e.clientX, e.clientY);
+            });
+
+            el.addEventListener('mousemove', (e) => {
+              if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 8) {
+                cancelPress();
+              }
+            });
+
+            el.addEventListener('mouseup', (e) => {
+              if (isLongPress) {
+                e.stopPropagation();
+              }
+              cancelPress();
+            });
+
+            // При обычном клике всегда возвращаем стандартный вид окна
+            el.addEventListener('click', () => {
+              if (!isLongPress) {
+                marker.setPopupContent(standardPopupContent);
+              }
+            });
+          });
+
           trafficLightLayer.addLayer(marker);
           trafficMarkersMap[cp.id] = marker;
         }
